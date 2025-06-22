@@ -1,349 +1,460 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useRouter, useSearchParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useSearchParams, useRouter } from "next/navigation";
-import { useTheme } from "@/lib/theme-context";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, TestTube, User, Calendar, Clock, MapPin } from "lucide-react";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { CalendarIcon, TestTube, UserIcon, MapPinIcon, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 import Link from "next/link";
 
 const sampleCollectionSchema = z.object({
-  collectionDateTime: z.string().min(1, "Collection date and time is required"),
-  sampleId: z.string().min(1, "Sample ID/Barcode is required"),
-  sampleType: z.enum(["plasma", "serum", "whole-blood", "other"], {
-    required_error: "Please select a sample type",
+  sampleId: z.string().min(1, "Sample ID is required"),
+  dateCollected: z.date({ required_error: "Collection date is required" }),
+  timeCollected: z.string().min(1, "Collection time is required"),
+  sampleType: z.enum(["plasma", "serum", "whole_blood", "other"], {
+    required_error: "Sample type is required",
   }),
-  centrifugationDateTime: z.string().min(1, "Centrifugation date and time is required"),
+  otherSampleType: z.string().optional(),
+  dateCentrifuged: z.date().optional(),
+  timeCentrifuged: z.string().optional(),
   technicianName: z.string().min(1, "Technician name is required"),
-  storageConsent: z.enum(["yes", "no", "unknown"], {
-    required_error: "Please select storage consent status",
+  specimenStorageConsent: z.enum(["yes", "no"], {
+    required_error: "Storage consent is required",
   }),
+  notes: z.string().optional(),
 });
 
-type SampleCollectionFormData = z.infer<typeof sampleCollectionSchema>;
+type SampleCollectionData = z.infer<typeof sampleCollectionSchema>;
 
-// Mock request data - in real app, this would come from API
+// Mock request data - in real app, this would come from an API
 const mockRequestData = {
-  "VL-001456": {
-    id: "VL-001456",
-    patientId: "95/24",
-    clinicianName: "Dr. Rita Zemeyi",
-    facility: "Butabika Hospital",
-    district: "Kampala",
-    hub: "Kampala Hub",
-    requestDate: "2025-06-17",
-    gender: "Male",
-    age: 36,
-    indication: "Routine monitoring"
-  },
-  "VL-001457": {
-    id: "VL-001457",
-    patientId: "96/24", 
-    clinicianName: "Dr. John Mugisha",
-    facility: "Mulago Hospital",
-    district: "Kampala",
-    hub: "Kampala Hub",
-    requestDate: "2025-06-16",
-    gender: "Female",
-    age: 28,
-    indication: "Post treatment initiation"
-  }
+  id: "VL-001456",
+  patientId: "P001234",
+  patientName: "Jane Doe",
+  age: "34 years",
+  gender: "Female",
+  facility: "Butabika Hospital",
+  district: "Kampala",
+  clinician: "Dr. Sarah Kato",
+  clinicianPhone: "+256 700 123 456",
+  requestDate: new Date(2024, 11, 15),
+  indication: "Routine monitoring (6 months)",
+  regimen: "TDF-3TC-DTG",
+  status: "pending_collection",
+  priority: "routine",
 };
 
 export default function CollectSamplePage() {
-  const { getColorsForType } = useTheme();
-  const colors = getColorsForType('viral-load');
-  const [isLoading, setIsLoading] = useState(false);
-  const searchParams = useSearchParams();
   const router = useRouter();
-  const requestId = searchParams.get('id');
-  
-  const [requestData, setRequestData] = useState<any>(null);
-  
-  useEffect(() => {
-    if (requestId && mockRequestData[requestId as keyof typeof mockRequestData]) {
-      setRequestData(mockRequestData[requestId as keyof typeof mockRequestData]);
-    }
-  }, [requestId]);
-  
-  const form = useForm<SampleCollectionFormData>({
+  const searchParams = useSearchParams();
+  const requestId = searchParams.get("id");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [requestData, setRequestData] = useState(mockRequestData);
+
+  const form = useForm<SampleCollectionData>({
     resolver: zodResolver(sampleCollectionSchema),
     defaultValues: {
-      collectionDateTime: new Date().toISOString().slice(0, 16),
-      centrifugationDateTime: new Date().toISOString().slice(0, 16),
+      dateCollected: new Date(),
+      timeCollected: format(new Date(), "HH:mm"),
+      sampleType: "plasma",
+      specimenStorageConsent: "yes",
     },
   });
 
-  const handleSubmit = async (data: SampleCollectionFormData) => {
-    setIsLoading(true);
-    try {
-      console.log("Sample Collection Data:", { requestId, ...data });
-      // Here you would send to your API
-      await new Promise(resolve => setTimeout(resolve, 2000)); // Simulate API call
-      
-      // Redirect back to pending collection or viral load operations
-      router.push('/viral-load/pending-collection');
-    } catch (error) {
-      console.error("Error submitting sample collection:", error);
-    } finally {
-      setIsLoading(false);
+  useEffect(() => {
+    if (!requestId) {
+      router.push("/viral-load/pending-collection");
+      return;
     }
+    
+    // In real app, fetch request data based on requestId
+    // For now, we'll use mock data
+    console.log("Loading request:", requestId);
+  }, [requestId, router]);
+
+  const onSubmit = async (data: SampleCollectionData) => {
+    setIsSubmitting(true);
+    
+    // Simulate API call
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    console.log("Sample Collection Data:", {
+      requestId: requestId,
+      ...data,
+    });
+    
+    // Redirect to pending collection with success message
+    router.push("/viral-load/pending-collection");
   };
 
   if (!requestId) {
     return (
-      <div className="px-4 py-6 sm:px-0 min-h-screen bg-gray-50">
-        <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Invalid Request</h3>
-              <p className="text-gray-600 mb-4">No request ID provided.</p>
-              <Link href="/viral-load/pending-collection">
-                <Button style={{ backgroundColor: colors.primary }} className="text-white">
-                  Back to Pending Collection
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
-      </div>
-    );
-  }
-
-  if (!requestData) {
-    return (
-      <div className="px-4 py-6 sm:px-0 min-h-screen bg-gray-50">
-        <div className="max-w-2xl mx-auto">
-          <Card>
-            <CardContent className="p-8 text-center">
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Request Not Found</h3>
-              <p className="text-gray-600 mb-4">Request ID {requestId} not found.</p>
-              <Link href="/viral-load/pending-collection">
-                <Button style={{ backgroundColor: colors.primary }} className="text-white">
-                  Back to Pending Collection
-                </Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <Card className="w-full max-w-md border-red-200">
+          <CardContent className="p-6 text-center">
+            <AlertCircle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Invalid Request</h3>
+            <p className="text-gray-600 mb-4">No request ID provided for sample collection.</p>
+            <Link href="/viral-load/pending-collection">
+              <Button className="bg-red-600 text-white hover:bg-red-700">
+                Back to Pending Collection
+              </Button>
+            </Link>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="px-4 py-6 sm:px-0 min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center space-x-4 mb-4">
-          <Link href="/viral-load/pending-collection">
-            <ArrowLeft className="h-6 w-6 text-gray-600 hover:text-gray-800" />
-          </Link>
-          <div>
-            <h1 className="text-xl md:text-2xl font-bold text-gray-900">Collect Sample</h1>
-            <p className="text-gray-600">Add sample details for request {requestId}</p>
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+        {/* Header */}
+        <div className="mb-8">
+          <div className="flex items-center space-x-3 mb-4">
+            <div className="p-2 bg-red-500 rounded-lg">
+              <TestTube className="h-6 w-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Sample Collection</h1>
+              <p className="text-gray-600 mt-1">Collect specimen for viral load testing</p>
+            </div>
+          </div>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2">
+              <Badge variant="outline" className="border-red-200 text-red-700 bg-red-50">
+                Step 3 of 3
+              </Badge>
+              <span className="text-sm text-gray-500">Sample Collection</span>
+            </div>
+            <Badge variant="outline" className="border-blue-200 text-blue-700 bg-blue-50">
+              Request ID: {requestId}
+            </Badge>
           </div>
         </div>
-      </div>
 
-      <div className="max-w-2xl mx-auto space-y-6">
-        
-        {/* Request Details (Read-Only) */}
-        <Card>
-          <CardHeader style={{ backgroundColor: colors.primaryLight }}>
-            <CardTitle className="flex items-center space-x-2" style={{ color: colors.primaryDark }}>
-              <TestTube className="h-5 w-5" />
-              <span>Request Details</span>
+        {/* Request Information Summary */}
+        <Card className="border-red-200 shadow-sm mb-8">
+          <CardHeader className="bg-red-50 border-b border-red-100">
+            <CardTitle className="flex items-center space-x-2 text-red-800">
+              <UserIcon className="h-5 w-5" />
+              <span>Request Information</span>
+              <Badge variant="outline" className="ml-auto bg-orange-100 text-orange-800 border-orange-200">
+                Pending Collection
+              </Badge>
             </CardTitle>
           </CardHeader>
-          <CardContent className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-              <div>
-                <label className="text-sm font-medium text-gray-700">Patient Clinic ID/ART #</label>
-                <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">{requestData.patientId}</div>
+          <CardContent className="p-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Patient</Label>
+                  <p className="text-lg font-semibold text-gray-900">{requestData.patientName}</p>
+                  <p className="text-sm text-gray-500">
+                    {requestData.patientId} • {requestData.age} • {requestData.gender}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Facility</Label>
+                  <p className="text-base text-gray-900">{requestData.facility}</p>
+                  <p className="text-sm text-gray-500 flex items-center">
+                    <MapPinIcon className="h-3 w-3 mr-1" />
+                    {requestData.district}
+                  </p>
+                </div>
               </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Gender</label>
-                <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">{requestData.gender}</div>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Requesting Clinician</Label>
+                  <p className="text-base text-gray-900">{requestData.clinician}</p>
+                  <p className="text-sm text-gray-500">{requestData.clinicianPhone}</p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Current Regimen</Label>
+                  <p className="text-base text-gray-900">{requestData.regimen}</p>
+                </div>
               </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">Requested on</label>
-                <div className="mt-1 p-2 bg-gray-50 rounded border text-sm">{requestData.requestDate}</div>
-              </div>
-            </div>
-            
-            <div className="space-y-3">
-              <div className="flex items-center space-x-2">
-                <User className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-gray-600">Clinician: {requestData.clinicianName}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <MapPin className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-gray-600">{requestData.facility} | {requestData.district} | {requestData.hub}</span>
-              </div>
-              <div className="flex items-center space-x-2">
-                <TestTube className="h-4 w-4 text-gray-500" />
-                <span className="text-sm text-gray-600">Indication: {requestData.indication}</span>
+              
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Request Date</Label>
+                  <p className="text-base text-gray-900">
+                    {format(requestData.requestDate, "MMM dd, yyyy")}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {format(requestData.requestDate, "h:mm a")}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-sm font-medium text-gray-600">Indication</Label>
+                  <p className="text-base text-gray-900">{requestData.indication}</p>
+                </div>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        {/* Sample Details Form */}
-        <Card>
-          <CardHeader style={{ backgroundColor: colors.primaryLight }}>
-            <CardTitle className="flex items-center space-x-2" style={{ color: colors.primaryDark }}>
-              <TestTube className="h-5 w-5" />
-              <span>Sample Details</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-6">
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
-                
-                <FormField
-                  control={form.control}
-                  name="collectionDateTime"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Date and Time of Collection</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          type="datetime-local" 
-                          className="text-base"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          {/* Sample Collection Information */}
+          <Card className="border-red-200 shadow-sm">
+            <CardHeader className="bg-red-50 border-b border-red-100">
+              <CardTitle className="flex items-center space-x-2 text-red-800">
+                <TestTube className="h-5 w-5" />
+                <span>Sample Collection Details</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6 space-y-6">
+              <Alert className="border-blue-200 bg-blue-50">
+                <Clock className="h-4 w-4" />
+                <AlertDescription className="text-blue-800">
+                  Please ensure all sample collection protocols are followed according to facility guidelines.
+                </AlertDescription>
+              </Alert>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="sampleId"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sample ID/Barcode</FormLabel>
-                        <FormControl>
-                          <Input 
-                            {...field} 
-                            placeholder="Enter sample barcode"
-                            className="text-base"
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label htmlFor="sampleId" className="text-sm font-medium text-gray-700">
+                    Sample ID/Barcode *
+                  </Label>
+                  <Input
+                    id="sampleId"
+                    {...form.register("sampleId")}
+                    className="border-gray-300 focus:border-red-500 focus:ring-red-500"
+                    placeholder="Enter sample barcode"
                   />
+                  {form.formState.errors.sampleId && (
+                    <p className="text-sm text-red-600">{form.formState.errors.sampleId.message}</p>
+                  )}
+                </div>
 
-                  <FormField
-                    control={form.control}
-                    name="sampleType"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Sample Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                          <FormControl>
-                            <SelectTrigger className="text-base">
-                              <SelectValue placeholder="Select sample type" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="plasma">Plasma</SelectItem>
-                            <SelectItem value="serum">Serum</SelectItem>
-                            <SelectItem value="whole-blood">Whole Blood</SelectItem>
-                            <SelectItem value="other">Other</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Sample Type *</Label>
+                  <Select onValueChange={(value: "plasma" | "serum" | "whole_blood" | "other") => 
+                    form.setValue("sampleType", value)
+                  }>
+                    <SelectTrigger className="border-gray-300 focus:border-red-500 focus:ring-red-500">
+                      <SelectValue placeholder="Select sample type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="plasma">Plasma</SelectItem>
+                      <SelectItem value="serum">Serum</SelectItem>
+                      <SelectItem value="whole_blood">Whole Blood</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.sampleType && (
+                    <p className="text-sm text-red-600">{form.formState.errors.sampleType.message}</p>
+                  )}
+                </div>
+
+                {form.watch("sampleType") === "other" && (
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="otherSampleType" className="text-sm font-medium text-gray-700">
+                      Specify Other Sample Type
+                    </Label>
+                    <Input
+                      id="otherSampleType"
+                      {...form.register("otherSampleType")}
+                      className="border-gray-300 focus:border-red-500 focus:ring-red-500"
+                      placeholder="Specify sample type"
+                    />
+                  </div>
+                )}
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Date Collected *</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal border-gray-300 hover:border-red-500",
+                          !form.watch("dateCollected") && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {form.watch("dateCollected") ? (
+                          format(form.watch("dateCollected"), "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={form.watch("dateCollected")}
+                        onSelect={(date) => form.setValue("dateCollected", date!)}
+                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  {form.formState.errors.dateCollected && (
+                    <p className="text-sm text-red-600">{form.formState.errors.dateCollected.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="timeCollected" className="text-sm font-medium text-gray-700">
+                    Time Collected *
+                  </Label>
+                  <Input
+                    id="timeCollected"
+                    type="time"
+                    {...form.register("timeCollected")}
+                    className="border-gray-300 focus:border-red-500 focus:ring-red-500"
+                  />
+                  {form.formState.errors.timeCollected && (
+                    <p className="text-sm text-red-600">{form.formState.errors.timeCollected.message}</p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-sm font-medium text-gray-700">Date Centrifuged (Optional)</Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal border-gray-300 hover:border-red-500",
+                          !form.watch("dateCentrifuged") && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {form.watch("dateCentrifuged") ? (
+                          format(form.watch("dateCentrifuged"), "PPP")
+                        ) : (
+                          <span>Pick a date</span>
+                        )}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <Calendar
+                        mode="single"
+                        selected={form.watch("dateCentrifuged")}
+                        onSelect={(date) => form.setValue("dateCentrifuged", date)}
+                        disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="timeCentrifuged" className="text-sm font-medium text-gray-700">
+                    Time Centrifuged (Optional)
+                  </Label>
+                  <Input
+                    id="timeCentrifuged"
+                    type="time"
+                    {...form.register("timeCentrifuged")}
+                    className="border-gray-300 focus:border-red-500 focus:ring-red-500"
                   />
                 </div>
 
-                <FormField
-                  control={form.control}
-                  name="centrifugationDateTime"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Date and Time of Centrifugation</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          type="datetime-local" 
-                          className="text-base"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="technicianName" className="text-sm font-medium text-gray-700">
+                    Technician Name *
+                  </Label>
+                  <Input
+                    id="technicianName"
+                    {...form.register("technicianName")}
+                    className="border-gray-300 focus:border-red-500 focus:ring-red-500"
+                    placeholder="Enter technician name"
+                  />
+                  {form.formState.errors.technicianName && (
+                    <p className="text-sm text-red-600">{form.formState.errors.technicianName.message}</p>
                   )}
-                />
+                </div>
 
-                <FormField
-                  control={form.control}
-                  name="technicianName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Technician Name</FormLabel>
-                      <FormControl>
-                        <Input 
-                          {...field} 
-                          placeholder="Name of person collecting sample"
-                          className="text-base"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                <FormField
-                  control={form.control}
-                  name="storageConsent"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Specimen Storage Consent</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="text-base">
-                            <SelectValue placeholder="Select consent status" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="yes">Yes - Consent Given</SelectItem>
-                          <SelectItem value="no">No - Consent Not Given</SelectItem>
-                          <SelectItem value="unknown">Unknown</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-
-                {/* Submit Button */}
-                <div className="sticky bottom-0 bg-white p-4 border-t -mx-6 -mb-6">
-                  <Button 
-                    type="submit" 
-                    disabled={isLoading}
-                    className="w-full py-4 text-white font-semibold text-lg"
-                    style={{ backgroundColor: colors.primary }}
+                <div className="space-y-2 md:col-span-2">
+                  <Label className="text-sm font-medium text-gray-700">
+                    Specimen Storage Consent *
+                  </Label>
+                  <RadioGroup
+                    value={form.watch("specimenStorageConsent")}
+                    onValueChange={(value: "yes" | "no") => form.setValue("specimenStorageConsent", value)}
+                    className="flex space-x-6"
                   >
-                    {isLoading ? "Submitting Sample..." : "Submit Sample Collection"}
-                  </Button>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="yes" id="consent-yes" className="border-red-300 text-red-600" />
+                      <Label htmlFor="consent-yes" className="text-sm font-normal">
+                        Yes, patient consents to specimen storage
+                      </Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="no" id="consent-no" className="border-red-300 text-red-600" />
+                      <Label htmlFor="consent-no" className="text-sm font-normal">
+                        No, patient does not consent
+                      </Label>
+                    </div>
+                  </RadioGroup>
+                  {form.formState.errors.specimenStorageConsent && (
+                    <p className="text-sm text-red-600">{form.formState.errors.specimenStorageConsent.message}</p>
+                  )}
                 </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+
+                <div className="space-y-2 md:col-span-2">
+                  <Label htmlFor="notes" className="text-sm font-medium text-gray-700">
+                    Collection Notes (Optional)
+                  </Label>
+                  <Input
+                    id="notes"
+                    {...form.register("notes")}
+                    className="border-gray-300 focus:border-red-500 focus:ring-red-500"
+                    placeholder="Any additional notes about sample collection..."
+                  />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Submit Button */}
+          <div className="flex justify-end space-x-4 pb-8">
+            <Link href="/viral-load/pending-collection">
+              <Button
+                type="button"
+                variant="outline"
+                className="border-gray-300 text-gray-700 hover:bg-gray-50"
+              >
+                Cancel
+              </Button>
+            </Link>
+            <Button
+              type="submit"
+              disabled={isSubmitting}
+              className="bg-red-600 text-white hover:bg-red-700 disabled:bg-red-400 px-8"
+            >
+              {isSubmitting ? (
+                <>
+                  <Clock className="h-4 w-4 mr-2 animate-spin" />
+                  Processing Collection...
+                </>
+              ) : (
+                <>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Complete Collection
+                </>
+              )}
+            </Button>
+          </div>
+        </form>
       </div>
     </div>
   );
