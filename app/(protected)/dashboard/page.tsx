@@ -1,104 +1,170 @@
 "use client";
 
 import { useSession } from "@/lib/auth-client";
+import { useTheme } from "@/lib/theme-context";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { TestTube, Baby, Plus, List, Package } from "lucide-react";
+import Link from "next/link";
 
 export default function DashboardPage() {
   const { data: session } = useSession();
+  const { getColorsForType } = useTheme();
+  
+  const viralLoadColors = getColorsForType('viral-load');
+  const eidColors = getColorsForType('eid');
 
   return (
-    <div className="px-4 py-6 sm:px-0">
-      <div className="border-4 border-dashed border-gray-200 rounded-lg p-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Welcome to your Dashboard
-          </h1>
-          <p className="text-gray-600">
-            Hello {session?.user?.name || session?.user?.email}, manage your viral load data here.
-          </p>
-        </div>
+    <div className="px-4 py-6 sm:px-0 min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="mb-8 text-center">
+        <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
+          Uganda Viral Load Manager
+        </h1>
+        <p className="text-gray-600">
+          Welcome, {session?.user?.name || session?.user?.email}
+        </p>
+      </div>
 
-        {/* Statistics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-blue-100 rounded-lg">
-                <svg className="w-6 h-6 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                </svg>
+      {/* Main Service Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mx-auto">
+        
+        {/* Viral Load Card */}
+        <Link href="/viral-load">
+          <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer transform hover:scale-105">
+            <CardHeader 
+              className="text-center pb-4"
+              style={{ backgroundColor: viralLoadColors.primaryLight }}
+            >
+              <div 
+                className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4"
+                style={{ backgroundColor: viralLoadColors.primary }}
+              >
+                <TestTube className="h-8 w-8 text-white" />
               </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Total Patients</p>
-                <p className="text-2xl font-semibold text-gray-900">1,234</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-green-100 rounded-lg">
-                <svg className="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Tests Completed</p>
-                <p className="text-2xl font-semibold text-gray-900">856</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center">
-              <div className="p-2 bg-yellow-100 rounded-lg">
-                <svg className="w-6 h-6 text-yellow-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v13m0-13V6a2 2 0 112 0v1m-2 0V6a2 2 0 00-2 0v1m2 0V9.5m0 0v3m0-3h3m-3 0h-3" />
-                </svg>
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-gray-600">Pending Tests</p>
-                <p className="text-2xl font-semibold text-gray-900">127</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Activity */}
-        <div className="bg-white rounded-lg shadow">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Recent Activity</h2>
-          </div>
-          <div className="p-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Patient VL-001234 test completed</p>
-                  <p className="text-sm text-gray-500">2 hours ago</p>
+              <CardTitle 
+                className="text-xl font-bold"
+                style={{ color: viralLoadColors.primaryDark }}
+              >
+                Viral Load Testing
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
+                  <Plus className="h-5 w-5 text-gray-600" />
+                  <div>
+                    <div className="font-medium text-gray-900">New Request</div>
+                    <div className="text-sm text-gray-500">Create viral load test request</div>
+                  </div>
                 </div>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                  Completed
-                </span>
+                
+                <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
+                  <List className="h-5 w-5 text-gray-600" />
+                  <div>
+                    <div className="font-medium text-gray-900">Sample Collection</div>
+                    <div className="text-sm text-gray-500">Manage pending samples</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
+                  <Package className="h-5 w-5 text-gray-600" />
+                  <div>
+                    <div className="font-medium text-gray-900">Package Samples</div>
+                    <div className="text-sm text-gray-500">Group and organize samples</div>
+                  </div>
+                </div>
               </div>
               
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">New patient VL-001235 registered</p>
-                  <p className="text-sm text-gray-500">4 hours ago</p>
-                </div>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                  New
+              <div className="mt-6 text-center">
+                <span 
+                  className="inline-block px-4 py-2 rounded-full text-white font-medium"
+                  style={{ backgroundColor: viralLoadColors.primary }}
+                >
+                  Access Viral Load
                 </span>
+              </div>
+            </CardContent>
+          </Card>
+        </Link>
+
+        {/* EID Card */}
+        <Link href="/eid">
+          <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer transform hover:scale-105">
+            <CardHeader 
+              className="text-center pb-4"
+              style={{ backgroundColor: eidColors.primaryLight }}
+            >
+              <div 
+                className="w-16 h-16 mx-auto rounded-full flex items-center justify-center mb-4"
+                style={{ backgroundColor: eidColors.primary }}
+              >
+                <Baby className="h-8 w-8 text-white" />
+              </div>
+              <CardTitle 
+                className="text-xl font-bold"
+                style={{ color: eidColors.primaryDark }}
+              >
+                Early Infant Diagnosis
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-6">
+              <div className="space-y-3">
+                <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
+                  <Plus className="h-5 w-5 text-gray-600" />
+                  <div>
+                    <div className="font-medium text-gray-900">New EID Request</div>
+                    <div className="text-sm text-gray-500">Create infant testing request</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
+                  <List className="h-5 w-5 text-gray-600" />
+                  <div>
+                    <div className="font-medium text-gray-900">Track Infants</div>
+                    <div className="text-sm text-gray-500">Monitor testing progress</div>
+                  </div>
+                </div>
+                
+                <div className="flex items-center space-x-3 p-3 rounded-lg bg-gray-50">
+                  <Package className="h-5 w-5 text-gray-600" />
+                  <div>
+                    <div className="font-medium text-gray-900">Results Management</div>
+                    <div className="text-sm text-gray-500">Manage test results</div>
+                  </div>
+                </div>
               </div>
               
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-900">Patient VL-001236 test pending</p>
-                  <p className="text-sm text-gray-500">6 hours ago</p>
-                </div>
-                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-800">
-                  Pending
+              <div className="mt-6 text-center">
+                <span 
+                  className="inline-block px-4 py-2 rounded-full text-white font-medium"
+                  style={{ backgroundColor: eidColors.primary }}
+                >
+                  Access EID
                 </span>
               </div>
-            </div>
+            </CardContent>
+          </Card>
+        </Link>
+      </div>
+
+      {/* Quick Stats */}
+      <div className="mt-12 max-w-4xl mx-auto">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="bg-white rounded-lg p-4 text-center shadow">
+            <div className="text-2xl font-bold text-gray-900">1,456</div>
+            <div className="text-sm text-gray-500">Total Requests</div>
+          </div>
+          <div className="bg-white rounded-lg p-4 text-center shadow">
+            <div className="text-2xl font-bold text-green-600">1,203</div>
+            <div className="text-sm text-gray-500">Completed</div>
+          </div>
+          <div className="bg-white rounded-lg p-4 text-center shadow">
+            <div className="text-2xl font-bold text-yellow-600">147</div>
+            <div className="text-sm text-gray-500">Pending</div>
+          </div>
+          <div className="bg-white rounded-lg p-4 text-center shadow">
+            <div className="text-2xl font-bold text-blue-600">106</div>
+            <div className="text-sm text-gray-500">This Month</div>
           </div>
         </div>
       </div>
