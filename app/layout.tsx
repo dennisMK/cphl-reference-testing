@@ -5,6 +5,7 @@ import { Geist } from "next/font/google";
 import { poppins } from "@/lib/fonts";
 
 import { TRPCReactProvider } from "@/trpc/react";
+import { ThemeProvider } from "@/lib/theme-context";
 
 export const metadata: Metadata = {
   title: "Uganda Viral Load Manager",
@@ -23,7 +24,9 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable} ${poppins.className}`}>
       <body>
-        <TRPCReactProvider>{children}</TRPCReactProvider>
+        <ThemeProvider>
+          <TRPCReactProvider>{children}</TRPCReactProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

@@ -2,10 +2,12 @@
 
 import { useSession, authClient } from "@/lib/auth-client";
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Palette, TestTube, Baby } from "lucide-react";
+import { useTheme } from "@/lib/theme-context";
 
 export default function SettingsPage() {
   const { data: session } = useSession();
+  const { viralLoadColors, eidColors, updateColors } = useTheme();
   const [activeTab, setActiveTab] = useState("profile");
   const [isLoading, setIsLoading] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -133,6 +135,17 @@ export default function SettingsPage() {
             }`}
           >
             Security
+          </button>
+          
+          <button
+            onClick={() => setActiveTab("themes")}
+            className={`py-2 px-1 border-b-2 font-medium text-sm ${
+              activeTab === "themes"
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+            }`}
+          >
+            Color Themes
           </button>
         </nav>
       </div>
@@ -276,6 +289,234 @@ export default function SettingsPage() {
               </div>
               
              
+            </div>
+          </div>
+        </div>
+      )}
+
+      {activeTab === "themes" && (
+        <div className="space-y-6">
+          <div className="bg-white shadow rounded-lg">
+            <div className="px-6 py-4 border-b border-gray-200">
+              <h2 className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                <Palette className="h-5 w-5" />
+                <span>Color Themes</span>
+              </h2>
+              <p className="text-sm text-gray-600">Customize colors for different form types</p>
+            </div>
+            <div className="p-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                
+                {/* Viral Load Colors */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <TestTube className="h-5 w-5 text-red-600" />
+                    <h3 className="text-md font-semibold text-gray-900">Viral Load Theme</h3>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Primary Color
+                      </label>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="color"
+                          value={viralLoadColors.primary}
+                          onChange={(e) => updateColors('viral-load', {
+                            ...viralLoadColors,
+                            primary: e.target.value
+                          })}
+                          className="w-12 h-8 rounded border border-gray-300"
+                        />
+                        <span className="text-sm text-gray-600">{viralLoadColors.primary}</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Hover Color
+                      </label>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="color"
+                          value={viralLoadColors.primaryHover}
+                          onChange={(e) => updateColors('viral-load', {
+                            ...viralLoadColors,
+                            primaryHover: e.target.value
+                          })}
+                          className="w-12 h-8 rounded border border-gray-300"
+                        />
+                        <span className="text-sm text-gray-600">{viralLoadColors.primaryHover}</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Light Background
+                      </label>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="color"
+                          value={viralLoadColors.primaryLight}
+                          onChange={(e) => updateColors('viral-load', {
+                            ...viralLoadColors,
+                            primaryLight: e.target.value
+                          })}
+                          className="w-12 h-8 rounded border border-gray-300"
+                        />
+                        <span className="text-sm text-gray-600">{viralLoadColors.primaryLight}</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Dark Text
+                      </label>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="color"
+                          value={viralLoadColors.primaryDark}
+                          onChange={(e) => updateColors('viral-load', {
+                            ...viralLoadColors,
+                            primaryDark: e.target.value
+                          })}
+                          className="w-12 h-8 rounded border border-gray-300"
+                        />
+                        <span className="text-sm text-gray-600">{viralLoadColors.primaryDark}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Preview */}
+                  <div className="mt-4 p-4 rounded-lg border" style={{ backgroundColor: viralLoadColors.primaryLight }}>
+                    <h4 className="font-medium" style={{ color: viralLoadColors.primaryDark }}>Preview</h4>
+                    <button 
+                      className="mt-2 px-4 py-2 rounded text-white text-sm"
+                      style={{ backgroundColor: viralLoadColors.primary }}
+                    >
+                      Viral Load Button
+                    </button>
+                  </div>
+                </div>
+
+                {/* EID Colors */}
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2 mb-4">
+                    <Baby className="h-5 w-5 text-blue-600" />
+                    <h3 className="text-md font-semibold text-gray-900">EID Theme</h3>
+                  </div>
+                  
+                  <div className="space-y-3">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Primary Color
+                      </label>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="color"
+                          value={eidColors.primary}
+                          onChange={(e) => updateColors('eid', {
+                            ...eidColors,
+                            primary: e.target.value
+                          })}
+                          className="w-12 h-8 rounded border border-gray-300"
+                        />
+                        <span className="text-sm text-gray-600">{eidColors.primary}</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Hover Color
+                      </label>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="color"
+                          value={eidColors.primaryHover}
+                          onChange={(e) => updateColors('eid', {
+                            ...eidColors,
+                            primaryHover: e.target.value
+                          })}
+                          className="w-12 h-8 rounded border border-gray-300"
+                        />
+                        <span className="text-sm text-gray-600">{eidColors.primaryHover}</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Light Background
+                      </label>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="color"
+                          value={eidColors.primaryLight}
+                          onChange={(e) => updateColors('eid', {
+                            ...eidColors,
+                            primaryLight: e.target.value
+                          })}
+                          className="w-12 h-8 rounded border border-gray-300"
+                        />
+                        <span className="text-sm text-gray-600">{eidColors.primaryLight}</span>
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">
+                        Dark Text
+                      </label>
+                      <div className="flex items-center space-x-3">
+                        <input
+                          type="color"
+                          value={eidColors.primaryDark}
+                          onChange={(e) => updateColors('eid', {
+                            ...eidColors,
+                            primaryDark: e.target.value
+                          })}
+                          className="w-12 h-8 rounded border border-gray-300"
+                        />
+                        <span className="text-sm text-gray-600">{eidColors.primaryDark}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Preview */}
+                  <div className="mt-4 p-4 rounded-lg border" style={{ backgroundColor: eidColors.primaryLight }}>
+                    <h4 className="font-medium" style={{ color: eidColors.primaryDark }}>Preview</h4>
+                    <button 
+                      className="mt-2 px-4 py-2 rounded text-white text-sm"
+                      style={{ backgroundColor: eidColors.primary }}
+                    >
+                      EID Button
+                    </button>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Reset to Defaults */}
+              <div className="mt-8 pt-6 border-t border-gray-200">
+                <button
+                  onClick={() => {
+                    updateColors('viral-load', {
+                      primary: '#dc2626',
+                      primaryHover: '#b91c1c',
+                      primaryLight: '#fef2f2',
+                      primaryDark: '#991b1b',
+                    });
+                    updateColors('eid', {
+                      primary: '#2563eb',
+                      primaryHover: '#1d4ed8',
+                      primaryLight: '#eff6ff',
+                      primaryDark: '#1e40af',
+                    });
+                    setMessage({ type: "success", text: "Color themes reset to defaults" });
+                  }}
+                  className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200 transition-colors"
+                >
+                  Reset to Default Colors
+                </button>
+              </div>
             </div>
           </div>
         </div>
