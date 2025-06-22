@@ -10,4 +10,8 @@ export const {
   signOut,
   useSession,
   getSession,
-} = authClient; 
+} = authClient;
+
+// Password reset methods
+export const requestPasswordReset = authClient.forgetPassword;
+export const resetUserPassword = authClient.resetPassword; 

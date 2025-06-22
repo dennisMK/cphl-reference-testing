@@ -1,64 +1,82 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { signUp } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
-import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
-
+import { Loader2, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { resetUserPassword } from "@/lib/auth-client";
 
-const signupSchema = z.object({
-  name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters"),
-  confirmPassword: z.string().min(6, "Please confirm your password"),
-}).refine((data) => data.password === data.confirmPassword, {
+const resetPasswordSchema = z.object({
+  newPassword: z.string().min(6, "Password must be at least 6 characters"),
+  confirmPassword: z.string().min(6, "Password must be at least 6 characters"),
+}).refine((data) => data.newPassword === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
 });
 
-type SignupForm = z.infer<typeof signupSchema>;
+type ResetPasswordForm = z.infer<typeof resetPasswordSchema>;
 
-export function SignupForm({
+export function ResetPasswordForm({
   className,
   ...props
 }: React.ComponentProps<"div">) {
-  const [showPassword, setShowPassword] = useState(false);
+  const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
   const [serverError, setServerError] = useState("");
+  const [token, setToken] = useState<string | null>(null);
+  
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const tokenParam = searchParams.get("token");
+    const errorParam = searchParams.get("error");
+    
+    if (errorParam === "invalid_token") {
+      setServerError("Invalid or expired reset link. Please request a new one.");
+    } else if (tokenParam) {
+      setToken(tokenParam);
+    } else {
+      setServerError("Invalid reset link. Please request a new password reset.");
+    }
+  }, [searchParams]);
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<SignupForm>({
-    resolver: zodResolver(signupSchema),
+  } = useForm<ResetPasswordForm>({
+    resolver: zodResolver(resetPasswordSchema),
   });
 
-  const onSubmit = async (data: SignupForm) => {
+  const onSubmit = async (data: ResetPasswordForm) => {
+    if (!token) {
+      setServerError("Invalid reset token");
+      return;
+    }
+
     setIsLoading(true);
     setServerError("");
 
     try {
-      const result = await signUp.email({
-        email: data.email,
-        password: data.password,
-        name: data.name,
+      const result = await resetUserPassword({
+        newPassword: data.newPassword,
+        token,
       });
 
       if (result.error) {
-        setServerError(result.error.message || "Sign up failed");
+        setServerError(result.error.message || "Failed to reset password");
       } else {
-        router.push("/dashboard");
+        setIsSuccess(true);
       }
     } catch (err) {
       setServerError("An unexpected error occurred");
@@ -66,6 +84,46 @@ export function SignupForm({
       setIsLoading(false);
     }
   };
+
+  if (isSuccess) {
+    return (
+      <div className={cn("w-full max-w-md mx-auto bg-white font-['Poppins']", className)} {...props}>
+        <div className="bg-white">
+          {/* Header with Uganda Flag */}
+          <div className="text-center mb-8">
+            {/* Uganda Flag */}
+            <div className="w-20 h-20 mx-auto mb-8">
+              <img 
+                src="/uganda.png" 
+                alt="Uganda Flag" 
+                className="w-full h-full object-contain"
+              />
+            </div>
+            <h1 className="text-4xl font-semibold text-gray-900 mb-3">
+              Password reset successfully
+            </h1>
+            <p className="text-lg text-gray-600 mb-6">
+              Your password has been updated
+            </p>
+          </div>
+
+          {/* Success Message */}
+          <div className="mb-8 text-center">
+            <p className="text-gray-600 mb-6">
+              You can now sign in with your new password.
+            </p>
+            
+            <Button
+              onClick={() => router.push("/auth/login")}
+              className="w-full h-12 bg-black hover:bg-gray-800 text-white font-medium rounded-xl transition-colors duration-200"
+            >
+              Continue to sign in
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={cn("w-full max-w-md mx-auto bg-white font-['Poppins']", className)} {...props}>
@@ -81,10 +139,10 @@ export function SignupForm({
             />
           </div>
           <h1 className="text-4xl font-semibold text-gray-900 mb-3">
-            Create your account
+            Reset your password
           </h1>
           <p className="text-lg text-gray-600">
-            Join Uganda Viral Load Manager
+            Enter your new password below
           </p>
         </div>
 
@@ -93,76 +151,30 @@ export function SignupForm({
           <form onSubmit={handleSubmit(onSubmit)}>
             {/* Grouped Input Container */}
             <div className="border border-gray-300 rounded-2xl overflow-hidden bg-white mb-6">
-              {/* Name Field */}
+              {/* New Password Field */}
               <div className="relative">
                 <Label 
-                  htmlFor="name" 
+                  htmlFor="newPassword" 
                   className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
                 >
-                  Full Name
+                  New Password
                 </Label>
                 <Input
-                  id="name"
-                  type="text"
-                  placeholder=""
-                  className={cn(
-                    "h-16 px-4 pt-6 pb-2 border-0 rounded-none focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
-                    errors.name && "bg-red-50"
-                  )}
-                  {...register("name")}
-                />
-              </div>
-              
-              {/* Divider */}
-              <div className="border-t border-gray-300"></div>
-              
-              {/* Email Field */}
-              <div className="relative">
-                <Label 
-                  htmlFor="email" 
-                  className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
-                >
-                  Email Address
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder=""
-                  className={cn(
-                    "h-16 px-4 pt-6 pb-2 border-0 rounded-none focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
-                    errors.email && "bg-red-50"
-                  )}
-                  {...register("email")}
-                />
-              </div>
-              
-              {/* Divider */}
-              <div className="border-t border-gray-300"></div>
-              
-              {/* Password Field */}
-              <div className="relative">
-                <Label 
-                  htmlFor="password" 
-                  className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
-                >
-                  Password
-                </Label>
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
+                  id="newPassword"
+                  type={showNewPassword ? "text" : "password"}
                   placeholder=""
                   className={cn(
                     "h-16 px-4 pt-6 pb-2 pr-12 border-0 rounded-none focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
-                    errors.password && "bg-red-50"
+                    errors.newPassword && "bg-red-50"
                   )}
-                  {...register("password")}
+                  {...register("newPassword")}
                 />
                 <button
                   type="button"
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-                  onClick={() => setShowPassword(!showPassword)}
+                  onClick={() => setShowNewPassword(!showNewPassword)}
                 >
-                  {showPassword ? (
+                  {showNewPassword ? (
                     <EyeOff className="h-5 w-5" />
                   ) : (
                     <Eye className="h-5 w-5" />
@@ -179,7 +191,7 @@ export function SignupForm({
                   htmlFor="confirmPassword" 
                   className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
                 >
-                  Confirm Password
+                  Confirm New Password
                 </Label>
                 <Input
                   id="confirmPassword"
@@ -206,16 +218,10 @@ export function SignupForm({
             </div>
 
             {/* Error Messages */}
-            {(errors.name || errors.email || errors.password || errors.confirmPassword || serverError) && (
+            {(errors.newPassword || errors.confirmPassword || serverError) && (
               <div className="mb-6 space-y-2">
-                {errors.name && (
-                  <p className="text-sm text-red-600">{errors.name.message}</p>
-                )}
-                {errors.email && (
-                  <p className="text-sm text-red-600">{errors.email.message}</p>
-                )}
-                {errors.password && (
-                  <p className="text-sm text-red-600">{errors.password.message}</p>
+                {errors.newPassword && (
+                  <p className="text-sm text-red-600">{errors.newPassword.message}</p>
                 )}
                 {errors.confirmPassword && (
                   <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>
@@ -229,31 +235,28 @@ export function SignupForm({
             {/* Submit Button */}
             <Button
               type="submit"
-              disabled={isLoading}
+              disabled={isLoading || !token}
               className="w-full h-12 bg-black hover:bg-gray-800 text-white font-medium rounded-xl transition-colors duration-200 disabled:opacity-50 mb-6"
             >
               {isLoading ? (
                 <>
                   <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                  Creating account...
+                  Resetting password...
                 </>
               ) : (
-                "Create Account"
+                "Reset password"
               )}
             </Button>
           </form>
 
-          {/* Footer */}
+          {/* Back to Login */}
           <div className="text-center">
-            <p className="text-gray-600">
-              Already have an account?{" "}
-              <Link
-                href="/auth/login"
-                className="font-medium text-black hover:text-gray-700 transition-colors"
-              >
-                Sign in
-              </Link>
-            </p>
+            <Link
+              href="/auth/login"
+              className="text-black hover:text-gray-700 font-medium"
+            >
+              ← Back to sign in
+            </Link>
           </div>
         </div>
       </div>
@@ -261,13 +264,9 @@ export function SignupForm({
       {/* Terms */}
       <div className="mt-8 text-center">
         <p className="text-xs text-gray-400">
-          By creating an account, you agree to our{" "}
+          Need help?{" "}
           <a href="#" className="underline hover:text-gray-600">
-            Terms of Service
-          </a>{" "}
-          and{" "}
-          <a href="#" className="underline hover:text-gray-600">
-            Privacy Policy
+            Contact support
           </a>
         </p>
       </div>

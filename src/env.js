@@ -13,6 +13,7 @@ export const env = createEnv({
       .default("development"),
     BETTER_AUTH_URL: z.string().url().optional(),
     BETTER_AUTH_SECRET: z.string().optional(),
+    RESEND_API_KEY: z.string().url().optional(),
   },
 
   /**
@@ -32,6 +33,7 @@ export const env = createEnv({
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
     NODE_ENV: process.env.NODE_ENV,
+    RESEND_API_KEY: process.env.RESEND_API_KEY,
     BETTER_AUTH_URL: process.env.BETTER_AUTH_URL,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
     NEXT_PUBLIC_BETTER_AUTH_URL: process.env.NEXT_PUBLIC_BETTER_AUTH_URL,
