@@ -15,9 +15,9 @@ export const auth = betterAuth({
     expiresIn: 60 * 60 * 24 * 7, // 7 days
     updateAge: 60 * 60 * 24, // 1 day
   },
-  baseURL:
-    env.NODE_ENV === "production"
-      ? env.BETTER_AUTH_URL
-      : "http://lo  calhost:3000",
-  trustedOrigins: [env.NEXT_PUBLIC_BETTER_AUTH_URL],
+  baseURL: env.NODE_ENV === "production" 
+    ? env.BETTER_AUTH_URL
+    : "http://localhost:3000",
+  trustedOrigins: [env.NEXT_PUBLIC_BETTER_AUTH_URL || "http://localhost:3000"],
+  secret: env.BETTER_AUTH_SECRET || "default-secret-for-development",
 });
