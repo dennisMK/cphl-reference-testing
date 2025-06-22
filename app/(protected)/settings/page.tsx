@@ -1,11 +1,82 @@
 "use client";
 
-import { useSession } from "@/lib/auth-client";
+import { useSession, changePassword, updateUser } from "@/lib/auth-client";
 import { useState } from "react";
 
 export default function SettingsPage() {
   const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState("profile");
+  const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+
+  const handlePasswordChange = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage(null);
+
+    const formData = new FormData(e.currentTarget);
+    const currentPassword = formData.get("currentPassword") as string;
+    const newPassword = formData.get("newPassword") as string;
+    const confirmPassword = formData.get("confirmPassword") as string;
+
+    // Validate passwords match
+    if (newPassword !== confirmPassword) {
+      setMessage({ type: "error", text: "New passwords do not match" });
+      setIsLoading(false);
+      return;
+    }
+
+    // Validate password length
+    if (newPassword.length < 8) {
+      setMessage({ type: "error", text: "Password must be at least 8 characters long" });
+      setIsLoading(false);
+      return;
+    }
+
+    try {
+      const result = await changePassword({
+        currentPassword,
+        newPassword,
+      });
+
+      if (result.error) {
+        setMessage({ type: "error", text: result.error.message || "Failed to change password" });
+      } else {
+        setMessage({ type: "success", text: "Password changed successfully" });
+        // Reset form
+        e.currentTarget.reset();
+      }
+    } catch (error) {
+      setMessage({ type: "error", text: "An unexpected error occurred" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleProfileUpdate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setIsLoading(true);
+    setMessage(null);
+
+    const formData = new FormData(e.currentTarget);
+    const name = formData.get("name") as string;
+
+    try {
+      const result = await updateUser({
+        name,
+      });
+
+      if (result.error) {
+        setMessage({ type: "error", text: result.error.message || "Failed to update profile" });
+      } else {
+        setMessage({ type: "success", text: "Profile updated successfully" });
+      }
+    } catch (error) {
+      setMessage({ type: "error", text: "An unexpected error occurred" });
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   return (
     <div className="px-4 py-6 sm:px-0">
@@ -13,6 +84,23 @@ export default function SettingsPage() {
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
         <p className="text-gray-600">Manage your account and application preferences.</p>
       </div>
+
+      {/* Success/Error Messages */}
+      {message && (
+        <div className={`mb-6 p-4 rounded-md ${
+          message.type === "success" 
+            ? "bg-green-50 text-green-800 border border-green-200" 
+            : "bg-red-50 text-red-800 border border-red-200"
+        }`}>
+          <p className="text-sm font-medium">{message.text}</p>
+          <button 
+            onClick={() => setMessage(null)}
+            className="mt-2 text-sm underline"
+          >
+            Dismiss
+          </button>
+        </div>
+      )}
 
       {/* Tab Navigation */}
       <div className="border-b border-gray-200 mb-8">
@@ -58,54 +146,69 @@ export default function SettingsPage() {
             <p className="text-sm text-gray-600">Update your account profile information.</p>
           </div>
           <div className="p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Full Name
-                </label>
-                <input
-                  type="text"
-                  defaultValue={session?.user?.name || ""}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
+            <form onSubmit={handleProfileUpdate}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Full Name
+                  </label>
+                  <input
+                    name="name"
+                    type="text"
+                    defaultValue={session?.user?.name || ""}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address
+                  </label>
+                  <input
+                    name="email"
+                    type="email"
+                    defaultValue={session?.user?.email || ""}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    readOnly
+                  />
+                  <p className="mt-1 text-sm text-gray-500">Email cannot be changed</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Organization
+                  </label>
+                  <input
+                    name="organization"
+                    type="text"
+                    placeholder="Ministry of Health"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Role
+                  </label>
+                  <select 
+                    name="role"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option>Lab Technician</option>
+                    <option>Doctor</option>
+                    <option>Administrator</option>
+                    <option>Data Manager</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Email Address
-                </label>
-                <input
-                  type="email"
-                  defaultValue={session?.user?.email || ""}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
+              <div className="mt-6">
+                <button 
+                  type="submit"
+                  disabled={isLoading}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {isLoading ? "Saving..." : "Save Changes"}
+                </button>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Organization
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ministry of Health"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Role
-                </label>
-                <select className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500">
-                  <option>Lab Technician</option>
-                  <option>Doctor</option>
-                  <option>Administrator</option>
-                  <option>Data Manager</option>
-                </select>
-              </div>
-            </div>
-            <div className="mt-6">
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                Save Changes
-              </button>
-            </div>
+            </form>
           </div>
         </div>
       )}
@@ -159,26 +262,40 @@ export default function SettingsPage() {
             <div className="space-y-6">
               <div>
                 <h3 className="text-sm font-medium text-gray-900 mb-3">Change Password</h3>
-                <div className="space-y-4">
-                  <input
-                    type="password"
-                    placeholder="Current Password"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <input
-                    type="password"
-                    placeholder="New Password"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                  <input
-                    type="password"
-                    placeholder="Confirm New Password"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <button className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                  Update Password
-                </button>
+                <form onSubmit={handlePasswordChange}>
+                  <div className="space-y-4">
+                    <input
+                      name="currentPassword"
+                      type="password"
+                      placeholder="Current Password"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <input
+                      name="newPassword"
+                      type="password"
+                      placeholder="New Password (min 8 characters)"
+                      minLength={8}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                    <input
+                      name="confirmPassword"
+                      type="password"
+                      placeholder="Confirm New Password"
+                      minLength={8}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                      required
+                    />
+                  </div>
+                  <button 
+                    type="submit"
+                    disabled={isLoading}
+                    className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {isLoading ? "Updating..." : "Update Password"}
+                  </button>
+                </form>
               </div>
               
               <div className="border-t pt-6">
