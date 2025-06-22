@@ -1,6 +1,6 @@
 "use client";
 
-import { useSession, changePassword, updateUser } from "@/lib/auth-client";
+import { useSession, authClient } from "@/lib/auth-client";
 import { useState } from "react";
 
 export default function SettingsPage() {
@@ -34,19 +34,21 @@ export default function SettingsPage() {
     }
 
     try {
-      const result = await changePassword({
+      // Use Better Auth client method directly
+      const { data, error } = await authClient.changePassword({
         currentPassword,
         newPassword,
       });
 
-      if (result.error) {
-        setMessage({ type: "error", text: result.error.message || "Failed to change password" });
+      if (error) {
+        setMessage({ type: "error", text: error.message || "Failed to change password" });
       } else {
         setMessage({ type: "success", text: "Password changed successfully" });
         // Reset form
         e.currentTarget.reset();
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Password change error:", error);
       setMessage({ type: "error", text: "An unexpected error occurred" });
     } finally {
       setIsLoading(false);
@@ -62,16 +64,18 @@ export default function SettingsPage() {
     const name = formData.get("name") as string;
 
     try {
-      const result = await updateUser({
+      // Use Better Auth client method directly
+      const { data, error } = await authClient.updateUser({
         name,
       });
 
-      if (result.error) {
-        setMessage({ type: "error", text: result.error.message || "Failed to update profile" });
+      if (error) {
+        setMessage({ type: "error", text: error.message || "Failed to update profile" });
       } else {
         setMessage({ type: "success", text: "Profile updated successfully" });
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error("Profile update error:", error);
       setMessage({ type: "error", text: "An unexpected error occurred" });
     } finally {
       setIsLoading(false);
@@ -115,16 +119,7 @@ export default function SettingsPage() {
           >
             Profile
           </button>
-          <button
-            onClick={() => setActiveTab("notifications")}
-            className={`py-2 px-1 border-b-2 font-medium text-sm ${
-              activeTab === "notifications"
-                ? "border-blue-500 text-blue-600"
-                : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
-            }`}
-          >
-            Notifications
-          </button>
+        
           <button
             onClick={() => setActiveTab("security")}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
@@ -173,31 +168,7 @@ export default function SettingsPage() {
                   />
                   <p className="mt-1 text-sm text-gray-500">Email cannot be changed</p>
                 </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Organization
-                  </label>
-                  <input
-                    name="organization"
-                    type="text"
-                    placeholder="Ministry of Health"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Role
-                  </label>
-                  <select 
-                    name="role"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option>Lab Technician</option>
-                    <option>Doctor</option>
-                    <option>Administrator</option>
-                    <option>Data Manager</option>
-                  </select>
-                </div>
+             
               </div>
               <div className="mt-6">
                 <button 
@@ -213,44 +184,7 @@ export default function SettingsPage() {
         </div>
       )}
 
-      {activeTab === "notifications" && (
-        <div className="bg-white shadow rounded-lg">
-          <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-lg font-semibold text-gray-900">Notification Preferences</h2>
-            <p className="text-sm text-gray-600">Choose how you want to be notified.</p>
-          </div>
-          <div className="p-6">
-            <div className="space-y-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-900">Test Results</h3>
-                  <p className="text-sm text-gray-500">Notify when test results are available</p>
-                </div>
-                <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600" />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-900">System Updates</h3>
-                  <p className="text-sm text-gray-500">Notify about system maintenance and updates</p>
-                </div>
-                <input type="checkbox" defaultChecked className="h-4 w-4 text-blue-600" />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <h3 className="text-sm font-medium text-gray-900">Weekly Reports</h3>
-                  <p className="text-sm text-gray-500">Receive weekly summary reports</p>
-                </div>
-                <input type="checkbox" className="h-4 w-4 text-blue-600" />
-              </div>
-            </div>
-            <div className="mt-6">
-              <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
-                Save Preferences
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+     
 
       {activeTab === "security" && (
         <div className="bg-white shadow rounded-lg">
@@ -298,15 +232,7 @@ export default function SettingsPage() {
                 </form>
               </div>
               
-              <div className="border-t pt-6">
-                <h3 className="text-sm font-medium text-gray-900 mb-3">Two-Factor Authentication</h3>
-                <p className="text-sm text-gray-500 mb-4">
-                  Add an extra layer of security to your account
-                </p>
-                <button className="bg-green-600 text-white px-4 py-2 rounded-md hover:bg-green-700">
-                  Enable 2FA
-                </button>
-              </div>
+             
             </div>
           </div>
         </div>
