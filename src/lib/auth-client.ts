@@ -12,6 +12,6 @@ export const {
   getSession,
 } = authClient;
 
-// Password reset methods
-export const requestPasswordReset = authClient.forgetPassword;
+// Password reset methods from Better Auth - using direct client methods
+export const requestPasswordReset = authClient.forgetPassword || authClient.requestPasswordReset;
 export const resetUserPassword = authClient.resetPassword; 

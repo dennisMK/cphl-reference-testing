@@ -84,75 +84,75 @@ export function LoginForm({
         {/* Form Container - Apple Style Grouped Inputs */}
         <div className="mb-8">
           <form onSubmit={handleSubmit(onSubmit)}>
-            {/* Grouped Input Container */}
-            <div className="border border-gray-300 rounded-2xl overflow-hidden bg-white mb-6">
-              {/* Email Field */}
-              <div className="relative">
-                <Label 
-                  htmlFor="email" 
-                  className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
-                >
-                  Email or Phone Number
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder=""
-                  className={cn(
-                    "h-16 px-4 pt-6 pb-2 border-0 rounded-none focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
-                    errors.email && "bg-red-50"
-                  )}
-                  {...register("email")}
-                />
+            {/* Email Field */}
+            <div className="mb-4">
+              <div className="border border-gray-300 rounded-2xl overflow-hidden bg-white">
+                <div className="relative">
+                  <Label 
+                    htmlFor="email" 
+                    className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
+                  >
+                    Email or Phone Number
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder=""
+                    className={cn(
+                      "h-16 px-4 pt-6 pb-2 border-0 rounded-2xl focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
+                      errors.email && "bg-red-50"
+                    )}
+                    {...register("email")}
+                  />
+                </div>
               </div>
-              
-              {/* Divider */}
-              <div className="border-t border-gray-300"></div>
-              
-              {/* Password Field */}
-              <div className="relative">
-                <Label 
-                  htmlFor="password" 
-                  className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
-                >
-                  Password
-                </Label>
-                <Input
-                  id="password"
-                  type={showPassword ? "text" : "password"}
-                  placeholder=""
-                  className={cn(
-                    "h-16 px-4 pt-6 pb-2 pr-12 border-0 rounded-none focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
-                    errors.password && "bg-red-50"
-                  )}
-                  {...register("password")}
-                />
-                <button
-                  type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-                  onClick={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
+              {errors.email && (
+                <p className="text-sm text-red-600 mt-2 ml-1">{errors.email.message}</p>
+              )}
+            </div>
+            
+            {/* Password Field */}
+            <div className="mb-6">
+              <div className="border border-gray-300 rounded-2xl overflow-hidden bg-white">
+                <div className="relative">
+                  <Label 
+                    htmlFor="password" 
+                    className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
+                  >
+                    Password
+                  </Label>
+                  <Input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder=""
+                    className={cn(
+                      "h-16 px-4 pt-6 pb-2 pr-12 border-0 rounded-2xl focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
+                      errors.password && "bg-red-50"
+                    )}
+                    {...register("password")}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                    onClick={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
+              {errors.password && (
+                <p className="text-sm text-red-600 mt-2 ml-1">{errors.password.message}</p>
+              )}
             </div>
 
-            {/* Error Messages */}
-            {(errors.email || errors.password || serverError) && (
-              <div className="mb-6 space-y-2">
-                {errors.email && (
-                  <p className="text-sm text-red-600">{errors.email.message}</p>
-                )}
-                {errors.password && (
-                  <p className="text-sm text-red-600">{errors.password.message}</p>
-                )}
-                {serverError && (
-                  <p className="text-sm text-red-600">{serverError}</p>
-                )}
+            {/* Server Error */}
+            {serverError && (
+              <div className="mb-6">
+                <p className="text-sm text-red-600 ml-1">{serverError}</p>
               </div>
             )}
 

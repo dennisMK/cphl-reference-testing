@@ -11,9 +11,9 @@ export const env = createEnv({
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
-    BETTER_AUTH_URL: z.string().url().optional(),
-    BETTER_AUTH_SECRET: z.string().optional(),
-    RESEND_API_KEY: z.string().url().optional(),
+    BETTER_AUTH_URL: z.string().url(),
+    BETTER_AUTH_SECRET: z.string(),
+    RESEND_API_KEY: z.string(),
   },
 
   /**
@@ -23,7 +23,7 @@ export const env = createEnv({
    */
   client: {
     // NEXT_PUBLIC_CLIENTVAR: z.string(),
-    NEXT_PUBLIC_BETTER_AUTH_URL: z.string().url().optional(),
+    NEXT_PUBLIC_BETTER_AUTH_URL: z.string().url(),
   },
 
   /**

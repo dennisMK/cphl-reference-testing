@@ -140,37 +140,37 @@ export function ForgotPasswordForm({
         {/* Form Container - Apple Style */}
         <div className="mb-8">
           <form onSubmit={handleSubmit(onSubmit)}>
-            {/* Email Input Container */}
-            <div className="border border-gray-300 rounded-2xl overflow-hidden bg-white mb-6">
-              <div className="relative">
-                <Label 
-                  htmlFor="email" 
-                  className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
-                >
-                  Email Address
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder=""
-                  className={cn(
-                    "h-16 px-4 pt-6 pb-2 border-0 rounded-2xl focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
-                    errors.email && "bg-red-50"
-                  )}
-                  {...register("email")}
-                />
+            {/* Email Field */}
+            <div className="mb-6">
+              <div className="border border-gray-300 rounded-2xl overflow-hidden bg-white">
+                <div className="relative">
+                  <Label 
+                    htmlFor="email" 
+                    className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
+                  >
+                    Email Address
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder=""
+                    className={cn(
+                      "h-16 px-4 pt-6 pb-2 border-0 rounded-2xl focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
+                      errors.email && "bg-red-50"
+                    )}
+                    {...register("email")}
+                  />
+                </div>
               </div>
+              {errors.email && (
+                <p className="text-sm text-red-600 mt-2 ml-1">{errors.email.message}</p>
+              )}
             </div>
 
-            {/* Error Messages */}
-            {(errors.email || serverError) && (
-              <div className="mb-6 space-y-2">
-                {errors.email && (
-                  <p className="text-sm text-red-600">{errors.email.message}</p>
-                )}
-                {serverError && (
-                  <p className="text-sm text-red-600">{serverError}</p>
-                )}
+            {/* Server Error */}
+            {serverError && (
+              <div className="mb-6">
+                <p className="text-sm text-red-600 ml-1">{serverError}</p>
               </div>
             )}
 

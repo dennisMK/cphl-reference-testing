@@ -149,86 +149,86 @@ export function ResetPasswordForm({
         {/* Form Container - Apple Style Grouped Inputs */}
         <div className="mb-8">
           <form onSubmit={handleSubmit(onSubmit)}>
-            {/* Grouped Input Container */}
-            <div className="border border-gray-300 rounded-2xl overflow-hidden bg-white mb-6">
-              {/* New Password Field */}
-              <div className="relative">
-                <Label 
-                  htmlFor="newPassword" 
-                  className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
-                >
-                  New Password
-                </Label>
-                <Input
-                  id="newPassword"
-                  type={showNewPassword ? "text" : "password"}
-                  placeholder=""
-                  className={cn(
-                    "h-16 px-4 pt-6 pb-2 pr-12 border-0 rounded-none focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
-                    errors.newPassword && "bg-red-50"
-                  )}
-                  {...register("newPassword")}
-                />
-                <button
-                  type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-                  onClick={() => setShowNewPassword(!showNewPassword)}
-                >
-                  {showNewPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
+            {/* New Password Field */}
+            <div className="mb-4">
+              <div className="border border-gray-300 rounded-2xl overflow-hidden bg-white">
+                <div className="relative">
+                  <Label 
+                    htmlFor="newPassword" 
+                    className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
+                  >
+                    New Password
+                  </Label>
+                  <Input
+                    id="newPassword"
+                    type={showNewPassword ? "text" : "password"}
+                    placeholder=""
+                    className={cn(
+                      "h-16 px-4 pt-6 pb-2 pr-12 border-0 rounded-2xl focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
+                      errors.newPassword && "bg-red-50"
+                    )}
+                    {...register("newPassword")}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                    onClick={() => setShowNewPassword(!showNewPassword)}
+                  >
+                    {showNewPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
-              
-              {/* Divider */}
-              <div className="border-t border-gray-300"></div>
-              
-              {/* Confirm Password Field */}
-              <div className="relative">
-                <Label 
-                  htmlFor="confirmPassword" 
-                  className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
-                >
-                  Confirm New Password
-                </Label>
-                <Input
-                  id="confirmPassword"
-                  type={showConfirmPassword ? "text" : "password"}
-                  placeholder=""
-                  className={cn(
-                    "h-16 px-4 pt-6 pb-2 pr-12 border-0 rounded-none focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
-                    errors.confirmPassword && "bg-red-50"
-                  )}
-                  {...register("confirmPassword")}
-                />
-                <button
-                  type="button"
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? (
-                    <EyeOff className="h-5 w-5" />
-                  ) : (
-                    <Eye className="h-5 w-5" />
-                  )}
-                </button>
+              {errors.newPassword && (
+                <p className="text-sm text-red-600 mt-2 ml-1">{errors.newPassword.message}</p>
+              )}
+            </div>
+            
+            {/* Confirm Password Field */}
+            <div className="mb-6">
+              <div className="border border-gray-300 rounded-2xl overflow-hidden bg-white">
+                <div className="relative">
+                  <Label 
+                    htmlFor="confirmPassword" 
+                    className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
+                  >
+                    Confirm New Password
+                  </Label>
+                  <Input
+                    id="confirmPassword"
+                    type={showConfirmPassword ? "text" : "password"}
+                    placeholder=""
+                    className={cn(
+                      "h-16 px-4 pt-6 pb-2 pr-12 border-0 rounded-2xl focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
+                      errors.confirmPassword && "bg-red-50"
+                    )}
+                    {...register("confirmPassword")}
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 transition-colors"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? (
+                      <EyeOff className="h-5 w-5" />
+                    ) : (
+                      <Eye className="h-5 w-5" />
+                    )}
+                  </button>
+                </div>
               </div>
+              {errors.confirmPassword && (
+                <p className="text-sm text-red-600 mt-2 ml-1">{errors.confirmPassword.message}</p>
+              )}
             </div>
 
-            {/* Error Messages */}
-            {(errors.newPassword || errors.confirmPassword || serverError) && (
-              <div className="mb-6 space-y-2">
-                {errors.newPassword && (
-                  <p className="text-sm text-red-600">{errors.newPassword.message}</p>
-                )}
-                {errors.confirmPassword && (
-                  <p className="text-sm text-red-600">{errors.confirmPassword.message}</p>
-                )}
-                {serverError && (
-                  <p className="text-sm text-red-600">{serverError}</p>
-                )}
+            {/* Server Error */}
+            {serverError && (
+              <div className="mb-6">
+                <p className="text-sm text-red-600 ml-1">{serverError}</p>
               </div>
             )}
 
