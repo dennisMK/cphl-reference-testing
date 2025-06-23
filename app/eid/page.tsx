@@ -19,19 +19,7 @@ export default function EIDPage() {
   };
 
   return (
-    <div className="px-4 py-6 sm:px-0 min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center space-x-4 mb-4">
-          <Link href="/dashboard">
-            <ArrowLeft className="h-6 w-6 text-gray-600 hover:text-gray-800" />
-          </Link>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Early Infant Diagnosis (EID)</h1>
-            <p className="text-gray-600">Manage infant HIV testing workflow</p>
-          </div>
-        </div>
-      </div>
+    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
