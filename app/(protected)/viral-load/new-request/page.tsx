@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
@@ -12,10 +12,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { CalendarIcon, UserIcon, ClipboardIcon, HeartIcon, TestTube, MapPinIcon } from "lucide-react";
 import { format } from "date-fns";
@@ -54,7 +52,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function NewViralLoadRequest() {
+export default function NewViralLoadRequest(): React.JSX.Element {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -67,7 +65,7 @@ export default function NewViralLoadRequest() {
     },
   });
 
-  const onSubmit = async (data: FormData) => {
+  const onSubmit = async (data: FormData): Promise<void> => {
     setIsSubmitting(true);
     
     // Simulate API call
@@ -481,9 +479,9 @@ export default function NewViralLoadRequest() {
                       <SelectValue placeholder="Select adherence level" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="good">Good (>95%)</SelectItem>
+                      <SelectItem value="good">Good (≥95%)</SelectItem>
                       <SelectItem value="fair">Fair (85-94%)</SelectItem>
-                      <SelectItem value="poor">Poor (<85%)</SelectItem>
+                      <SelectItem value="poor">Poor (≤85%)</SelectItem>
                     </SelectContent>
                   </Select>
                   {form.formState.errors.adherenceLevel && (
