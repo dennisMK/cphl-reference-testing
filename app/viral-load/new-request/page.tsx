@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -14,9 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { CalendarIcon, UserIcon, ClipboardIcon, HeartIcon, TestTube, MapPinIcon } from "lucide-react";
+import { CalendarIcon, TestTube } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
+import Link from "next/link";
 
 const formSchema = z.object({
   // Facility Information
@@ -102,173 +102,195 @@ export default function NewViralLoadRequest(): React.JSX.Element {
   };
 
   return (
-    <div className="max-w-4xl mx-auto p-6">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-red-600">
-            <TestTube className="h-5 w-5 text-white" />
+    <div className="">
+      {/* Header with title and actions */}
+      <div className="mb-6 pb-4 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+              Create Viral Load Request
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">
+              Create a new viral load testing request
+            </p>
           </div>
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">New Viral Load Request</h1>
-            <p className="text-muted-foreground">Create a new viral load testing request</p>
-          </div>
+          
         </div>
-        <Badge variant="secondary" className="bg-red-50 text-red-700 border-red-200">
-          Step 1 of 3 - Request Creation
-        </Badge>
       </div>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-        {/* Facility Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPinIcon className="h-4 w-4" />
-              Facility Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+      <div className="">
+        <form id="viral-load-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+
+          {/* Facility Information */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+            <div className="pb-3 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Facility Information
+              </h2>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="facilityName">Facility Name *</Label>
+              <div>
+                <Label htmlFor="facilityName" className="text-sm font-medium text-gray-700">
+                  Facility Name *
+                </Label>
                 <Input
                   id="facilityName"
                   {...form.register("facilityName")}
                   placeholder="Enter facility name"
+                  className="mt-2 h-10"
                 />
                 {form.formState.errors.facilityName && (
-                  <p className="text-sm text-red-500">{form.formState.errors.facilityName.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.facilityName.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="facilityCode">Facility Code *</Label>
+              <div>
+                <Label htmlFor="facilityCode" className="text-sm font-medium text-gray-700">
+                  Facility Code *
+                </Label>
                 <Input
                   id="facilityCode"
                   {...form.register("facilityCode")}
                   placeholder="Enter facility code"
+                  className="mt-2 h-10"
                 />
                 {form.formState.errors.facilityCode && (
-                  <p className="text-sm text-red-500">{form.formState.errors.facilityCode.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.facilityCode.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="district">District *</Label>
+              <div>
+                <Label htmlFor="district" className="text-sm font-medium text-gray-700">
+                  District *
+                </Label>
                 <Input
                   id="district"
                   {...form.register("district")}
                   placeholder="Enter district"
+                  className="mt-2 h-10"
                 />
                 {form.formState.errors.district && (
-                  <p className="text-sm text-red-500">{form.formState.errors.district.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.district.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="hub">Testing Hub *</Label>
+              <div>
+                <Label htmlFor="hub" className="text-sm font-medium text-gray-700">
+                  Testing Hub *
+                </Label>
                 <Input
                   id="hub"
                   {...form.register("hub")}
                   placeholder="Enter testing hub"
+                  className="mt-2 h-10"
                 />
                 {form.formState.errors.hub && (
-                  <p className="text-sm text-red-500">{form.formState.errors.hub.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.hub.message}</p>
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Requesting Clinician */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <UserIcon className="h-4 w-4" />
-              Requesting Clinician
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          {/* Requesting Clinician */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+            <div className="pb-3 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Requesting Clinician
+              </h2>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="clinicianName">Clinician Name *</Label>
+              <div>
+                <Label htmlFor="clinicianName" className="text-sm font-medium text-gray-700">
+                  Clinician Name *
+                </Label>
                 <Input
                   id="clinicianName"
                   {...form.register("clinicianName")}
                   placeholder="Dr. John Doe"
+                  className="mt-2 h-10"
                 />
                 {form.formState.errors.clinicianName && (
-                  <p className="text-sm text-red-500">{form.formState.errors.clinicianName.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.clinicianName.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="clinicianPhone">Phone Number *</Label>
+              <div>
+                <Label htmlFor="clinicianPhone" className="text-sm font-medium text-gray-700">
+                  Phone Number *
+                </Label>
                 <Input
                   id="clinicianPhone"
                   {...form.register("clinicianPhone")}
                   placeholder="+256 700 000 000"
+                  className="mt-2 h-10"
                 />
                 {form.formState.errors.clinicianPhone && (
-                  <p className="text-sm text-red-500">{form.formState.errors.clinicianPhone.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.clinicianPhone.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="clinicianEmail">Email Address (Optional)</Label>
+              <div className="md:col-span-2">
+                <Label htmlFor="clinicianEmail" className="text-sm font-medium text-gray-700">
+                  Email Address (Optional)
+                </Label>
                 <Input
                   id="clinicianEmail"
                   type="email"
                   {...form.register("clinicianEmail")}
                   placeholder="doctor@facility.com"
+                  className="mt-2 h-10"
                 />
                 {form.formState.errors.clinicianEmail && (
-                  <p className="text-sm text-red-500">{form.formState.errors.clinicianEmail.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.clinicianEmail.message}</p>
                 )}
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Patient Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <HeartIcon className="h-4 w-4" />
-              Patient Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          {/* Patient Information */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+            <div className="pb-3 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Patient Information
+              </h2>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="patientId">Patient ID *</Label>
+              <div>
+                <Label htmlFor="patientId" className="text-sm font-medium text-gray-700">
+                  Patient ID *
+                </Label>
                 <Input
                   id="patientId"
                   {...form.register("patientId")}
                   placeholder="P001234"
+                  className="mt-2 h-10 w-full"
                 />
                 {form.formState.errors.patientId && (
-                  <p className="text-sm text-red-500">{form.formState.errors.patientId.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.patientId.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="patientName">Patient Name *</Label>
+              <div>
+                <Label htmlFor="patientName" className="text-sm font-medium text-gray-700">
+                  Patient Name *
+                </Label>
                 <Input
                   id="patientName"
                   {...form.register("patientName")}
                   placeholder="Jane Doe"
+                  className="mt-2 h-10 w-full"
                 />
                 {form.formState.errors.patientName && (
-                  <p className="text-sm text-red-500">{form.formState.errors.patientName.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.patientName.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label>Gender *</Label>
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  Gender *
+                </Label>
                 <Select onValueChange={(value: "male" | "female") => form.setValue("gender", value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
@@ -277,18 +299,20 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                   </SelectContent>
                 </Select>
                 {form.formState.errors.gender && (
-                  <p className="text-sm text-red-500">{form.formState.errors.gender.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.gender.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label>Date of Birth *</Label>
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  Date of Birth *
+                </Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
+                        "w-full justify-start text-left font-normal mt-2 h-10",
                         !form.watch("dateOfBirth") && "text-muted-foreground"
                       )}
                     >
@@ -311,48 +335,53 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                   </PopoverContent>
                 </Popover>
                 {form.formState.errors.dateOfBirth && (
-                  <p className="text-sm text-red-500">{form.formState.errors.dateOfBirth.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.dateOfBirth.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="age">Age *</Label>
+              <div>
+                <Label htmlFor="age" className="text-sm font-medium text-gray-700">
+                  Age *
+                </Label>
                 <Input
                   id="age"
                   {...form.register("age")}
                   placeholder="25 years"
+                  className="mt-2 h-10"
                 />
                 {form.formState.errors.age && (
-                  <p className="text-sm text-red-500">{form.formState.errors.age.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.age.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="phoneNumber">Phone Number (Optional)</Label>
+              <div>
+                <Label htmlFor="phoneNumber" className="text-sm font-medium text-gray-700">
+                  Phone Number (Optional)
+                </Label>
                 <Input
                   id="phoneNumber"
                   {...form.register("phoneNumber")}
                   placeholder="+256 700 000 000"
+                  className="mt-2 h-10"
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Treatment Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ClipboardIcon className="h-4 w-4" />
-              Treatment Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
+          {/* Treatment Information */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+            <div className="pb-3 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Treatment Information
+              </h2>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <Label>Current ART Regimen *</Label>
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  Current ART Regimen *
+                </Label>
                 <Select onValueChange={(value) => form.setValue("currentRegimen", value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select regimen" />
                   </SelectTrigger>
                   <SelectContent>
@@ -364,18 +393,20 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                   </SelectContent>
                 </Select>
                 {form.formState.errors.currentRegimen && (
-                  <p className="text-sm text-red-500">{form.formState.errors.currentRegimen.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.currentRegimen.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label>Date Started ART *</Label>
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  Date Started ART *
+                </Label>
                 <Popover>
                   <PopoverTrigger asChild>
                     <Button
                       variant="outline"
                       className={cn(
-                        "w-full justify-start text-left font-normal",
+                        "w-full justify-start text-left font-normal mt-2 h-10 w-full",
                         !form.watch("dateStartedArt") && "text-muted-foreground"
                       )}
                     >
@@ -398,20 +429,24 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                   </PopoverContent>
                 </Popover>
                 {form.formState.errors.dateStartedArt && (
-                  <p className="text-sm text-red-500">{form.formState.errors.dateStartedArt.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.dateStartedArt.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label>
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
                   Pregnant {form.watch("gender") === "female" ? "*" : ""}
                 </Label>
                 <Select 
+                  
                   onValueChange={(value: "yes" | "no" | "unknown" | "not_applicable") => form.setValue("isPregnant", value)}
                   disabled={form.watch("gender") === "male"}
                   value={form.watch("gender") === "male" ? "not_applicable" : form.watch("isPregnant")}
                 >
-                  <SelectTrigger className={form.watch("gender") === "male" ? "bg-muted cursor-not-allowed" : ""}>
+                  <SelectTrigger className={cn(
+                    "mt-2 h-10 w-full",
+                    form.watch("gender") === "male" && "bg-muted cursor-not-allowed"
+                  )}>
                     <SelectValue placeholder={
                       form.watch("gender") === "male" ? "Not applicable (Male)" : "Select option"
                     } />
@@ -423,14 +458,16 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                   </SelectContent>
                 </Select>
                 {form.formState.errors.isPregnant && (
-                  <p className="text-sm text-red-500">{form.formState.errors.isPregnant.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.isPregnant.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label>TB Status *</Label>
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  TB Status *
+                </Label>
                 <Select onValueChange={(value: "yes" | "no" | "unknown") => form.setValue("hasTb", value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
@@ -440,14 +477,16 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                   </SelectContent>
                 </Select>
                 {form.formState.errors.hasTb && (
-                  <p className="text-sm text-red-500">{form.formState.errors.hasTb.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.hasTb.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label>Adherence Level *</Label>
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  Adherence Level *
+                </Label>
                 <Select onValueChange={(value: "good" | "fair" | "poor") => form.setValue("adherenceLevel", value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select adherence level" />
                   </SelectTrigger>
                   <SelectContent>
@@ -457,14 +496,16 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                   </SelectContent>
                 </Select>
                 {form.formState.errors.adherenceLevel && (
-                  <p className="text-sm text-red-500">{form.formState.errors.adherenceLevel.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.adherenceLevel.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2">
-                <Label>WHO Stage *</Label>
+              <div>
+                <Label className="text-sm font-medium text-gray-700">
+                  WHO Stage *
+                </Label>
                 <Select onValueChange={(value: "1" | "2" | "3" | "4") => form.setValue("whoStage", value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select WHO stage" />
                   </SelectTrigger>
                   <SelectContent>
@@ -475,14 +516,16 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                   </SelectContent>
                 </Select>
                 {form.formState.errors.whoStage && (
-                  <p className="text-sm text-red-500">{form.formState.errors.whoStage.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.whoStage.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <Label>Indication for VL Testing *</Label>
+              <div className="md:col-span-2">
+                <Label className="text-sm font-medium text-gray-700">
+                  Indication for VL Testing *
+                </Label>
                 <Select onValueChange={(value) => form.setValue("indication", value)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="mt-2 h-10 w-full  ">
                     <SelectValue placeholder="Select indication" />
                   </SelectTrigger>
                   <SelectContent>
@@ -496,41 +539,44 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                   </SelectContent>
                 </Select>
                 {form.formState.errors.indication && (
-                  <p className="text-sm text-red-500">{form.formState.errors.indication.message}</p>
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.indication.message}</p>
                 )}
               </div>
 
-              <div className="space-y-2 md:col-span-2">
-                <Label htmlFor="clinicalNotes">Clinical Notes (Optional)</Label>
+              <div className="md:col-span-2">
+                <Label htmlFor="clinicalNotes" className="text-sm font-medium text-gray-700">
+                  Clinical Notes (Optional)
+                </Label>
                 <Textarea
                   id="clinicalNotes"
                   {...form.register("clinicalNotes")}
                   placeholder="Additional clinical information..."
                   rows={4}
+                  className="mt-2"
                 />
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
 
-        {/* Submit Button */}
-        <div className="flex justify-end gap-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => router.back()}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="submit"
-            disabled={isSubmitting}
-            className="bg-red-600 hover:bg-red-700"
-          >
-            {isSubmitting ? "Creating Request..." : "Create Request"}
-          </Button>
-        </div>
-      </form>
+          {/* Bottom Submit Buttons */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-end space-x-4">
+              <Link href="/viral-load">
+                <Button variant="outline" className="h-10 px-6">
+                  Cancel
+                </Button>
+              </Link>
+              <Button
+                type="submit"
+                disabled={isSubmitting}
+                className="bg-red-600 hover:bg-red-700 h-10 px-8"
+              >
+                {isSubmitting ? "Creating Request..." : "Create Request"}
+              </Button>
+            </div>
+          </div>
+        </form>
+      </div>
     </div>
   );
 } 

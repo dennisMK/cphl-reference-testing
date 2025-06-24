@@ -13,7 +13,7 @@ import {
   useReactTable,
   VisibilityState,
 } from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, Eye, Edit, Trash2, FileText } from "lucide-react"
+import { ArrowUpDown, ChevronDown, MoreHorizontal, Eye, Edit, Trash2, FileText, Package } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Clock, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button"
@@ -275,13 +275,25 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
               Copy Sample ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
-              <Eye className="mr-2 h-4 w-4" />
-              View Details
+            <DropdownMenuItem asChild>
+              <a href={`/viral-load/${sample.id}`}>
+                <Eye className="mr-2 h-4 w-4" />
+                View Details
+              </a>
             </DropdownMenuItem>
-            <DropdownMenuItem>
-              <Edit className="mr-2 h-4 w-4" />
-              Edit Sample
+            {sample.status === "pending" && (
+              <DropdownMenuItem asChild>
+                <a href={`/viral-load/${sample.id}/collect`}>
+                  <Package className="mr-2 h-4 w-4" />
+                  Collect Sample
+                </a>
+              </DropdownMenuItem>
+            )}
+            <DropdownMenuItem asChild>
+              <a href={`/viral-load/${sample.id}/edit`}>
+                <Edit className="mr-2 h-4 w-4" />
+                Edit Sample
+              </a>
             </DropdownMenuItem>
             <DropdownMenuItem className="text-red-600">
               <Trash2 className="mr-2 h-4 w-4" />
