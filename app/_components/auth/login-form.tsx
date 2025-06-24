@@ -74,7 +74,7 @@ export function LoginForm({
             />
           </div>
           <h1 className="text-4xl font-semibold text-gray-900 mb-3">
-            Uganda Viral Load Manager
+            Uganda Lab e-Test Requests
           </h1>
           <p className="text-lg text-gray-600">
             Manage your account

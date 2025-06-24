@@ -21,11 +21,11 @@ export const ResetPasswordEmail = ({
 }: ResetPasswordEmailProps) => (
   <Html>
     <Head />
-    <Preview>Reset your password for Uganda Viral Load Manager</Preview>
+    <Preview>Reset your password for Uganda Lab e-Test Requests</Preview>
     <Body style={main}>
       <Container style={container}>
         <Section style={header}>
-          <Heading style={h1}>Uganda Viral Load Manager</Heading>
+          <Heading style={h1}>Uganda Lab e-Test Requests</Heading>
         </Section>
         
         <Section style={content}>
@@ -34,7 +34,7 @@ export const ResetPasswordEmail = ({
             Hi {userName},
           </Text>
           <Text style={text}>
-            You requested to reset your password for Uganda Viral Load Manager.
+            You requested to reset your password for Uganda Lab e-Test Requests.
           </Text>
           <Text style={text}>
             Click the button below to reset your password:
@@ -57,7 +57,7 @@ export const ResetPasswordEmail = ({
         <Section style={footer}>
           <Text style={footerText}>
             Best regards,<br />
-            Uganda Viral Load Manager Team
+            Uganda Lab e-Test Requests Team
           </Text>
         </Section>
       </Container>

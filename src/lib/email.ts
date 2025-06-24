@@ -35,9 +35,9 @@ export async function sendPasswordResetEmail({
 
     // Send the email
     const { data, error } = await resend.emails.send({
-      from: 'Uganda Viral Load Manager <noreply@ugandaviralload.com>',
+      from: 'Uganda Lab e-Test Requests <noreply@ugandaviralload.com>',
       to: [email],
-      subject: 'Reset your password - Uganda Viral Load Manager',
+      subject: 'Reset your password - Uganda Lab e-Test Requests',
       html: emailHtml,
     });
 
@@ -66,7 +66,7 @@ export async function sendWelcomeEmail({
       console.log(`
 === EMAIL DEBUG (No RESEND_API_KEY provided) ===
 To: ${email}
-Subject: Welcome to Uganda Viral Load Manager
+Subject: Welcome to Uganda Lab e-Test Requests
 User: ${userName}
 ==========================================
       `);
@@ -74,16 +74,16 @@ User: ${userName}
     }
 
     const { data, error } = await resend.emails.send({
-      from: 'Uganda Viral Load Manager <noreply@ugandaviralload.com>',
+      from: 'Uganda Lab e-Test Requests <noreply@ugandaviralload.com>',
       to: [email],
-      subject: 'Welcome to Uganda Viral Load Manager',
+      subject: 'Welcome to Uganda Lab e-Test Requests',
       html: `
         <div style="font-family: 'Poppins', sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-          <h1 style="color: #1f2937; text-align: center;">Welcome to Uganda Viral Load Manager</h1>
+          <h1 style="color: #1f2937; text-align: center;">Welcome to Uganda Lab e-Test Requests</h1>
           <p style="color: #4b5563; font-size: 16px;">Hi ${userName},</p>
-          <p style="color: #4b5563; font-size: 16px;">Welcome to Uganda Viral Load Manager! Your account has been created successfully.</p>
+          <p style="color: #4b5563; font-size: 16px;">Welcome to Uganda Lab e-Test Requests! Your account has been created successfully.</p>
           <p style="color: #4b5563; font-size: 16px;">You can now access the system and start managing viral load data.</p>
-          <p style="color: #4b5563; font-size: 16px;">Best regards,<br>Uganda Viral Load Manager Team</p>
+          <p style="color: #4b5563; font-size: 16px;">Best regards,<br>Uganda Lab e-Test Requests Team</p>
         </div>
       `,
     });

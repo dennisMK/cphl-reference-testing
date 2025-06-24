@@ -8,7 +8,7 @@ import { TRPCReactProvider } from "@/trpc/react";
 import { ThemeProvider } from "@/lib/theme-context";
 
 export const metadata: Metadata = {
-  title: "Uganda Viral Load Manager",
+  title: "Uganda Lab e-Test Requests",
   description: "Comprehensive viral load management system for Uganda",
   icons: [{ rel: "icon", url: "/favicon.ico" }],
 };

@@ -106,49 +106,56 @@ const recentActivity = [
 
 export default function ViralLoadPage(): React.JSX.Element {
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Header Section */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-4 mb-6">
-            <div className="p-3 bg-gradient-to-r from-red-500 to-red-600 rounded-2xl shadow-lg">
-              <TestTube className="h-8 w-8 text-white" />
+    <div>
+        {/* Mobile-Optimized Header Section */}
+        <div className="mb-6 sm:mb-8">
+          <div className="flex items-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
+            <div className="p-2 sm:p-3 bg-gradient-to-r from-red-500 to-red-600 rounded-xl sm:rounded-2xl shadow-lg flex-shrink-0">
+              <TestTube className="h-6 w-6 sm:h-8 sm:w-8 text-white" />
             </div>
-            <div>
-              <h1 className="text-4xl font-bold text-gray-900 tracking-tight">Viral Load Management</h1>
-              <p className="text-lg text-gray-600 mt-1">Monitor and manage HIV viral load testing workflow</p>
+            <div className="min-w-0 flex-1">
+              <h1 className="text-xl sm:text-2xl lg:text-4xl font-bold text-gray-900 tracking-tight">
+                <span className="sm:hidden">VLM System</span>
+                <span className="hidden sm:inline">Viral Load Management</span>
+              </h1>
+              <p className="text-sm sm:text-base lg:text-lg text-gray-600 mt-1 line-clamp-2">
+                Monitor and manage HIV viral load testing workflow
+              </p>
             </div>
           </div>
           
-          <div className="flex items-center space-x-3">
-            <Badge variant="outline" className="border-red-200 text-red-700 bg-red-50 px-3 py-1">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-3">
+            <Badge variant="outline" className="border-red-200 text-red-700 bg-red-50 px-2 sm:px-3 py-1">
               <Calendar className="h-3 w-3 mr-1" />
               Active System
             </Badge>
-            <span className="text-sm text-gray-500">Last updated: {new Date().toLocaleDateString()}</span>
+            <span className="text-xs sm:text-sm text-gray-500">
+              Last updated: {new Date().toLocaleDateString()}
+            </span>
           </div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        {/* Mobile-Optimized Stats Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6 mb-6 sm:mb-8">
           {statsData.map((stat, index) => {
             const IconComponent = stat.icon;
             return (
               <Card key={index} className="border-0 shadow-lg hover:shadow-xl transition-all duration-300 bg-white/80 backdrop-blur-sm">
-                <CardContent className="p-6">
+                <CardContent className="p-3 sm:p-4 lg:p-6">
                   <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <p className="text-sm font-medium text-gray-600 mb-1">{stat.title}</p>
-                      <div className="flex items-baseline space-x-2">
-                        <h3 className="text-3xl font-bold text-gray-900">{stat.value}</h3>
-                        <span className={`text-sm font-medium ${
+                    <div className="flex-1 min-w-0">
+                      <p className="text-xs sm:text-sm font-medium text-gray-600 mb-1 truncate">{stat.title}</p>
+                      <div className="flex flex-col sm:flex-row sm:items-baseline space-y-1 sm:space-y-0 sm:space-x-2">
+                        <h3 className="text-lg sm:text-2xl lg:text-3xl font-bold text-gray-900">{stat.value}</h3>
+                        <span className={`text-xs sm:text-sm font-medium ${
                           stat.trend === 'up' ? 'text-green-600' : 'text-red-600'
                         }`}>
                           {stat.change}
                         </span>
                       </div>
                     </div>
-                    <div className={`p-3 rounded-xl ${stat.lightColor}`}>
-                      <IconComponent className={`h-6 w-6 ${stat.textColor}`} />
+                    <div className={`p-1.5 sm:p-2 lg:p-3 rounded-lg lg:rounded-xl ${stat.lightColor} flex-shrink-0`}>
+                      <IconComponent className={`h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 ${stat.textColor}`} />
                     </div>
                   </div>
                 </CardContent>
@@ -157,7 +164,7 @@ export default function ViralLoadPage(): React.JSX.Element {
           })}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6 lg:gap-8">
           {/* Quick Actions */}
           <div className="lg:col-span-2">
             <Card className="border-0 shadow-lg bg-white/80 backdrop-blur-sm">
@@ -169,26 +176,26 @@ export default function ViralLoadPage(): React.JSX.Element {
                   Quick Actions
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6 pt-0">
-                <div className="grid grid-cols-1 gap-4">
+              <CardContent className="p-3 sm:p-4 lg:p-6 pt-0">
+                <div className="grid grid-cols-1 gap-3 sm:gap-4">
                   {quickActions.map((action, index) => {
                     const IconComponent = action.icon;
                     return (
                       <Link key={index} href={action.href}>
-                        <div className="group p-4 rounded-xl border border-gray-200 hover:border-red-300 hover:bg-red-50/50 transition-all duration-200 cursor-pointer">
+                        <div className="group p-3 sm:p-4 rounded-lg sm:rounded-xl border border-gray-200 hover:border-red-300 hover:bg-red-50/50 transition-all duration-200 cursor-pointer">
                           <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-4">
-                              <div className={`p-3 rounded-xl ${action.color} group-hover:scale-110 transition-transform duration-200`}>
-                                <IconComponent className="h-5 w-5 text-white" />
+                            <div className="flex items-center space-x-3 sm:space-x-4 flex-1 min-w-0">
+                              <div className={`p-2 sm:p-3 rounded-lg sm:rounded-xl ${action.color} group-hover:scale-110 transition-transform duration-200 flex-shrink-0`}>
+                                <IconComponent className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
                               </div>
-                              <div>
-                                <h3 className="font-semibold text-gray-900 group-hover:text-red-700 transition-colors">
+                              <div className="min-w-0 flex-1">
+                                <h3 className="font-semibold text-sm sm:text-base text-gray-900 group-hover:text-red-700 transition-colors truncate">
                                   {action.title}
                                 </h3>
-                                <p className="text-sm text-gray-600">{action.description}</p>
+                                <p className="text-xs sm:text-sm text-gray-600 line-clamp-2">{action.description}</p>
                               </div>
                             </div>
-                            <ChevronRight className="h-5 w-5 text-gray-400 group-hover:text-red-500 transition-colors" />
+                            <ChevronRight className="h-4 w-4 sm:h-5 sm:w-5 text-gray-400 group-hover:text-red-500 transition-colors flex-shrink-0" />
                           </div>
                         </div>
                       </Link>

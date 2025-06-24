@@ -84,7 +84,7 @@ export function SignupForm({
             Create your account
           </h1>
           <p className="text-lg text-gray-600">
-            Join Uganda Viral Load Manager
+            Join Uganda Lab e-Test Requests
           </p>
         </div>
 

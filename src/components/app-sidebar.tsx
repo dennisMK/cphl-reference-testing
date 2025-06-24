@@ -2,19 +2,17 @@
 
 import * as React from "react"
 import {
-  IconActivity,
   IconBabyCarriage,
   IconChartBar,
   IconDashboard,
-  IconDatabase,
   IconHelp,
   IconTestPipe,
   IconMedicalCross,
+  IconPlus,
   IconReport,
   IconSearch,
   IconSettings,
   IconUsers,
-  IconInnerShadowTop,
 } from "@tabler/icons-react"
 import { useSession, signOut } from "@/lib/auth-client"
 import { useRouter } from "next/navigation"
@@ -23,6 +21,7 @@ import { NavDocuments } from "@/components/nav-documents"
 import { NavMain } from "@/components/nav-main"
 import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
+import { TestTypeModal } from "@/components/test-type-modal"
 import {
   Sidebar,
   SidebarContent,
@@ -36,10 +35,15 @@ import {
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { data: session } = useSession()
   const router = useRouter()
+  const [isTestModalOpen, setIsTestModalOpen] = React.useState(false)
 
   const handleSignOut = async () => {
     await signOut()
     router.push("/auth/login")
+  }
+
+  const handleNewRequest = () => {
+    setIsTestModalOpen(true)
   }
 
   const data = {
@@ -55,37 +59,30 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         icon: IconDashboard,
       },
       {
+        title: "New Request",
+        url: "#",
+        icon: IconPlus,
+        onClick: handleNewRequest,
+      },
+      {
         title: "Viral Load",
         url: "/viral-load",
         icon: IconTestPipe,
       },
-             {
-         title: "Early Infant Diagnosis",
-         url: "/eid", 
-         icon: IconBabyCarriage,
-       },
       {
-        title: "Analytics",
-        url: "/analytics",
-        icon: IconChartBar,
+        title: "Early Infant Diagnosis",
+        url: "/eid", 
+        icon: IconBabyCarriage,
       },
-      {
-        title: "Activity",
-        url: "/activity",
-        icon: IconActivity,
-      },
+    
     ],
     navClouds: [
       {
-        title: "Viral Load Testing",
+        title: "Testing Workflows",
         icon: IconTestPipe,
         isActive: true,
-        url: "/viral-load",
+        url: "/testing",
         items: [
-          {
-            title: "New Request",
-            url: "/viral-load/new-request",
-          },
           {
             title: "Pending Collection",
             url: "/viral-load/pending-collection",
@@ -98,23 +95,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
             title: "View Results",
             url: "/viral-load/view",
           },
-        ],
-      },
-             {
-         title: "EID Testing",
-         icon: IconBabyCarriage,
-         url: "/eid",
-        items: [
           {
-            title: "New EID Request",
-            url: "/eid/new-request",
-          },
-          {
-            title: "Track Infants",
-            url: "/eid/track",
-          },
-          {
-            title: "Results & Reports",
+            title: "EID Results",
             url: "/eid/results",
           },
         ],
@@ -138,49 +120,42 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       },
     ],
     documents: [
-      {
-        name: "Lab Reports",
-        url: "/reports",
-        icon: IconReport,
-      },
-      {
-        name: "Patient Database",
-        url: "/database",
-        icon: IconDatabase,
-      },
-      {
-        name: "System Users",
-        url: "/users",
-        icon: IconUsers,
-      },
+     
     ],
   }
 
   return (
-    <Sidebar collapsible="offcanvas" {...props}>
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              className="data-[slot=sidebar-menu-button]:!p-1.5"
-            >
-              <a href="/dashboard">
-                <IconMedicalCross className="!size-5 text-red-600" />
-                <span className="text-base font-semibold">Uganda VLM</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-      <SidebarContent>
-        <NavMain items={data.navMain} />
-        <NavDocuments items={data.documents} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
-      </SidebarContent>
-      <SidebarFooter>
-        <NavUser user={data.user} onSignOut={handleSignOut} />
-      </SidebarFooter>
-    </Sidebar>
+    <>
+      <Sidebar collapsible="offcanvas" {...props}>
+        <SidebarHeader>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                className="data-[slot=sidebar-menu-button]:!p-1.5"
+              >
+                <a href="/dashboard">
+                  <IconMedicalCross className="!size-5 text-red-600" />
+                  <span className="text-base font-semibold">Uganda VLM</span>
+                </a>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        </SidebarHeader>
+        <SidebarContent>
+          <NavMain items={data.navMain} />
+          {/* <NavDocuments items={data.documents} /> */}
+          <NavSecondary items={data.navSecondary} className="mt-auto" />
+        </SidebarContent>
+        <SidebarFooter>
+          <NavUser user={data.user} onSignOut={handleSignOut} />
+        </SidebarFooter>
+      </Sidebar>
+      
+      <TestTypeModal 
+        isOpen={isTestModalOpen} 
+        onClose={() => setIsTestModalOpen(false)} 
+      />
+    </>
   )
 }
