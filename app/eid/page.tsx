@@ -1,42 +1,62 @@
-"use client"
-import Link from 'next/link'
-import React from 'react'
-import { IconPlus, IconTestPipe } from '@tabler/icons-react'
+"use client";
+
+import React from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Plus, TestTube } from "lucide-react";
+import Link from "next/link";
 
 export default function page() {
+  const actions = [
+    { 
+      title: "Create Request", 
+      icon: Plus, 
+      href: "/eid/create-request", 
+      action: "create",
+      description: "Create a new EID test request for infant HIV diagnosis"
+    },
+    { 
+      title: "Collect Sample", 
+      icon: TestTube, 
+      href: "/eid/collect-sample", 
+      action: "view",
+      description: "Collect and register biological samples for testing"
+    }
+  ];
+
   return (
-    <>
-    {/* cards for create requests & collect sample */}
-   <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-     <Link href="/eid/create-request" className="group">
-       <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer">
-         <div className="flex items-center space-x-4 mb-4">
-           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500">
-             <IconPlus className="h-7 w-7 text-white" />
-           </div>
-           <div>
-             <h3 className="text-2xl font-semibold text-gray-900">Create Request</h3>
-           </div>
-         </div>
-         <p className="text-gray-600 leading-relaxed">Create a new EID test request for infant HIV diagnosis</p>
-       </div>
-     </Link>
-     
-     <Link href="/eid/collect-sample" className="group">
-       <div className="bg-white rounded-2xl p-8 shadow-sm hover:shadow-md transition-all duration-200 cursor-pointer">
-         <div className="flex items-center space-x-4 mb-4">
-           <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-green-500">
-             <IconTestPipe className="h-7 w-7 text-white" />
-           </div>
-           <div>
-             <h3 className="text-2xl font-semibold text-gray-900">Collect Sample</h3>
-           </div>
-         </div>
-         <p className="text-gray-600 leading-relaxed">Collect and register biological samples for testing</p>
-       </div>
-     </Link>
-   </div>
-    
-    </>
-  )
+    <main className="md:container mx-auto px-4 py-6">
+      <div className="mb-6">
+        <h1 className="text-3xl font-bold mb-2">Early Infant Diagnosis (EID)</h1>
+        <p className="text-muted-foreground">Manage EID test requests and sample collection for infant HIV diagnosis.</p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {actions.map((action, index) => {
+          const IconComponent = action.icon;
+          return (
+            <Card key={index}>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <IconComponent className="h-5 w-5" />
+                  {action.title}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">{action.description}</p>
+                <Link href={action.href}>
+                  <Button
+                  size={"lg"}
+                    variant={action.action === "create" ? "default" : "outline"}
+                    className={`cursor-pointer rounded-xl w-full ${action.action === "create" ? "bg-blue-600 hover:bg-blue-700" : ""}`}>
+                    {action.action === "create" ? "Create" : "View"}
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          );
+        })}
+      </div>
+    </main>
+  );
 }

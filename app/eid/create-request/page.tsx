@@ -34,20 +34,7 @@ export default function page() {
               Early Infant Diagnosis test request
             </p>
           </div>
-          <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
-            <Link href="/eid" className="flex-1 sm:flex-none">
-              <Button variant="outline" className="w-full sm:w-auto h-9 sm:h-10 px-4 sm:px-6 text-sm">
-                Cancel
-              </Button>
-            </Link>
-            <Button
-              type="submit"
-              form="eid-form"
-              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 h-9 sm:h-10 px-4 sm:px-8 text-sm"
-            >
-              Save Request
-            </Button>
-          </div>
+         
         </div>
       </div>
 
