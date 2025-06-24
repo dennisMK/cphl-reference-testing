@@ -11,64 +11,127 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { IconBabyCarriage, IconArrowLeft } from "@tabler/icons-react";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
-export default function CreateRequestPage() {
+interface EditEidRequestPageProps {
+  params: {
+    requesId: string;
+  };
+}
+
+// Mock data for the EID request (in real app this would come from API)
+const mockEidRequest = {
+  id: "EID-001234",
+  entryPoint: "58", // MCH/PMTCT/ANC
+  requestedBy: "Dr. Sarah Nakato",
+  clinicianTel: "+256700123456",
+  infantName: "Baby Nakato",
+  expNo: "EXP-001234",
+  gender: "FEMALE",
+  infantAge: "8",
+  ageUnit: "weeks",
+  caregiverPhone: "+256700987654",
+  givenContrimoxazole: "Y",
+  deliveredAtHC: "Y",
+  infantPMTCTARVs: "1",
+  infantFeeding: "EBF",
+  testType: "P",
+  pcr: "FIRST",
+  nonRoutinePCR: "",
+  motherHTSNo: "HTS-123456",
+  motherARTNo: "ART-789012",
+  motherNIN: "NIN-345678",
+  antenatal: "80",
+  delivery: "80",
+  postnatal: "80",
+  status: "Pending Collection",
+  createdDate: "2024-01-15",
+  lastModified: "2024-01-16"
+};
+
+export default function EditEidRequestPage({ params }: EditEidRequestPageProps) {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission
-    console.log("Form submitted");
+    console.log("Form updated for request:", params.requesId);
+  };
+
+  const StatusBadge = ({ status }: { status: string }) => {
+    const getStatusStyle = (status: string) => {
+      switch (status) {
+        case "Pending Collection":
+          return "bg-orange-100 text-orange-800";
+        case "Sample Collected":
+          return "bg-green-100 text-green-800";
+        case "In Transit":
+          return "bg-blue-100 text-blue-800";
+        case "Completed":
+          return "bg-green-100 text-green-800";
+        default:
+          return "bg-gray-100 text-gray-800";
+      }
+    };
+
+    return (
+      <Badge className={`${getStatusStyle(status)} text-sm`}>
+        {status}
+      </Badge>
+    );
   };
 
   return (
-    <div className="max-w-6xl mx-auto px-4">
-      {/* Header */}
-      <div className="mb-10">
-        <div className="flex items-center space-x-4 mb-6">
-          <Link href="/eid">
-            <Button variant="ghost" size="sm" className="p-2 hover:bg-gray-100">
-              <IconArrowLeft className="h-4 w-4" />
+    <div className="">
+      {/* Header with title and actions */}
+      <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200">
+        <div>
+          <div className="flex items-center space-x-3 mb-2">
+            <h1 className="text-3xl font-bold text-gray-900">
+              Edit EID Request
+            </h1>
+            <StatusBadge status={mockEidRequest.status} />
+          </div>
+          <p className="text-gray-600">
+            Request ID: {params.requesId} • Last modified: {mockEidRequest.lastModified}
+          </p>
+        </div>
+        <div className="flex items-center space-x-4">
+          <Link href="/eid/collect-sample">
+            <Button variant="outline" className="h-10 px-6">
+              Cancel
             </Button>
           </Link>
-          <div className="flex items-center space-x-4">
-            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500">
-              <IconBabyCarriage className="h-7 w-7 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">
-                Create EID Request
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Early Infant Diagnosis test request
-              </p>
-            </div>
-          </div>
+          <Button
+            type="submit"
+            form="eid-edit-form"
+            className="bg-blue-600 hover:bg-blue-700 h-10 px-8"
+          >
+            Update Request
+          </Button>
         </div>
       </div>
 
-      {/* Form */}
-      <div className="bg-white rounded-xl border border-gray-200 p-8">
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {/* Requesting Clinician */}
-          <div className="space-y-4">
+      <div className="">
+        <form id="eid-edit-form" onSubmit={handleSubmit} className="space-y-8">
+          {/* Requesting Clinician Section */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
             <div className="pb-3 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">
                 Requesting Clinician
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                              <div>
-                  <Label
-                    htmlFor="entryPoint"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Entry Point
-                  </Label>
-                  <Select>
-                    <SelectTrigger className="mt-2 h-10">
-                      <SelectValue placeholder="Select entry point" />
-                    </SelectTrigger>
+            <div className="grid grid-cols-1 items-center md:grid-cols-2 gap-4">
+              <div>
+                <Label
+                  htmlFor="entryPoint"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Entry Point
+                </Label>
+                <Select defaultValue={mockEidRequest.entryPoint}>
+                  <SelectTrigger className="mt-2 w-full">
+                    <SelectValue placeholder="Select entry point" />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="53">ART Clinic</SelectItem>
                     <SelectItem value="54">EID/MBCP</SelectItem>
@@ -88,37 +151,39 @@ export default function CreateRequestPage() {
                   </SelectContent>
                 </Select>
               </div>
-                              <div>
-                  <Label
-                    htmlFor="requestedBy"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Requested by
-                  </Label>
-                  <Input
-                    id="requestedBy"
-                    placeholder="Enter clinician name"
-                    className="mt-2 h-10"
-                  />
-                </div>
-                <div>
-                  <Label
-                    htmlFor="clinicianTel"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Tel No
-                  </Label>
-                  <Input
-                    id="clinicianTel"
-                    placeholder="Enter phone number"
-                    className="mt-2 h-10"
-                  />
-                </div>
+              <div>
+                <Label
+                  htmlFor="requestedBy"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Requested by
+                </Label>
+                <Input
+                  id="requestedBy"
+                  placeholder="Enter clinician name"
+                  defaultValue={mockEidRequest.requestedBy}
+                  className="mt-2 h-10"
+                />
+              </div>
+              <div>
+                <Label
+                  htmlFor="clinicianTel"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Tel No
+                </Label>
+                <Input
+                  id="clinicianTel"
+                  placeholder="Enter phone number"
+                  defaultValue={mockEidRequest.clinicianTel}
+                  className="mt-2 h-10"
+                />
+              </div>
             </div>
           </div>
 
-          {/* Patient Information */}
-          <div className="space-y-4">
+          {/* Patient Information Section */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
             <div className="pb-3 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">
                 Patient Information
@@ -135,6 +200,7 @@ export default function CreateRequestPage() {
                 <Input
                   id="infantName"
                   placeholder="Enter infant name"
+                  defaultValue={mockEidRequest.infantName}
                   className="mt-2 h-10"
                 />
               </div>
@@ -148,9 +214,13 @@ export default function CreateRequestPage() {
                 <Input
                   id="expNo"
                   placeholder="Enter exposure number"
+                  defaultValue={mockEidRequest.expNo}
                   className="mt-2 h-10"
                 />
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label
                   htmlFor="gender"
@@ -158,8 +228,8 @@ export default function CreateRequestPage() {
                 >
                   Sex
                 </Label>
-                <Select>
-                  <SelectTrigger className="mt-2 h-10">
+                <Select defaultValue={mockEidRequest.gender}>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
@@ -169,9 +239,23 @@ export default function CreateRequestPage() {
                   </SelectContent>
                 </Select>
               </div>
+              <div>
+                <Label
+                  htmlFor="caregiverPhone"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Care Giver Phone Number
+                </Label>
+                <Input
+                  id="caregiverPhone"
+                  placeholder="Enter phone number"
+                  defaultValue={mockEidRequest.caregiverPhone}
+                  className="mt-2 h-10 w-full"
+                />
+              </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 gap-4">
               <div>
                 <Label
                   htmlFor="infantAge"
@@ -183,9 +267,10 @@ export default function CreateRequestPage() {
                   <Input
                     id="infantAge"
                     placeholder="Enter age"
+                    defaultValue={mockEidRequest.infantAge}
                     className="flex-1 h-10"
                   />
-                  <Select>
+                  <Select defaultValue={mockEidRequest.ageUnit}>
                     <SelectTrigger className="w-28 h-10">
                       <SelectValue placeholder="Unit" />
                     </SelectTrigger>
@@ -198,19 +283,6 @@ export default function CreateRequestPage() {
                   </Select>
                 </div>
               </div>
-              <div>
-                <Label
-                  htmlFor="caregiverPhone"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Care Giver Phone Number
-                </Label>
-                <Input
-                  id="caregiverPhone"
-                  placeholder="Enter phone number"
-                  className="mt-2 h-10"
-                />
-              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -221,8 +293,8 @@ export default function CreateRequestPage() {
                 >
                   Given Contrimoxazole
                 </Label>
-                <Select>
-                  <SelectTrigger className="mt-2 h-10">
+                <Select defaultValue={mockEidRequest.givenContrimoxazole}>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
@@ -239,8 +311,8 @@ export default function CreateRequestPage() {
                 >
                   Delivered at H/C
                 </Label>
-                <Select>
-                  <SelectTrigger className="mt-2 h-10">
+                <Select defaultValue={mockEidRequest.deliveredAtHC}>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
@@ -260,8 +332,8 @@ export default function CreateRequestPage() {
                 >
                   Infant PMTCT ARVS
                 </Label>
-                <Select>
-                  <SelectTrigger className="mt-2 h-10">
+                <Select defaultValue={mockEidRequest.infantPMTCTARVs}>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select ARV regimen" />
                   </SelectTrigger>
                   <SelectContent>
@@ -282,14 +354,14 @@ export default function CreateRequestPage() {
             </div>
           </div>
 
-          {/* Other Information */}
-          <div className="space-y-6">
-            <div className="pb-4 border-b border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-900">
+          {/* Other Information Section */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
+            <div className="pb-3 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">
                 Other Information
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label
                   htmlFor="infantFeeding"
@@ -297,8 +369,8 @@ export default function CreateRequestPage() {
                 >
                   Infant Feeding
                 </Label>
-                <Select>
-                  <SelectTrigger className="mt-3 h-11">
+                <Select defaultValue={mockEidRequest.infantFeeding}>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select feeding" />
                   </SelectTrigger>
                   <SelectContent>
@@ -326,8 +398,8 @@ export default function CreateRequestPage() {
                 >
                   Type of Test
                 </Label>
-                <Select>
-                  <SelectTrigger className="mt-3 h-11">
+                <Select defaultValue={mockEidRequest.testType}>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select test type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -337,6 +409,9 @@ export default function CreateRequestPage() {
                   </SelectContent>
                 </Select>
               </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label
                   htmlFor="pcr"
@@ -344,8 +419,8 @@ export default function CreateRequestPage() {
                 >
                   PCR
                 </Label>
-                <Select>
-                  <SelectTrigger className="mt-3 h-11">
+                <Select defaultValue={mockEidRequest.pcr}>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select PCR" />
                   </SelectTrigger>
                   <SelectContent>
@@ -363,8 +438,8 @@ export default function CreateRequestPage() {
                 >
                   Non Routine PCR
                 </Label>
-                <Select>
-                  <SelectTrigger className="mt-3 h-11">
+                <Select defaultValue={mockEidRequest.nonRoutinePCR}>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
@@ -377,7 +452,7 @@ export default function CreateRequestPage() {
             </div>
 
             {/* Mother's Information */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label
                   htmlFor="motherHTSNo"
@@ -388,7 +463,8 @@ export default function CreateRequestPage() {
                 <Input
                   id="motherHTSNo"
                   placeholder="Enter HTS number"
-                  className="mt-3 h-11"
+                  defaultValue={mockEidRequest.motherHTSNo}
+                  className="mt-2 h-10 w-full"
                 />
               </div>
               <div>
@@ -401,7 +477,8 @@ export default function CreateRequestPage() {
                 <Input
                   id="motherARTNo"
                   placeholder="Enter ART number"
-                  className="mt-3 h-11"
+                  defaultValue={mockEidRequest.motherARTNo}
+                  className="mt-2 h-10 w-full"
                 />
               </div>
               <div>
@@ -414,13 +491,14 @@ export default function CreateRequestPage() {
                 <Input
                   id="motherNIN"
                   placeholder="Enter NIN"
-                  className="mt-3 h-11"
+                  defaultValue={mockEidRequest.motherNIN}
+                  className="mt-2 h-10 w-full"
                 />
               </div>
             </div>
 
             {/* Mother's Treatment History */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label
                   htmlFor="antenatal"
@@ -428,8 +506,8 @@ export default function CreateRequestPage() {
                 >
                   Antenatal
                 </Label>
-                <Select>
-                  <SelectTrigger className="mt-3 h-11">
+                <Select defaultValue={mockEidRequest.antenatal}>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
@@ -446,8 +524,8 @@ export default function CreateRequestPage() {
                 >
                   Delivery
                 </Label>
-                <Select>
-                  <SelectTrigger className="mt-3 h-11">
+                <Select defaultValue={mockEidRequest.delivery}>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
@@ -464,8 +542,8 @@ export default function CreateRequestPage() {
                 >
                   Postnatal
                 </Label>
-                <Select>
-                  <SelectTrigger className="mt-3 h-11">
+                <Select defaultValue={mockEidRequest.postnatal}>
+                  <SelectTrigger className="mt-2 h-10 w-full">
                     <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
@@ -478,19 +556,26 @@ export default function CreateRequestPage() {
             </div>
           </div>
 
-          {/* Submit Buttons */}
-          <div className="flex items-center justify-end space-x-4 pt-8 border-t border-gray-100">
-            <Link href="/eid">
-              <Button variant="outline" className="h-11 px-6">
-                Cancel
-              </Button>
-            </Link>
-            <Button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 h-11 px-8"
-            >
-              Save Request
-            </Button>
+          {/* Bottom Submit Buttons */}
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                Created: {mockEidRequest.createdDate} • Last modified: {mockEidRequest.lastModified}
+              </div>
+              <div className="flex items-center space-x-4">
+                <Link href="/eid/collect-sample">
+                  <Button variant="outline" className="h-10 px-6">
+                    Cancel
+                  </Button>
+                </Link>
+                <Button
+                  type="submit"
+                  className="bg-blue-600 hover:bg-blue-700 h-10 px-8"
+                >
+                  Update Request
+                </Button>
+              </div>
+            </div>
           </div>
         </form>
       </div>

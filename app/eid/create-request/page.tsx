@@ -22,36 +22,39 @@ export default function page() {
   };
 
   return (
-    <div className="md:container mx-auto md:px-0 px-4">
-      <div className="mb-5">
-        <div className="flex flex-col  space-x-4 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Create EID Request
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Early Infant Diagnosis test request
-          </p>
+        <div className="">
+      {/* Header with title and actions */}
+      <div className="mb-6 pb-4 border-b border-gray-200">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+              Create EID Request
+            </h1>
+            <p className="text-sm sm:text-base text-gray-600 mt-1">
+              Early Infant Diagnosis test request
+            </p>
+          </div>
+          <div className="flex items-center space-x-2 sm:space-x-4 flex-shrink-0">
+            <Link href="/eid" className="flex-1 sm:flex-none">
+              <Button variant="outline" className="w-full sm:w-auto h-9 sm:h-10 px-4 sm:px-6 text-sm">
+                Cancel
+              </Button>
+            </Link>
+            <Button
+              type="submit"
+              form="eid-form"
+              className="flex-1 sm:flex-none bg-blue-600 hover:bg-blue-700 h-9 sm:h-10 px-4 sm:px-8 text-sm"
+            >
+              Save Request
+            </Button>
+          </div>
         </div>
       </div>
 
-             <div className="bg-white rounded-none border border-gray-200 p-8">
-         <form onSubmit={handleSubmit} className="space-y-8">
-           {/* Top Submit Buttons */}
-           <div className="flex items-center justify-end space-x-4 pb-6 border-b border-gray-100">
-             <Link href="/eid">
-               <Button variant="outline" className="h-10 px-6">
-                 Cancel
-               </Button>
-             </Link>
-             <Button
-               type="submit"
-               className="bg-blue-600 hover:bg-blue-700 h-10 px-8"
-             >
-               Save Request
-             </Button>
-           </div>
+       <div className="">
+         <form id="eid-form" onSubmit={handleSubmit} className="space-y-8">
 
-           <div className="space-y-4">
+           <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
             <div className="pb-3 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">
                 Requesting Clinician
@@ -118,7 +121,7 @@ export default function page() {
           </div>
 
           {/* Patient Information */}
-            <div className="space-y-4">
+            <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
               <div className="pb-3 border-b border-gray-100">
                 <h2 className="text-lg font-semibold text-gray-900">
                   Patient Information
@@ -286,7 +289,7 @@ export default function page() {
             </div>
 
                {/* Other Information */}
-          <div className="space-y-4">
+          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
             <div className="pb-3 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">
                 Other Information
@@ -485,18 +488,20 @@ export default function page() {
           </div>
 
           {/* Bottom Submit Buttons */}
-          <div className="flex items-center justify-end space-x-4 pt-8 border-t border-gray-100">
-            <Link href="/eid">
-              <Button variant="outline" className="h-10 px-6">
-                Cancel
+          <div className="bg-white rounded-lg border border-gray-200 p-6">
+            <div className="flex items-center justify-end space-x-4">
+              <Link href="/eid">
+                <Button variant="outline" className="h-10 px-6">
+                  Cancel
+                </Button>
+              </Link>
+              <Button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 h-10 px-8"
+              >
+                Save Request
               </Button>
-            </Link>
-            <Button
-              type="submit"
-              className="bg-blue-600 hover:bg-blue-700 h-10 px-8"
-            >
-              Save Request
-            </Button>
+            </div>
           </div>
         </form>
       </div>

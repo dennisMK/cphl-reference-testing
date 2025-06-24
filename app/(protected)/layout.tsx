@@ -37,13 +37,7 @@ export default function ProtectedLayout({
   return (
     <div className="min-h-screen bg-gray-50/30">
       <TopNav />
-      <main className="container mx-auto px-4 py-6">
-        <div className="min-h-[calc(100vh-7rem)] rounded-xl bg-white shadow-sm border">
-          <div className="p-6 h-full">
-            {children}
-          </div>
-        </div>
-      </main>
+      {children}
     </div>
   );
-} 
+}
