@@ -48,17 +48,19 @@ export function SignupForm({
     setIsLoading(true);
     setServerError("");
 
-    try {
-      const result = await signUp.email({
-        email: data.email,
-        password: data.password,
-        name: data.name,
-      });
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-      if (result.error) {
-        setServerError(result.error.message || "Sign up failed");
-      } else {
+    try {
+      // For demo purposes, accept any valid signup
+      if (data.email && data.password && data.name) {
+        // Store auth flag in localStorage for demo
+        localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("userEmail", data.email);
+        localStorage.setItem("userName", data.name);
         router.push("/dashboard");
+      } else {
+        setServerError("Please fill in all fields");
       }
     } catch (err) {
       setServerError("An unexpected error occurred");

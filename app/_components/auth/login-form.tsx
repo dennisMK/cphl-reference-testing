@@ -42,16 +42,28 @@ export function LoginForm({
     setIsLoading(true);
     setServerError("");
 
-    try {
-      const result = await signIn.email({
-        email: data.email,
-        password: data.password,
-      });
+    // Simulate API call delay
+    await new Promise(resolve => setTimeout(resolve, 1000));
 
-      if (result.error) {
-        setServerError(result.error.message || "Sign in failed");
-      } else {
+    try {
+      // Hardcoded credentials for development
+      const validCredentials = [
+        { email: "admin@uganda.gov.ug", password: "admin123" },
+        { email: "test@test.com", password: "test123" },
+        { email: "user@demo.com", password: "demo123" },
+      ];
+
+      const isValidCredential = validCredentials.some(
+        cred => cred.email === data.email && cred.password === data.password
+      );
+
+      if (isValidCredential) {
+        // Store a simple auth flag in localStorage for demo
+        localStorage.setItem("isAuthenticated", "true");
+        localStorage.setItem("userEmail", data.email);
         router.push("/dashboard");
+      } else {
+        setServerError("Invalid email or password. Try: admin@uganda.gov.ug / admin123");
       }
     } catch (err) {
       setServerError("An unexpected error occurred");

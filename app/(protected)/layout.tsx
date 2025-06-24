@@ -1,8 +1,8 @@
 "use client";
 
-import { useSession } from "@/lib/auth-client";
+// import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { TopNav } from "@/components/top-nav";
 
 export default function ProtectedLayout({
@@ -10,16 +10,23 @@ export default function ProtectedLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { data: session, isPending } = useSession();
+  // Comment out real auth for demo
+  // const { data: session, isPending } = useSession();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    if (!isPending && !session) {
+    // Check localStorage for demo auth
+    const authFlag = localStorage.getItem("isAuthenticated");
+    setIsAuthenticated(authFlag === "true");
+    
+    if (authFlag !== "true") {
       router.push("/auth/login");
     }
-  }, [session, isPending, router]);
+  }, [router]);
 
-  if (isPending) {
+  // Show loading while checking auth
+  if (isAuthenticated === null) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
@@ -30,7 +37,7 @@ export default function ProtectedLayout({
     );
   }
 
-  if (!session) {
+  if (!isAuthenticated) {
     return null;
   }
 

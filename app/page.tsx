@@ -1,22 +1,26 @@
 "use client";
 
-import { useSession } from "@/lib/auth-client";
+// import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  const { data: session, isPending } = useSession();
+  // Comment out real auth for demo
+  // const { data: session, isPending } = useSession();
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    if (!isPending) {
-      if (session) {
-        router.push("/dashboard");
-      } else {
-        router.push("/auth/login");
-      }
+    // Check localStorage for demo auth
+    const authFlag = localStorage.getItem("isAuthenticated");
+    setIsAuthenticated(authFlag === "true");
+    
+    if (authFlag === "true") {
+      router.push("/dashboard");
+    } else {
+      router.push("/auth/login");
     }
-  }, [session, isPending, router]);
+  }, [router]);
 
   // Show loading spinner while checking auth status
   return (

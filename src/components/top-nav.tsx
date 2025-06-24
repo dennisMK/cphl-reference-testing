@@ -15,7 +15,7 @@ import {
   IconFileText,
   IconChartBar,
 } from "@tabler/icons-react"
-import { useSession, signOut } from "@/lib/auth-client"
+// import { useSession, signOut } from "@/lib/auth-client"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 
@@ -33,13 +33,30 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 
 export function TopNav() {
-  const { data: session } = useSession()
+  // Comment out real auth for demo
+  // const { data: session } = useSession()
   const router = useRouter()
   const pathname = usePathname()
   const [isTestModalOpen, setIsTestModalOpen] = React.useState(false)
 
+  // Demo user data from localStorage
+  const getUserData = () => {
+    if (typeof window !== 'undefined') {
+      return {
+        name: localStorage.getItem("userName") || "Demo User",
+        email: localStorage.getItem("userEmail") || "demo@uganda.gov.ug"
+      }
+    }
+    return { name: "Demo User", email: "demo@uganda.gov.ug" }
+  }
+
+  const session = { user: getUserData() }
+
   const handleSignOut = async () => {
-    await signOut()
+    // Clear localStorage for demo
+    localStorage.removeItem("isAuthenticated")
+    localStorage.removeItem("userEmail")
+    localStorage.removeItem("userName")
     router.push("/auth/login")
   }
 
