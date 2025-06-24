@@ -177,7 +177,7 @@ export default function PackageSamplesPage() {
             Package Information
           </h2>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <Label htmlFor="package-identifier" className="text-sm font-medium text-gray-700">
               Package Identifier *
@@ -200,6 +200,15 @@ export default function PackageSamplesPage() {
                 {selectedSamples.length} sample{selectedSamples.length !== 1 ? 's' : ''} selected
               </Badge>
             </div>
+          </div>
+          <div className="flex items-end">
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting || selectedSamples.length === 0 || !packageIdentifier.trim()}
+              className="bg-red-600 hover:bg-red-700 h-10 px-8 w-full"
+            >
+              {isSubmitting ? "Packaging..." : "Submit Package"}
+            </Button>
           </div>
         </div>
       </div>
@@ -345,8 +354,13 @@ export default function PackageSamplesPage() {
       {/* Submit Section */}
       <div className="bg-white rounded-lg border border-gray-200 p-6 mt-6">
         <div className="flex items-center justify-between">
-          <div className="text-sm text-gray-600">
-            Ready to package {selectedSamples.length} selected sample{selectedSamples.length !== 1 ? 's' : ''}
+          <div className="flex items-center space-x-4">
+            <Badge variant="secondary" className="text-blue-600 bg-blue-50">
+              {selectedSamples.length} sample{selectedSamples.length !== 1 ? 's' : ''} selected
+            </Badge>
+            <div className="text-sm text-gray-600">
+              Ready to package {selectedSamples.length} selected sample{selectedSamples.length !== 1 ? 's' : ''}
+            </div>
           </div>
           <Button
             onClick={handleSubmit}

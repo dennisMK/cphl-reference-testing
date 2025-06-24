@@ -133,7 +133,7 @@ const getStatusBadge = (status: string) => {
     case "Pending Collection":
       return <Badge variant="secondary" className="text-orange-600 bg-orange-50">Pending Collection</Badge>
     case "Ready for Collection":
-      return <Badge variant="secondary" className="text-green-600 bg-green-50">Ready for Collection</Badge>
+      return <Badge variant="secondary" className="text-blue-600 bg-blue-50">Ready for Collection</Badge>
     case "Collected":
       return <Badge variant="secondary" className="text-blue-600 bg-blue-50">Collected</Badge>
     case "Processing":
@@ -364,7 +364,7 @@ export function EIDDataTable() {
   })
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-4 bg-white p-3 rounded-lg border border-gray-200">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-2">
           <Input
@@ -538,7 +538,7 @@ export default function CollectSamplePage() {
             </Button>
           </Link>
           <div className="flex items-center space-x-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-green-500">
+            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500">
               <IconTestPipe className="h-6 w-6 text-white" />
             </div>
             <div>
@@ -567,7 +567,7 @@ export default function CollectSamplePage() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              <CheckCircle className="h-5 w-5 text-blue-500" />
               Ready for Collection
             </CardTitle>
           </CardHeader>

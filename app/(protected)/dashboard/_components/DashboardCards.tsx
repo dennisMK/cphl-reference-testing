@@ -1,66 +1,74 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, Baby, ArrowRight, BarChart3 } from "lucide-react";
+import { Activity, Baby } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 
 export default function DashboardCards() {
-  const cards = [
+  const actions = [
     {
       title: "HIV Viral Load",
-      count: 100,
-      requests: 150,
-      collections: 85,
+      description: "Monitor and track HIV viral load testing for patients",
       href: "/viral-load",
       icon: Activity,
-      buttonColor: "bg-red-600 hover:bg-red-700",
-      borderColor: "border-red-200 hover:border-red-300",
+      action: "View",
+      count: 145,
+      requests: 23,
+      collections: 18,
+      theme: "red",
     },
     {
-      title: "Early Infant Diagnosis",
-      count: 100,
-      requests: 120,
-      collections: 95,
+      title: "Early Infant Diagnosis", 
+      description: "Manage EID testing for infants born to HIV-positive mothers",
       href: "/eid",
       icon: Baby,
-      buttonColor: "bg-blue-600 hover:bg-blue-700",
-      borderColor: "border-blue-200 hover:border-blue-300",
+      action: "View",
+      count: 67,
+      requests: 12,
+      collections: 8,
+      theme: "blue",
     },
   ];
 
   return (
     <div className="w-full grid grid-cols-1 lg:grid-cols-2 gap-4">
-      {cards.map((card, index) => {
-        const IconComponent = card.icon;
+      {actions.map((action, index) => {
+        const IconComponent = action.icon;
         return (
-          <Card key={index} className={`hover:shadow-md transition-shadow ${card.borderColor}`}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-lg font-medium">{card.title}</CardTitle>
-              <IconComponent className="h-5 w-5 text-muted-foreground" />
+          <Card key={index}>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <IconComponent className={`h-5 w-5 ${action.theme === "red" ? "text-red-600" : "text-blue-600"}`} />
+                {action.title}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold mb-4">{card.count}</div>
+              <p className="text-sm text-muted-foreground mb-4">{action.description}</p>
+              
+              <div className="text-2xl font-bold mb-4">{action.count}</div>
               
               {/* Analytics */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="flex items-center space-x-2">
                   <div>
                     <p className="text-sm text-muted-foreground">Requests</p>
-                    <p className="text-lg font-semibold">{card.requests}</p>
+                    <p className="text-lg font-semibold">{action.requests}</p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div>
                     <p className="text-sm text-muted-foreground">Collections</p>
-                    <p className="text-lg font-semibold">{card.collections}</p>
+                    <p className="text-lg font-semibold">{action.collections}</p>
                   </div>
                 </div>
               </div>
 
-              <Link href={card.href}>
-                <Button className={`w-full group ${card.buttonColor}`}>
-                  Manage
-                  <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+              <Link href={action.href}>
+                <Button
+                  size={"lg"}
+                  variant={"default"}
+                  className={`cursor-pointer rounded-xl w-full ${action.action === "View" ? `bg-${action.theme}-600 hover:bg-${action.theme}-700` : `border-${action.theme}-600 text-${action.theme}-600 hover:bg-${action.theme}-50`}`}>
+                  View
                 </Button>
               </Link>
             </CardContent>
