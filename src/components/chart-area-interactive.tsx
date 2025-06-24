@@ -13,7 +13,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import {
-  type ChartConfig,
+  ChartConfig,
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
@@ -33,110 +33,110 @@ import {
 export const description = "An interactive area chart"
 
 const chartData = [
-  { date: "2024-04-01", viralLoad: 45, eid: 12 },
-  { date: "2024-04-02", viralLoad: 38, eid: 18 },
-  { date: "2024-04-03", viralLoad: 52, eid: 15 },
-  { date: "2024-04-04", viralLoad: 61, eid: 22 },
-  { date: "2024-04-05", viralLoad: 73, eid: 28 },
-  { date: "2024-04-06", viralLoad: 68, eid: 31 },
-  { date: "2024-04-07", viralLoad: 42, eid: 19 },
-  { date: "2024-04-08", viralLoad: 79, eid: 35 },
-  { date: "2024-04-09", viralLoad: 35, eid: 14 },
-  { date: "2024-04-10", viralLoad: 58, eid: 21 },
-  { date: "2024-04-11", viralLoad: 67, eid: 33 },
-  { date: "2024-04-12", viralLoad: 54, eid: 24 },
-  { date: "2024-04-13", viralLoad: 71, eid: 29 },
-  { date: "2024-04-14", viralLoad: 43, eid: 17 },
-  { date: "2024-04-15", viralLoad: 39, eid: 16 },
-  { date: "2024-04-16", viralLoad: 47, eid: 20 },
-  { date: "2024-04-17", viralLoad: 82, eid: 38 },
-  { date: "2024-04-18", viralLoad: 76, eid: 34 },
-  { date: "2024-04-19", viralLoad: 51, eid: 23 },
-  { date: "2024-04-20", viralLoad: 36, eid: 15 },
-  { date: "2024-04-21", viralLoad: 44, eid: 18 },
-  { date: "2024-04-22", viralLoad: 56, eid: 25 },
-  { date: "2024-04-23", viralLoad: 48, eid: 21 },
-  { date: "2024-04-24", viralLoad: 78, eid: 32 },
-  { date: "2024-04-25", viralLoad: 63, eid: 27 },
-  { date: "2024-04-26", viralLoad: 32, eid: 13 },
-  { date: "2024-04-27", viralLoad: 81, eid: 37 },
-  { date: "2024-04-28", viralLoad: 41, eid: 16 },
-  { date: "2024-04-29", viralLoad: 69, eid: 30 },
-  { date: "2024-04-30", viralLoad: 87, eid: 39 },
-  { date: "2024-05-01", viralLoad: 49, eid: 22 },
-  { date: "2024-05-02", viralLoad: 74, eid: 31 },
-  { date: "2024-05-03", viralLoad: 55, eid: 26 },
-  { date: "2024-05-04", viralLoad: 83, eid: 36 },
-  { date: "2024-05-05", viralLoad: 91, eid: 42 },
-  { date: "2024-05-06", viralLoad: 95, eid: 45 },
-  { date: "2024-05-07", viralLoad: 77, eid: 33 },
-  { date: "2024-05-08", viralLoad: 46, eid: 19 },
-  { date: "2024-05-09", viralLoad: 53, eid: 24 },
-  { date: "2024-05-10", viralLoad: 72, eid: 29 },
-  { date: "2024-05-11", viralLoad: 65, eid: 28 },
-  { date: "2024-05-12", viralLoad: 50, eid: 23 },
-  { date: "2024-05-13", viralLoad: 47, eid: 20 },
-  { date: "2024-05-14", viralLoad: 89, eid: 41 },
-  { date: "2024-05-15", viralLoad: 86, eid: 38 },
-  { date: "2024-05-16", viralLoad: 70, eid: 32 },
-  { date: "2024-05-17", viralLoad: 93, eid: 43 },
-  { date: "2024-05-18", viralLoad: 66, eid: 30 },
-  { date: "2024-05-19", viralLoad: 52, eid: 25 },
-  { date: "2024-05-20", viralLoad: 43, eid: 18 },
-  { date: "2024-05-21", viralLoad: 37, eid: 15 },
-  { date: "2024-05-22", viralLoad: 35, eid: 14 },
-  { date: "2024-05-23", viralLoad: 59, eid: 27 },
-  { date: "2024-05-24", viralLoad: 64, eid: 28 },
-  { date: "2024-05-25", viralLoad: 48, eid: 21 },
-  { date: "2024-05-26", viralLoad: 51, eid: 24 },
-  { date: "2024-05-27", viralLoad: 85, eid: 37 },
-  { date: "2024-05-28", viralLoad: 54, eid: 25 },
-  { date: "2024-05-29", viralLoad: 33, eid: 12 },
-  { date: "2024-05-30", viralLoad: 75, eid: 34 },
-  { date: "2024-05-31", viralLoad: 45, eid: 19 },
-  { date: "2024-06-01", viralLoad: 44, eid: 18 },
-  { date: "2024-06-02", viralLoad: 88, eid: 40 },
-  { date: "2024-06-03", viralLoad: 38, eid: 16 },
-  { date: "2024-06-04", viralLoad: 84, eid: 35 },
-  { date: "2024-06-05", viralLoad: 34, eid: 13 },
-  { date: "2024-06-06", viralLoad: 62, eid: 26 },
-  { date: "2024-06-07", viralLoad: 68, eid: 31 },
-  { date: "2024-06-08", viralLoad: 77, eid: 33 },
-  { date: "2024-06-09", viralLoad: 90, eid: 41 },
-  { date: "2024-06-10", viralLoad: 46, eid: 20 },
-  { date: "2024-06-11", viralLoad: 36, eid: 15 },
-  { date: "2024-06-12", viralLoad: 94, eid: 44 },
-  { date: "2024-06-13", viralLoad: 32, eid: 12 },
-  { date: "2024-06-14", viralLoad: 82, eid: 36 },
-  { date: "2024-06-15", viralLoad: 67, eid: 30 },
-  { date: "2024-06-16", viralLoad: 73, eid: 32 },
-  { date: "2024-06-17", viralLoad: 96, eid: 46 },
-  { date: "2024-06-18", viralLoad: 40, eid: 17 },
-  { date: "2024-06-19", viralLoad: 71, eid: 31 },
-  { date: "2024-06-20", viralLoad: 85, eid: 38 },
-  { date: "2024-06-21", viralLoad: 49, eid: 22 },
-  { date: "2024-06-22", viralLoad: 65, eid: 29 },
-  { date: "2024-06-23", viralLoad: 92, eid: 42 },
-  { date: "2024-06-24", viralLoad: 41, eid: 18 },
-  { date: "2024-06-25", viralLoad: 43, eid: 19 },
-  { date: "2024-06-26", viralLoad: 86, eid: 37 },
-  { date: "2024-06-27", viralLoad: 89, eid: 40 },
-  { date: "2024-06-28", viralLoad: 47, eid: 21 },
-  { date: "2024-06-29", viralLoad: 39, eid: 16 },
-  { date: "2024-06-30", viralLoad: 91, eid: 41 },
+  { date: "2024-04-01", desktop: 222, mobile: 150 },
+  { date: "2024-04-02", desktop: 97, mobile: 180 },
+  { date: "2024-04-03", desktop: 167, mobile: 120 },
+  { date: "2024-04-04", desktop: 242, mobile: 260 },
+  { date: "2024-04-05", desktop: 373, mobile: 290 },
+  { date: "2024-04-06", desktop: 301, mobile: 340 },
+  { date: "2024-04-07", desktop: 245, mobile: 180 },
+  { date: "2024-04-08", desktop: 409, mobile: 320 },
+  { date: "2024-04-09", desktop: 59, mobile: 110 },
+  { date: "2024-04-10", desktop: 261, mobile: 190 },
+  { date: "2024-04-11", desktop: 327, mobile: 350 },
+  { date: "2024-04-12", desktop: 292, mobile: 210 },
+  { date: "2024-04-13", desktop: 342, mobile: 380 },
+  { date: "2024-04-14", desktop: 137, mobile: 220 },
+  { date: "2024-04-15", desktop: 120, mobile: 170 },
+  { date: "2024-04-16", desktop: 138, mobile: 190 },
+  { date: "2024-04-17", desktop: 446, mobile: 360 },
+  { date: "2024-04-18", desktop: 364, mobile: 410 },
+  { date: "2024-04-19", desktop: 243, mobile: 180 },
+  { date: "2024-04-20", desktop: 89, mobile: 150 },
+  { date: "2024-04-21", desktop: 137, mobile: 200 },
+  { date: "2024-04-22", desktop: 224, mobile: 170 },
+  { date: "2024-04-23", desktop: 138, mobile: 230 },
+  { date: "2024-04-24", desktop: 387, mobile: 290 },
+  { date: "2024-04-25", desktop: 215, mobile: 250 },
+  { date: "2024-04-26", desktop: 75, mobile: 130 },
+  { date: "2024-04-27", desktop: 383, mobile: 420 },
+  { date: "2024-04-28", desktop: 122, mobile: 180 },
+  { date: "2024-04-29", desktop: 315, mobile: 240 },
+  { date: "2024-04-30", desktop: 454, mobile: 380 },
+  { date: "2024-05-01", desktop: 165, mobile: 220 },
+  { date: "2024-05-02", desktop: 293, mobile: 310 },
+  { date: "2024-05-03", desktop: 247, mobile: 190 },
+  { date: "2024-05-04", desktop: 385, mobile: 420 },
+  { date: "2024-05-05", desktop: 481, mobile: 390 },
+  { date: "2024-05-06", desktop: 498, mobile: 520 },
+  { date: "2024-05-07", desktop: 388, mobile: 300 },
+  { date: "2024-05-08", desktop: 149, mobile: 210 },
+  { date: "2024-05-09", desktop: 227, mobile: 180 },
+  { date: "2024-05-10", desktop: 293, mobile: 330 },
+  { date: "2024-05-11", desktop: 335, mobile: 270 },
+  { date: "2024-05-12", desktop: 197, mobile: 240 },
+  { date: "2024-05-13", desktop: 197, mobile: 160 },
+  { date: "2024-05-14", desktop: 448, mobile: 490 },
+  { date: "2024-05-15", desktop: 473, mobile: 380 },
+  { date: "2024-05-16", desktop: 338, mobile: 400 },
+  { date: "2024-05-17", desktop: 499, mobile: 420 },
+  { date: "2024-05-18", desktop: 315, mobile: 350 },
+  { date: "2024-05-19", desktop: 235, mobile: 180 },
+  { date: "2024-05-20", desktop: 177, mobile: 230 },
+  { date: "2024-05-21", desktop: 82, mobile: 140 },
+  { date: "2024-05-22", desktop: 81, mobile: 120 },
+  { date: "2024-05-23", desktop: 252, mobile: 290 },
+  { date: "2024-05-24", desktop: 294, mobile: 220 },
+  { date: "2024-05-25", desktop: 201, mobile: 250 },
+  { date: "2024-05-26", desktop: 213, mobile: 170 },
+  { date: "2024-05-27", desktop: 420, mobile: 460 },
+  { date: "2024-05-28", desktop: 233, mobile: 190 },
+  { date: "2024-05-29", desktop: 78, mobile: 130 },
+  { date: "2024-05-30", desktop: 340, mobile: 280 },
+  { date: "2024-05-31", desktop: 178, mobile: 230 },
+  { date: "2024-06-01", desktop: 178, mobile: 200 },
+  { date: "2024-06-02", desktop: 470, mobile: 410 },
+  { date: "2024-06-03", desktop: 103, mobile: 160 },
+  { date: "2024-06-04", desktop: 439, mobile: 380 },
+  { date: "2024-06-05", desktop: 88, mobile: 140 },
+  { date: "2024-06-06", desktop: 294, mobile: 250 },
+  { date: "2024-06-07", desktop: 323, mobile: 370 },
+  { date: "2024-06-08", desktop: 385, mobile: 320 },
+  { date: "2024-06-09", desktop: 438, mobile: 480 },
+  { date: "2024-06-10", desktop: 155, mobile: 200 },
+  { date: "2024-06-11", desktop: 92, mobile: 150 },
+  { date: "2024-06-12", desktop: 492, mobile: 420 },
+  { date: "2024-06-13", desktop: 81, mobile: 130 },
+  { date: "2024-06-14", desktop: 426, mobile: 380 },
+  { date: "2024-06-15", desktop: 307, mobile: 350 },
+  { date: "2024-06-16", desktop: 371, mobile: 310 },
+  { date: "2024-06-17", desktop: 475, mobile: 520 },
+  { date: "2024-06-18", desktop: 107, mobile: 170 },
+  { date: "2024-06-19", desktop: 341, mobile: 290 },
+  { date: "2024-06-20", desktop: 408, mobile: 450 },
+  { date: "2024-06-21", desktop: 169, mobile: 210 },
+  { date: "2024-06-22", desktop: 317, mobile: 270 },
+  { date: "2024-06-23", desktop: 480, mobile: 530 },
+  { date: "2024-06-24", desktop: 132, mobile: 180 },
+  { date: "2024-06-25", desktop: 141, mobile: 190 },
+  { date: "2024-06-26", desktop: 434, mobile: 380 },
+  { date: "2024-06-27", desktop: 448, mobile: 490 },
+  { date: "2024-06-28", desktop: 149, mobile: 200 },
+  { date: "2024-06-29", desktop: 103, mobile: 160 },
+  { date: "2024-06-30", desktop: 446, mobile: 400 },
 ]
 
 const chartConfig = {
-  tests: {
-    label: "Laboratory Tests",
+  visitors: {
+    label: "Visitors",
   },
-  viralLoad: {
-    label: "Viral Load",
-    color: "hsl(var(--destructive))",
+  desktop: {
+    label: "Desktop",
+    color: "var(--primary)",
   },
-  eid: {
-    label: "Early Infant Diagnosis", 
-    color: "hsl(var(--primary))",
+  mobile: {
+    label: "Mobile",
+    color: "var(--primary)",
   },
 } satisfies ChartConfig
 
@@ -167,10 +167,10 @@ export function ChartAreaInteractive() {
   return (
     <Card className="@container/card">
       <CardHeader>
-        <CardTitle>Laboratory Test Trends</CardTitle>
+        <CardTitle>Total Visitors</CardTitle>
         <CardDescription>
           <span className="hidden @[540px]/card:block">
-            Daily viral load and EID testing volume for the last 3 months
+            Total for the last 3 months
           </span>
           <span className="@[540px]/card:hidden">Last 3 months</span>
         </CardDescription>
@@ -215,27 +215,27 @@ export function ChartAreaInteractive() {
         >
           <AreaChart data={filteredData}>
             <defs>
-              <linearGradient id="fillViralLoad" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="fillDesktop" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor="var(--color-viralLoad)"
+                  stopColor="var(--color-desktop)"
                   stopOpacity={1.0}
                 />
                 <stop
                   offset="95%"
-                  stopColor="var(--color-viralLoad)"
+                  stopColor="var(--color-desktop)"
                   stopOpacity={0.1}
                 />
               </linearGradient>
-              <linearGradient id="fillEid" x1="0" y1="0" x2="0" y2="1">
+              <linearGradient id="fillMobile" x1="0" y1="0" x2="0" y2="1">
                 <stop
                   offset="5%"
-                  stopColor="var(--color-eid)"
+                  stopColor="var(--color-mobile)"
                   stopOpacity={0.8}
                 />
                 <stop
                   offset="95%"
-                  stopColor="var(--color-eid)"
+                  stopColor="var(--color-mobile)"
                   stopOpacity={0.1}
                 />
               </linearGradient>
@@ -271,17 +271,17 @@ export function ChartAreaInteractive() {
               }
             />
             <Area
-              dataKey="eid"
+              dataKey="mobile"
               type="natural"
-              fill="url(#fillEid)"
-              stroke="var(--color-eid)"
+              fill="url(#fillMobile)"
+              stroke="var(--color-mobile)"
               stackId="a"
             />
             <Area
-              dataKey="viralLoad"
+              dataKey="desktop"
               type="natural"
-              fill="url(#fillViralLoad)"
-              stroke="var(--color-viralLoad)"
+              fill="url(#fillDesktop)"
+              stroke="var(--color-desktop)"
               stackId="a"
             />
           </AreaChart>

@@ -1,4 +1,3 @@
-"use client"
 import {
   IconCreditCard,
   IconDotsVertical,
@@ -27,21 +26,17 @@ import {
   SidebarMenuItem,
   useSidebar,
 } from "@/components/ui/sidebar"
-import { useRouter } from "next/navigation"
 
 export function NavUser({
   user,
-  onSignOut,
 }: {
   user: {
     name: string
     email: string
     avatar: string
   }
-  onSignOut?: () => void
 }) {
   const { isMobile } = useSidebar()
-  const router = useRouter()
 
   return (
     <SidebarMenu>
@@ -87,22 +82,21 @@ export function NavUser({
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuGroup>
-              <DropdownMenuItem
-                onClick={() => {
-                  router.push("/settings")
-                }}
-              >
+              <DropdownMenuItem>
                 <IconUserCircle />
                 Account
               </DropdownMenuItem>
-              
-             
+              <DropdownMenuItem>
+                <IconCreditCard />
+                Billing
+              </DropdownMenuItem>
+              <DropdownMenuItem>
+                <IconNotification />
+                Notifications
+              </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              onClick={onSignOut}
-              className="cursor-pointer text-red-600 focus:text-red-600"
-            >
+            <DropdownMenuItem>
               <IconLogout />
               Log out
             </DropdownMenuItem>
