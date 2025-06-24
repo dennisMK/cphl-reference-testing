@@ -14,7 +14,7 @@ import {
 import { IconBabyCarriage, IconArrowLeft } from "@tabler/icons-react";
 import Link from "next/link";
 
-export default function page() {
+export default function CreateRequestPage() {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Handle form submission
@@ -22,53 +22,53 @@ export default function page() {
   };
 
   return (
-    <div className="md:container mx-auto md:px-0 px-4">
-      <div className="mb-5">
-        <div className="flex flex-col  space-x-4 mb-6">
-          <h1 className="text-3xl font-bold text-gray-900">
-            Create EID Request
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Early Infant Diagnosis test request
-          </p>
+    <div className="max-w-6xl mx-auto px-4">
+      {/* Header */}
+      <div className="mb-10">
+        <div className="flex items-center space-x-4 mb-6">
+          <Link href="/eid">
+            <Button variant="ghost" size="sm" className="p-2 hover:bg-gray-100">
+              <IconArrowLeft className="h-4 w-4" />
+            </Button>
+          </Link>
+          <div className="flex items-center space-x-4">
+            <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-500">
+              <IconBabyCarriage className="h-7 w-7 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">
+                Create EID Request
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Early Infant Diagnosis test request
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 
-             <div className="bg-white rounded-none border border-gray-200 p-8">
-         <form onSubmit={handleSubmit} className="space-y-8">
-           {/* Top Submit Buttons */}
-           <div className="flex items-center justify-end space-x-4 pb-6 border-b border-gray-100">
-             <Link href="/eid">
-               <Button variant="outline" className="h-10 px-6">
-                 Cancel
-               </Button>
-             </Link>
-             <Button
-               type="submit"
-               className="bg-blue-600 hover:bg-blue-700 h-10 px-8"
-             >
-               Save Request
-             </Button>
-           </div>
-
-           <div className="space-y-4">
+      {/* Form */}
+      <div className="bg-white rounded-xl border border-gray-200 p-8">
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* Requesting Clinician */}
+          <div className="space-y-4">
             <div className="pb-3 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">
                 Requesting Clinician
               </h2>
             </div>
-            <div className="grid grid-cols-1  items-center md:grid-cols-2 gap-4">
-              <div>
-                <Label
-                  htmlFor="entryPoint"
-                  className="text-sm font-medium text-gray-700"
-                >
-                  Entry Point
-                </Label>
-                <Select>
-                  <SelectTrigger className="mt-2 w-full">
-                    <SelectValue placeholder="Select entry point" />
-                  </SelectTrigger>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div>
+                  <Label
+                    htmlFor="entryPoint"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Entry Point
+                  </Label>
+                  <Select>
+                    <SelectTrigger className="mt-2 h-10">
+                      <SelectValue placeholder="Select entry point" />
+                    </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="53">ART Clinic</SelectItem>
                     <SelectItem value="54">EID/MBCP</SelectItem>
@@ -88,211 +88,208 @@ export default function page() {
                   </SelectContent>
                 </Select>
               </div>
+                              <div>
+                  <Label
+                    htmlFor="requestedBy"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Requested by
+                  </Label>
+                  <Input
+                    id="requestedBy"
+                    placeholder="Enter clinician name"
+                    className="mt-2 h-10"
+                  />
+                </div>
+                <div>
+                  <Label
+                    htmlFor="clinicianTel"
+                    className="text-sm font-medium text-gray-700"
+                  >
+                    Tel No
+                  </Label>
+                  <Input
+                    id="clinicianTel"
+                    placeholder="Enter phone number"
+                    className="mt-2 h-10"
+                  />
+                </div>
+            </div>
+          </div>
+
+          {/* Patient Information */}
+          <div className="space-y-4">
+            <div className="pb-3 border-b border-gray-100">
+              <h2 className="text-lg font-semibold text-gray-900">
+                Patient Information
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label
-                  htmlFor="requestedBy"
+                  htmlFor="infantName"
                   className="text-sm font-medium text-gray-700"
                 >
-                  Requested by
+                  Infant Name
                 </Label>
                 <Input
-                  id="requestedBy"
-                  placeholder="Enter clinician name"
+                  id="infantName"
+                  placeholder="Enter infant name"
                   className="mt-2 h-10"
                 />
               </div>
               <div>
                 <Label
-                  htmlFor="clinicianTel"
+                  htmlFor="expNo"
                   className="text-sm font-medium text-gray-700"
                 >
-                  Tel No
+                  EXP No
                 </Label>
                 <Input
-                  id="clinicianTel"
+                  id="expNo"
+                  placeholder="Enter exposure number"
+                  className="mt-2 h-10"
+                />
+              </div>
+              <div>
+                <Label
+                  htmlFor="gender"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Sex
+                </Label>
+                <Select>
+                  <SelectTrigger className="mt-2 h-10">
+                    <SelectValue placeholder="Select gender" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MALE">M</SelectItem>
+                    <SelectItem value="FEMALE">F</SelectItem>
+                    <SelectItem value="NOT_RECORDED">Blank</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label
+                  htmlFor="infantAge"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Age in Months
+                </Label>
+                <div className="flex gap-2 mt-2">
+                  <Input
+                    id="infantAge"
+                    placeholder="Enter age"
+                    className="flex-1 h-10"
+                  />
+                  <Select>
+                    <SelectTrigger className="w-28 h-10">
+                      <SelectValue placeholder="Unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="months">Months</SelectItem>
+                      <SelectItem value="days">Days</SelectItem>
+                      <SelectItem value="weeks">Weeks</SelectItem>
+                      <SelectItem value="years">Years</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label
+                  htmlFor="caregiverPhone"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Care Giver Phone Number
+                </Label>
+                <Input
+                  id="caregiverPhone"
                   placeholder="Enter phone number"
                   className="mt-2 h-10"
                 />
               </div>
             </div>
-          </div>
 
-          {/* Patient Information */}
-            <div className="space-y-4">
-              <div className="pb-3 border-b border-gray-100">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Patient Information
-                </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label
+                  htmlFor="givenContrimoxazole"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Given Contrimoxazole
+                </Label>
+                <Select>
+                  <SelectTrigger className="mt-2 h-10">
+                    <SelectValue placeholder="Select option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BLANK">Blank</SelectItem>
+                    <SelectItem value="Y">Y</SelectItem>
+                    <SelectItem value="N">N</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label
-                    htmlFor="infantName"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Infant Name
-                  </Label>
-                  <Input
-                    id="infantName"
-                    placeholder="Enter infant name"
-                    className="mt-2 h-10"
-                  />
-                </div>
-                <div>
-                  <Label
-                    htmlFor="expNo"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    EXP No
-                  </Label>
-                  <Input
-                    id="expNo"
-                    placeholder="Enter exposure number"
-                    className="mt-2 h-10"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label
-                    htmlFor="gender"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Sex
-                  </Label>
-                  <Select>
-                    <SelectTrigger className="mt-2 h-10 w-full">
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="MALE">M</SelectItem>
-                      <SelectItem value="FEMALE">F</SelectItem>
-                      <SelectItem value="NOT_RECORDED">Blank</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label
-                    htmlFor="caregiverPhone"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Care Giver Phone Number
-                  </Label>
-                  <Input
-                    id="caregiverPhone"
-                    placeholder="Enter phone number"
-                    className="mt-2 h-10 w-full"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1  gap-4">
-                <div>
-                  <Label
-                    htmlFor="infantAge"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Age in Months
-                  </Label>
-                  <div className="flex gap-2 mt-2">
-                    <Input
-                      id="infantAge"
-                      placeholder="Enter age"
-                      className="flex-1 h-10"
-                    />
-                    <Select>
-                      <SelectTrigger className="w-28 h-10">
-                        <SelectValue placeholder="Unit" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="months">Months</SelectItem>
-                        <SelectItem value="days">Days</SelectItem>
-                        <SelectItem value="weeks">Weeks</SelectItem>
-                        <SelectItem value="years">Years</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label
-                    htmlFor="givenContrimoxazole"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Given Contrimoxazole
-                  </Label>
-                  <Select>
-                    <SelectTrigger className="mt-2 h-10 w-full">
-                      <SelectValue placeholder="Select option" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="BLANK">Blank</SelectItem>
-                      <SelectItem value="Y">Y</SelectItem>
-                      <SelectItem value="N">N</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label
-                    htmlFor="deliveredAtHC"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Delivered at H/C
-                  </Label>
-                  <Select>
-                    <SelectTrigger className="mt-2 h-10 w-full">
-                      <SelectValue placeholder="Select option" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="BLANK">UNKNOWN</SelectItem>
-                      <SelectItem value="Y">Y</SelectItem>
-                      <SelectItem value="N">N</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <Label
-                    htmlFor="infantPMTCTARVs"
-                    className="text-sm font-medium text-gray-700"
-                  >
-                    Infant PMTCT ARVS
-                  </Label>
-                  <Select>
-                    <SelectTrigger className="mt-2 h-10 w-full">
-                      <SelectValue placeholder="Select ARV regimen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">
-                        1-Received NVP syrup at birth for 6 weeks
-                      </SelectItem>
-                      <SelectItem value="2">
-                        2-Received NVP syrup at birth for 12 weeks
-                      </SelectItem>
-                      <SelectItem value="3">3-AZT/3TC/NVP</SelectItem>
-                      <SelectItem value="4">4-No ARVs taken</SelectItem>
-                      <SelectItem value="5">
-                        5-Unknown-Infant PMTCT regimen not known
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+              <div>
+                <Label
+                  htmlFor="deliveredAtHC"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Delivered at H/C
+                </Label>
+                <Select>
+                  <SelectTrigger className="mt-2 h-10">
+                    <SelectValue placeholder="Select option" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="BLANK">UNKNOWN</SelectItem>
+                    <SelectItem value="Y">Y</SelectItem>
+                    <SelectItem value="N">N</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
             </div>
 
-               {/* Other Information */}
-          <div className="space-y-4">
-            <div className="pb-3 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label
+                  htmlFor="infantPMTCTARVs"
+                  className="text-sm font-medium text-gray-700"
+                >
+                  Infant PMTCT ARVS
+                </Label>
+                <Select>
+                  <SelectTrigger className="mt-2 h-10">
+                    <SelectValue placeholder="Select ARV regimen" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1">
+                      1-Received NVP syrup at birth for 6 weeks
+                    </SelectItem>
+                    <SelectItem value="2">
+                      2-Received NVP syrup at birth for 12 weeks
+                    </SelectItem>
+                    <SelectItem value="3">3-AZT/3TC/NVP</SelectItem>
+                    <SelectItem value="4">4-No ARVs taken</SelectItem>
+                    <SelectItem value="5">
+                      5-Unknown-Infant PMTCT regimen not known
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Other Information */}
+          <div className="space-y-6">
+            <div className="pb-4 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-900">
                 Other Information
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               <div>
                 <Label
                   htmlFor="infantFeeding"
@@ -301,7 +298,7 @@ export default function page() {
                   Infant Feeding
                 </Label>
                 <Select>
-                  <SelectTrigger className="mt-2 h-10 w-full">
+                  <SelectTrigger className="mt-3 h-11">
                     <SelectValue placeholder="Select feeding" />
                   </SelectTrigger>
                   <SelectContent>
@@ -330,7 +327,7 @@ export default function page() {
                   Type of Test
                 </Label>
                 <Select>
-                  <SelectTrigger className="mt-2 h-10 w-full">
+                  <SelectTrigger className="mt-3 h-11">
                     <SelectValue placeholder="Select test type" />
                   </SelectTrigger>
                   <SelectContent>
@@ -340,9 +337,6 @@ export default function page() {
                   </SelectContent>
                 </Select>
               </div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label
                   htmlFor="pcr"
@@ -351,7 +345,7 @@ export default function page() {
                   PCR
                 </Label>
                 <Select>
-                  <SelectTrigger className="mt-2 h-10 w-full">
+                  <SelectTrigger className="mt-3 h-11">
                     <SelectValue placeholder="Select PCR" />
                   </SelectTrigger>
                   <SelectContent>
@@ -370,7 +364,7 @@ export default function page() {
                   Non Routine PCR
                 </Label>
                 <Select>
-                  <SelectTrigger className="mt-2 h-10 w-full">
+                  <SelectTrigger className="mt-3 h-11">
                     <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
@@ -383,7 +377,7 @@ export default function page() {
             </div>
 
             {/* Mother's Information */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div>
                 <Label
                   htmlFor="motherHTSNo"
@@ -394,7 +388,7 @@ export default function page() {
                 <Input
                   id="motherHTSNo"
                   placeholder="Enter HTS number"
-                  className="mt-2 h-10 w-full"
+                  className="mt-3 h-11"
                 />
               </div>
               <div>
@@ -407,7 +401,7 @@ export default function page() {
                 <Input
                   id="motherARTNo"
                   placeholder="Enter ART number"
-                  className="mt-2 h-10 w-full"
+                  className="mt-3 h-11"
                 />
               </div>
               <div>
@@ -420,13 +414,13 @@ export default function page() {
                 <Input
                   id="motherNIN"
                   placeholder="Enter NIN"
-                  className="mt-2 h-10 w-full"
+                  className="mt-3 h-11"
                 />
               </div>
             </div>
 
             {/* Mother's Treatment History */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div>
                 <Label
                   htmlFor="antenatal"
@@ -435,7 +429,7 @@ export default function page() {
                   Antenatal
                 </Label>
                 <Select>
-                  <SelectTrigger className="mt-2 h-10 w-full">
+                  <SelectTrigger className="mt-3 h-11">
                     <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
@@ -453,7 +447,7 @@ export default function page() {
                   Delivery
                 </Label>
                 <Select>
-                  <SelectTrigger className="mt-2 h-10 w-full">
+                  <SelectTrigger className="mt-3 h-11">
                     <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
@@ -471,7 +465,7 @@ export default function page() {
                   Postnatal
                 </Label>
                 <Select>
-                  <SelectTrigger className="mt-2 h-10 w-full">
+                  <SelectTrigger className="mt-3 h-11">
                     <SelectValue placeholder="Select option" />
                   </SelectTrigger>
                   <SelectContent>
@@ -484,16 +478,16 @@ export default function page() {
             </div>
           </div>
 
-          {/* Bottom Submit Buttons */}
+          {/* Submit Buttons */}
           <div className="flex items-center justify-end space-x-4 pt-8 border-t border-gray-100">
             <Link href="/eid">
-              <Button variant="outline" className="h-10 px-6">
+              <Button variant="outline" className="h-11 px-6">
                 Cancel
               </Button>
             </Link>
             <Button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700 h-10 px-8"
+              className="bg-blue-600 hover:bg-blue-700 h-11 px-8"
             >
               Save Request
             </Button>
