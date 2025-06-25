@@ -18,6 +18,7 @@ export async function PUT(request: NextRequest) {
 
     // Verify the token
     const payload = verifyJWT(token);
+    
     if (!payload) {
       return NextResponse.json(
         { error: "Invalid or expired token" },
@@ -42,19 +43,27 @@ export async function PUT(request: NextRequest) {
     // Get database connection
     const db = await getUsersDb();
 
-    // Update the user's facility information
-    const updatedUser = await db
-      .update(users)
-      .set({
-        facility_name: facility_name.trim(),
-        hub_name: hub_name.trim(),
-        facility_id: facility_id ? parseInt(facility_id) : null,
-        hub_id: hub_id ? parseInt(hub_id) : null,
-      })
-      .where(eq(users.id, userId))
-      .returning();
+    const updateData = {
+      facility_name: facility_name.trim(),
+      hub_name: hub_name.trim(),
+      facility_id: facility_id ? parseInt(facility_id) : null,
+      hub_id: hub_id ? parseInt(hub_id) : null,
+    };
 
-    if (updatedUser.length === 0) {
+    // Update the user's facility information
+    await db
+      .update(users)
+      .set(updateData)
+      .where(eq(users.id, userId));
+
+    // Fetch the updated user data
+    const updatedUserResult = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, userId))
+      .limit(1);
+
+    if (updatedUserResult.length === 0) {
       return NextResponse.json(
         { error: "User not found" },
         { status: 404 }
@@ -62,12 +71,34 @@ export async function PUT(request: NextRequest) {
     }
 
     // Return the updated user data (excluding password)
-    const { password: _, ...userWithoutPassword } = updatedUser[0];
+    const updatedUser = updatedUserResult[0];
+    
+    if (!updatedUser) {
+      return NextResponse.json(
+        { error: "User not found" },
+        { status: 404 }
+      );
+    }
+
+    // Create user object without password for response
+    const userResponse = {
+      id: updatedUser.id,
+      username: updatedUser.username,
+      name: updatedUser.name,
+      email: updatedUser.email,
+      facility_id: updatedUser.facility_id,
+      facility_name: updatedUser.facility_name,
+      hub_id: updatedUser.hub_id,
+      hub_name: updatedUser.hub_name,
+      deactivated: updatedUser.deactivated,
+      created_at: updatedUser.created_at,
+      updated_at: updatedUser.updated_at,
+    };
 
     return NextResponse.json({
       success: true,
       message: "Facility information updated successfully",
-      user: userWithoutPassword,
+      user: userResponse,
     });
 
   } catch (error) {

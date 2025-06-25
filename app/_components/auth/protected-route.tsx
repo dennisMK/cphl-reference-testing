@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth-context";
 
 interface ProtectedRouteProps {
@@ -10,13 +9,13 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { user, isLoading, isAuthenticated } = useAuth();
-  const router = useRouter();
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
-      router.push("/auth/login");
+      console.log('🚪 Redirecting to login - not authenticated');
+      window.location.href = "/auth/login";
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated]);
 
   // Show loading spinner while checking auth status
   if (isLoading) {

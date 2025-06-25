@@ -31,12 +31,20 @@ export function checkTokenExpiration(token: string): TokenInfo {
 export function getTokenFromCookie(): string | null {
   if (typeof document === 'undefined') return null;
   
+  console.log('🍪 All cookies:', document.cookie);
   const cookies = document.cookie.split(';');
+  console.log('🍪 Parsed cookies:', cookies);
+  
   const authCookie = cookies.find(cookie => 
     cookie.trim().startsWith('auth-token=')
   );
   
+  console.log('🍪 Auth cookie found:', authCookie);
+  
   if (!authCookie) return null;
   
-  return authCookie.split('=')[1] || null;
+  const token = authCookie.split('=')[1] || null;
+  console.log('🍪 Extracted token:', token ? 'Found' : 'Not found');
+  
+  return token;
 } 

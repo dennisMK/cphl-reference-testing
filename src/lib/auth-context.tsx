@@ -2,8 +2,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { checkTokenExpiration, getTokenFromCookie } from './token-utils';
-import { clearAuthCookie } from './auth-utils-client';
 
 interface User {
   id: number;
@@ -46,49 +44,25 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Check authentication status and fetch user data
   const checkAuth = async () => {
+    console.log('🔍 checkAuth() started');
     try {
-      // First check token expiration client-side
-      const token = getTokenFromCookie();
-      if (token) {
-        const tokenInfo = checkTokenExpiration(token);
-        setTokenExpiresAt(tokenInfo.expiresAt);
-        
-        if (!tokenInfo.isValid) {
-          console.log('Token expired, clearing auth state');
-          // Don't call logout() to avoid infinite loops, just clear state
-          clearAuthCookie();
-          setUser(null);
-          setIsAuthenticated(false);
-          setTokenExpiresAt(null);
-          setIsLoading(false);
-          return;
-        }
-      } else {
-        // No token found, clear auth state
-        setUser(null);
-        setIsAuthenticated(false);
-        setTokenExpiresAt(null);
-        setIsLoading(false);
-        return;
-      }
-
+      // Since cookies are HttpOnly, we can't read them client-side
+      // Instead, we rely on the server-side /api/auth/me endpoint
       const response = await fetch('/api/auth/me');
       
       if (response.ok) {
         const data = await response.json();
         setUser(data.user);
         setIsAuthenticated(true);
+        // We can't get token expiration from HttpOnly cookies, so set to null
+        setTokenExpiresAt(null);
       } else {
         // If auth check fails (token expired/invalid), clear state
-        console.log('Server auth check failed, clearing auth state');
-        clearAuthCookie();
         setUser(null);
         setIsAuthenticated(false);
         setTokenExpiresAt(null);
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
-      clearAuthCookie();
       setUser(null);
       setIsAuthenticated(false);
       setTokenExpiresAt(null);
@@ -139,8 +113,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
-      // Clear client-side auth state and cookies
-      clearAuthCookie();
+      // Clear client-side auth state (can't clear HttpOnly cookies from client)
       setUser(null);
       setIsAuthenticated(false);
       setTokenExpiresAt(null);
