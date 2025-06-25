@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -21,6 +21,7 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { ArrowLeft, Save, Loader2, Building, AlertCircle, CheckCircle } from "lucide-react";
+import { useAuth } from "@/lib/auth-context";
 
 const facilitySchema = z.object({
   facility_name: z.string().min(1, "Facility name is required").min(2, "Facility name must be at least 2 characters"),
@@ -52,16 +53,8 @@ const availableHubs = [
   "Moroto Hub"
 ];
 
-import type { ApiUser } from '@/server/db/schemas/users';
-
-interface User extends ApiUser {}
-
-interface FacilityFormProps {
-  user: User;
-  onSuccess: () => void;
-}
-
-export default function FacilityForm({ user, onSuccess }: FacilityFormProps) {
+export default function FacilityForm() {
+  const { user, isLoading, refreshUser } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
@@ -69,19 +62,18 @@ export default function FacilityForm({ user, onSuccess }: FacilityFormProps) {
   const form = useForm<FacilityFormData>({
     resolver: zodResolver(facilitySchema),
     defaultValues: {
-      facility_name: "",
-      hub_name: "",
-      facility_id: "",
-      hub_id: "",
-      other_facilities: "",
-      requesting_facility_id: "",
+      facility_name: user?.facility_name || "",
+      hub_name: user?.hub_name || "",
+      facility_id: user?.facility_id?.toString() || "",
+      hub_id: user?.hub_id?.toString() || "",
+      other_facilities: user?.other_facilities || "",
+      requesting_facility_id: user?.requesting_facility_id?.toString() || "",
     },
   });
 
-  // Initialize form with user data
-  useEffect(() => {
+  // Update form values when user data loads
+  React.useEffect(() => {
     if (user) {
-      // Set form values using only actual database fields
       form.reset({
         facility_name: user.facility_name || "",
         hub_name: user.hub_name || "",
@@ -117,7 +109,7 @@ export default function FacilityForm({ user, onSuccess }: FacilityFormProps) {
 
       if (response.ok) {
         setMessage({ type: "success", text: "Facility information updated successfully!" });
-        onSuccess(); // Call the success callback to refresh user data
+        await refreshUser(); // Refresh user data in context
         
         // Redirect back to settings after a short delay
         setTimeout(() => {

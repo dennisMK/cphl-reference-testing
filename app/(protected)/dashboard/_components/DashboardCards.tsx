@@ -18,8 +18,8 @@ export default function DashboardCards() {
       theme: "red",
     },
     {
-      title: "Early Infant Diagnosis", 
-      description: "Manage EID testing for infants born to HIV-positive mothers",
+      title: "HIV-Positive Mothers", 
+      description: "Manage EID testing for infants born to HIV Positive Mothers",
       href: "/eid",
       icon: Baby,
       action: "View",
