@@ -5,6 +5,17 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { TopNav } from "@/components/top-nav";
 
+interface User {
+  id: number;
+  username: string;
+  name: string;
+  email: string | null;
+  facility_id: number | null;
+  facility_name: string | null;
+  hub_id: number | null;
+  hub_name: string | null;
+}
+
 export default function ProtectedLayout({
   children,
 }: {
@@ -12,21 +23,38 @@ export default function ProtectedLayout({
 }) {
   // Comment out real auth for demo
   // const { data: session, isPending } = useSession();
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // Check localStorage for demo auth
-    const authFlag = localStorage.getItem("isAuthenticated");
-    setIsAuthenticated(authFlag === "true");
-    
-    if (authFlag !== "true") {
-      router.push("/auth/login");
-    }
+    const checkAuth = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        } else {
+          // Not authenticated, redirect to login
+          const currentPath = window.location.pathname;
+          router.push(`/auth/login?redirect=${encodeURIComponent(currentPath)}`);
+          return;
+        }
+      } catch (error) {
+        console.error('Auth check failed:', error);
+        router.push('/auth/login');
+        return;
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    checkAuth();
   }, [router]);
 
   // Show loading while checking auth
-  if (isAuthenticated === null) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
         <div className="text-center">
@@ -37,8 +65,8 @@ export default function ProtectedLayout({
     );
   }
 
-  if (!isAuthenticated) {
-    return null;
+  if (!user) {
+    return null; // Will redirect
   }
 
   return (

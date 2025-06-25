@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from "react";
@@ -16,9 +15,11 @@ import { Label } from "@/components/ui/label";
 
 const signupSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
-  email: z.string().email("Please enter a valid email address"),
+  username: z.string().min(3, "Username must be at least 3 characters"),
+  email: z.string().email("Please enter a valid email address").optional(),
   password: z.string().min(6, "Password must be at least 6 characters"),
   confirmPassword: z.string().min(6, "Please confirm your password"),
+  facility_name: z.string().optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords don't match",
   path: ["confirmPassword"],
@@ -48,22 +49,35 @@ export function SignupForm({
     setIsLoading(true);
     setServerError("");
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
     try {
-      // For demo purposes, accept any valid signup
-      if (data.email && data.password && data.name) {
-        // Store auth flag in localStorage for demo
-        localStorage.setItem("isAuthenticated", "true");
-        localStorage.setItem("userEmail", data.email);
-        localStorage.setItem("userName", data.name);
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          username: data.username,
+          password: data.password,
+          name: data.name,
+          email: data.email || null,
+          facility_name: data.facility_name || null,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        setServerError(result.error || 'Signup failed');
+        return;
+      }
+
+      if (result.success) {
         router.push("/dashboard");
       } else {
-        setServerError("Please fill in all fields");
+        setServerError("Signup failed. Please try again.");
       }
     } catch (err) {
-      setServerError("An unexpected error occurred");
+      setServerError("Network error. Please check your connection.");
     } finally {
       setIsLoading(false);
     }
@@ -119,6 +133,33 @@ export function SignupForm({
                 <p className="text-sm text-red-600 mt-2 ml-1">{errors.name.message}</p>
               )}
             </div>
+
+            {/* Username Field */}
+            <div className="mb-4">
+              <div className="border border-gray-300 rounded-2xl overflow-hidden bg-white">
+                <div className="relative">
+                  <Label 
+                    htmlFor="username" 
+                    className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
+                  >
+                    Username
+                  </Label>
+                  <Input
+                    id="username"
+                    type="text"
+                    placeholder=""
+                    className={cn(
+                      "h-16 px-4 pt-6 pb-2 border-0 rounded-2xl focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
+                      errors.username && "bg-red-50"
+                    )}
+                    {...register("username")}
+                  />
+                </div>
+              </div>
+              {errors.username && (
+                <p className="text-sm text-red-600 mt-2 ml-1">{errors.username.message}</p>
+              )}
+            </div>
             
             {/* Email Field */}
             <div className="mb-4">
@@ -128,7 +169,7 @@ export function SignupForm({
                     htmlFor="email" 
                     className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
                   >
-                    Email Address
+                    Email Address (Optional)
                   </Label>
                   <Input
                     id="email"
@@ -145,6 +186,27 @@ export function SignupForm({
               {errors.email && (
                 <p className="text-sm text-red-600 mt-2 ml-1">{errors.email.message}</p>
               )}
+            </div>
+
+            {/* Facility Name Field */}
+            <div className="mb-4">
+              <div className="border border-gray-300 rounded-2xl overflow-hidden bg-white">
+                <div className="relative">
+                  <Label 
+                    htmlFor="facility_name" 
+                    className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
+                  >
+                    Facility Name (Optional)
+                  </Label>
+                  <Input
+                    id="facility_name"
+                    type="text"
+                    placeholder=""
+                    className="h-16 px-4 pt-6 pb-2 border-0 rounded-2xl focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent"
+                    {...register("facility_name")}
+                  />
+                </div>
+              </div>
             </div>
             
             {/* Password Field */}

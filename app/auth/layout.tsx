@@ -1,12 +1,14 @@
 "use client";
 
-// import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import React from 'react'
 
-export default function Home() {
-  // Comment out real auth for demo
-  // const { data: session, isPending } = useSession();
+export default function AuthLayout({
+    children,
+}: {
+    children: React.ReactNode
+}) {
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
@@ -16,17 +18,15 @@ export default function Home() {
         const response = await fetch('/api/auth/me');
         
         if (response.ok) {
-          // User is authenticated, redirect to dashboard
+          // User is already authenticated, redirect to dashboard
           router.push("/dashboard");
         } else {
-          // User is not authenticated, redirect to login
-          router.push("/auth/login");
+          // User is not authenticated, allow access to auth pages
+          setIsLoading(false);
         }
       } catch (error) {
         console.error('Auth check failed:', error);
-        // On error, redirect to login
-        router.push("/auth/login");
-      } finally {
+        // On error, allow access to auth pages
         setIsLoading(false);
       }
     };
@@ -43,6 +43,9 @@ export default function Home() {
     );
   }
 
-  // This return should rarely be seen as we redirect immediately
-  return null;
+  return (
+    <>
+        {children}
+    </>
+  )
 }

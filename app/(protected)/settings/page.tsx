@@ -1,19 +1,46 @@
 "use client";
 
-import { useSession, authClient } from "@/lib/auth-client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Eye, EyeOff, Palette, TestTube, Baby } from "lucide-react";
 import { useTheme } from "@/lib/theme-context";
 
+interface User {
+  id: number;
+  username: string;
+  name: string;
+  email: string | null;
+  facility_id: number | null;
+  facility_name: string | null;
+  hub_id: number | null;
+  hub_name: string | null;
+}
+
 export default function SettingsPage() {
-  const { data: session } = useSession();
   const { viralLoadColors, eidColors, updateColors } = useTheme();
   const [activeTab, setActiveTab] = useState("profile");
   const [isLoading, setIsLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const handlePasswordChange = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -33,25 +60,32 @@ export default function SettingsPage() {
     }
 
     // Validate password length
-    if (newPassword.length < 8) {
-      setMessage({ type: "error", text: "Password must be at least 8 characters long" });
+    if (newPassword.length < 6) {
+      setMessage({ type: "error", text: "Password must be at least 6 characters long" });
       setIsLoading(false);
       return;
     }
 
     try {
-      // Use Better Auth client method directly
-      const { data, error } = await authClient.changePassword({
-        currentPassword,
-        newPassword,
+      const response = await fetch('/api/auth/change-password', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          currentPassword,
+          newPassword,
+        }),
       });
 
-      if (error) {
-        setMessage({ type: "error", text: error.message || "Failed to change password" });
-      } else {
-        setMessage({ type: "success", text: "Password changed successfully" });
+      const result = await response.json();
+
+      if (response.ok) {
+        setMessage({ type: "success", text: result.message || "Password changed successfully" });
         // Reset form
         e.currentTarget.reset();
+      } else {
+        setMessage({ type: "error", text: result.error || "Failed to change password" });
       }
     } catch (error: any) {
       console.error("Password change error:", error);
@@ -68,17 +102,29 @@ export default function SettingsPage() {
 
     const formData = new FormData(e.currentTarget);
     const name = formData.get("name") as string;
+    const email = formData.get("email") as string;
+    const facility_name = formData.get("facility_name") as string;
 
     try {
-      // Use Better Auth client method directly
-      const { data, error } = await authClient.updateUser({
-        name,
+      const response = await fetch('/api/auth/update-profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name,
+          email: email || null,
+          facility_name: facility_name || null,
+        }),
       });
 
-      if (error) {
-        setMessage({ type: "error", text: error.message || "Failed to update profile" });
-      } else {
+      const result = await response.json();
+
+      if (response.ok) {
+        setUser(result.user);
         setMessage({ type: "success", text: "Profile updated successfully" });
+      } else {
+        setMessage({ type: "error", text: result.error || "Failed to update profile" });
       }
     } catch (error: any) {
       console.error("Profile update error:", error);
@@ -89,6 +135,7 @@ export default function SettingsPage() {
   };
 
   return (
+   <main className="md:container mx-auto px-4 py-6">
     <div className="px-4 py-6 sm:px-0">
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
@@ -167,25 +214,46 @@ export default function SettingsPage() {
                   <input
                     name="name"
                     type="text"
-                    defaultValue={session?.user?.name || ""}
+                    defaultValue={user?.name || ""}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                     required
                   />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Email Address
+                    Username
+                  </label>
+                  <input
+                    name="username"
+                    type="text"
+                    defaultValue={user?.username || ""}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                    readOnly
+                  />
+                  <p className="mt-1 text-sm text-gray-500">Username cannot be changed</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Email Address (Optional)
                   </label>
                   <input
                     name="email"
                     type="email"
-                    defaultValue={session?.user?.email || ""}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                    readOnly
+                    defaultValue={user?.email || ""}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   />
-                  <p className="mt-1 text-sm text-gray-500">Email cannot be changed</p>
                 </div>
-             
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Facility Name (Optional)
+                  </label>
+                  <input
+                    name="facility_name"
+                    type="text"
+                    defaultValue={user?.facility_name || ""}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
               </div>
               <div className="mt-6">
                 <button 
@@ -200,8 +268,6 @@ export default function SettingsPage() {
           </div>
         </div>
       )}
-
-     
 
       {activeTab === "security" && (
         <div className="bg-white shadow rounded-lg">
@@ -239,8 +305,8 @@ export default function SettingsPage() {
                       <input
                         name="newPassword"
                         type={showNewPassword ? "text" : "password"}
-                        placeholder="New Password (min 8 characters)"
-                        minLength={8}
+                        placeholder="New Password (min 6 characters)"
+                        minLength={6}
                         className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
@@ -261,7 +327,7 @@ export default function SettingsPage() {
                         name="confirmPassword"
                         type={showConfirmPassword ? "text" : "password"}
                         placeholder="Confirm New Password"
-                        minLength={8}
+                        minLength={6}
                         className="w-full px-3 py-2 pr-10 border border-gray-300 rounded-md focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                         required
                       />
@@ -287,8 +353,6 @@ export default function SettingsPage() {
                   </button>
                 </form>
               </div>
-              
-             
             </div>
           </div>
         </div>
@@ -522,5 +586,6 @@ export default function SettingsPage() {
         </div>
       )}
     </div>
+   </main>
   );
 } 

@@ -53,10 +53,9 @@ export function LoginForm({
       const result = await response.json();
 
       if (response.ok && result.success) {
-        // Check if there's a redirect URL in the query params
-        const urlParams = new URLSearchParams(window.location.search);
-        const redirectTo = urlParams.get('redirect') || '/dashboard';
-        router.push(redirectTo);
+        // Always redirect to dashboard after successful login
+        router.push('/dashboard');
+        router.refresh(); // Force refresh to ensure auth state is updated
       } else {
         setServerError(result.error || "Invalid username or password");
       }

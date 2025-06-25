@@ -15,7 +15,6 @@ import {
   IconFileText,
   IconChartBar,
 } from "@tabler/icons-react"
-// import { useSession, signOut } from "@/lib/auth-client"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 
@@ -32,32 +31,53 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
 
+interface User {
+  id: number;
+  username: string;
+  name: string;
+  email: string | null;
+  facility_id: number | null;
+  facility_name: string | null;
+  hub_id: number | null;
+  hub_name: string | null;
+}
+
 export function TopNav() {
-  // Comment out real auth for demo
-  // const { data: session } = useSession()
   const router = useRouter()
   const pathname = usePathname()
   const [isTestModalOpen, setIsTestModalOpen] = React.useState(false)
+  const [user, setUser] = React.useState<User | null>(null)
+  const [isLoading, setIsLoading] = React.useState(true)
 
-  // Demo user data from localStorage
-  const getUserData = () => {
-    if (typeof window !== 'undefined') {
-      return {
-        name: localStorage.getItem("userName") || "Demo User",
-        email: localStorage.getItem("userEmail") || "demo@uganda.gov.ug"
+  // Fetch user data on component mount
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      } finally {
+        setIsLoading(false);
       }
-    }
-    return { name: "Demo User", email: "demo@uganda.gov.ug" }
-  }
+    };
 
-  const session = { user: getUserData() }
+    fetchUser();
+  }, []);
 
   const handleSignOut = async () => {
-    // Clear localStorage for demo
-    localStorage.removeItem("isAuthenticated")
-    localStorage.removeItem("userEmail")
-    localStorage.removeItem("userName")
-    router.push("/auth/login")
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' });
+      router.push("/auth/login");
+      router.refresh();
+    } catch (error) {
+      console.error('Logout failed:', error);
+      // Fallback: redirect anyway
+      router.push("/auth/login");
+    }
   }
 
   const handleNewRequest = () => {
@@ -95,6 +115,21 @@ export function TopNav() {
       return pathname === href
     }
     return pathname.startsWith(href)
+  }
+
+  // Show loading state if user data is still being fetched
+  if (isLoading) {
+    return (
+      <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white">
+        <div className="flex h-16 items-center justify-between px-4">
+          <div className="flex items-center space-x-3">
+            <img src="/uganda.png" alt="Uganda" className="h-8 w-8 rounded-full" />
+            <span className="text-lg font-semibold text-gray-900">Uganda Lab e-Test Requests</span>
+          </div>
+          <div className="animate-pulse h-7 w-7 bg-gray-200 rounded-full"></div>
+        </div>
+      </header>
+    )
   }
 
   return (
@@ -143,11 +178,11 @@ export function TopNav() {
                 <Button variant="ghost" className="relative h-8 w-8 rounded-full ml-2">
                   <Avatar className="h-7 w-7">
                     <AvatarImage 
-                      src={`https://vercel.com/api/www/avatar/${encodeURIComponent(session?.user?.email || 'user@ugandavlm.org')}?s=64`} 
-                      alt={session?.user?.name || "User"} 
+                      src={`https://vercel.com/api/www/avatar/${encodeURIComponent(user?.email || user?.username || 'user@ugandavlm.org')}?s=64`} 
+                      alt={user?.name || "User"} 
                     />
                     <AvatarFallback className="text-xs">
-                      {session?.user?.name?.[0]?.toUpperCase() || "U"}
+                      {user?.name?.[0]?.toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
                 </Button>
@@ -156,11 +191,16 @@ export function TopNav() {
                 <DropdownMenuLabel className="font-normal">
                   <div className="flex flex-col space-y-1">
                     <p className="text-sm font-medium leading-none">
-                      {session?.user?.name || "User"}
+                      {user?.name || "User"}
                     </p>
                     <p className="text-xs leading-none text-muted-foreground">
-                      {session?.user?.email || "user@ugandavlm.org"}
+                      {user?.email || user?.username || "No email"}
                     </p>
+                    {user?.facility_name && (
+                      <p className="text-xs leading-none text-muted-foreground">
+                        📍 {user.facility_name}
+                      </p>
+                    )}
                   </div>
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
@@ -222,5 +262,5 @@ export function TopNav() {
         onClose={() => setIsTestModalOpen(false)} 
       />
     </>
-  )
-} 
+      )
+  } 
