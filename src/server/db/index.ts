@@ -25,29 +25,32 @@ if (!globalForDb.promises) {
   globalForDb.promises = {};
 }
 
-const createConnection = async (database: string): Promise<mysql.Connection> => {
-  const dbUrl = env.DATABASE_URL.replace(/\/[^\/]*$/, `/${database}`);
+const createConnection = async (database: 'users' | 'eid' | 'vlLims'): Promise<mysql.Connection> => {
+  const dbUrl = database === 'users' 
+    ? env.DATABASE_URL 
+    : database === 'eid' 
+    ? env.DATABASE_URL_EID 
+    : env.DATABASE_URL_VL_LIMS;
   
-  const existingConn = globalForDb[`${database === 'etest_users' ? 'users' : database === 'etest_eid' ? 'eid' : 'vlLims'}Conn` as keyof typeof globalForDb] as mysql.Connection;
+  const existingConn = globalForDb[`${database}Conn` as keyof typeof globalForDb] as mysql.Connection;
   if (existingConn) {
     return existingConn;
   }
   
-  const dbKey = database === 'etest_users' ? 'users' : database === 'etest_eid' ? 'eid' : 'vlLims';
-  if (globalForDb.promises[dbKey as keyof typeof globalForDb.promises]) {
-    return globalForDb.promises[dbKey as keyof typeof globalForDb.promises]!;
+  if (globalForDb.promises[database]) {
+    return globalForDb.promises[database]!;
   }
   
-  globalForDb.promises[dbKey as keyof typeof globalForDb.promises] = mysql.createConnection(dbUrl);
-  const conn = await globalForDb.promises[dbKey as keyof typeof globalForDb.promises]!;
+  globalForDb.promises[database] = mysql.createConnection(dbUrl);
+  const conn = await globalForDb.promises[database]!;
   
   if (env.NODE_ENV !== "production") {
-    if (database === 'etest_users') globalForDb.usersConn = conn;
-    if (database === 'etest_eid') globalForDb.eidConn = conn;
-    if (database === 'etest_vl_lims') globalForDb.vlLimsConn = conn;
+    if (database === 'users') globalForDb.usersConn = conn;
+    if (database === 'eid') globalForDb.eidConn = conn;
+    if (database === 'vlLims') globalForDb.vlLimsConn = conn;
   }
   
-  globalForDb.promises[dbKey as keyof typeof globalForDb.promises] = undefined;
+  globalForDb.promises[database] = undefined;
   return conn;
 };
 
@@ -58,7 +61,7 @@ let vlLimsDbInstance: ReturnType<typeof drizzle> | undefined;
 
 export const getUsersDb = async () => {
   if (!usersDbInstance) {
-    const conn = await createConnection('etest_users');
+    const conn = await createConnection('users');
     usersDbInstance = drizzle(conn, { schema: usersSchema, mode: 'default' });
   }
   return usersDbInstance;
@@ -66,7 +69,7 @@ export const getUsersDb = async () => {
 
 export const getEidDb = async () => {
   if (!eidDbInstance) {
-    const conn = await createConnection('etest_eid');
+    const conn = await createConnection('eid');
     eidDbInstance = drizzle(conn, { schema: eidSchema, mode: 'default' });
   }
   return eidDbInstance;
@@ -74,7 +77,7 @@ export const getEidDb = async () => {
 
 export const getVlLimsDb = async () => {
   if (!vlLimsDbInstance) {
-    const conn = await createConnection('etest_vl_lims');
+    const conn = await createConnection('vlLims');
     vlLimsDbInstance = drizzle(conn, { schema: vlLimsSchema, mode: 'default' });
   }
   return vlLimsDbInstance;
