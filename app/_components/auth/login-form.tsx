@@ -39,10 +39,13 @@ export function LoginForm({
 
   const onSubmit = async (data: LoginForm) => {
     setServerError("");
+    console.log('Login form submitted:', data.username);
 
     try {
       await login(data);
+      console.log('Login successful, should redirect to dashboard');
     } catch (error: any) {
+      console.log('Login failed:', error.message);
       setServerError(error.message || "Invalid username or password");
     }
   };

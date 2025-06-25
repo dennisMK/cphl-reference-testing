@@ -8,14 +8,24 @@ export async function POST(request: Request) {
   try {
     const { username, password, name, email, facility_id, facility_name } = await request.json();
 
+    console.log('Signup attempt for username:', username);
+
     if (!username || !password || !name) {
       return NextResponse.json({ 
         error: 'Username, password, and name are required' 
       }, { status: 400 });
     }
 
-    // Get database connection for users
-    const db = await getUsersDb();
+    let db;
+    try {
+      // Get database connection for users
+      db = await getUsersDb();
+    } catch (dbError) {
+      console.error('Database connection error:', dbError);
+      return NextResponse.json({ 
+        error: 'Database connection failed. Please ensure MySQL is running and the database exists.' 
+      }, { status: 500 });
+    }
 
     // Check if username already exists
     const existingUser = await db

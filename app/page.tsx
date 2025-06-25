@@ -1,27 +1,24 @@
 "use client";
 
-// import { useSession } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
-import { useEffect } from "react";
 import { useAuth } from "@/lib/auth-context";
+import { useEffect, useState } from "react";
 
 export default function Home() {
-  // Comment out real auth for demo
-  // const { data: session, isPending } = useSession();
-  const { user, isLoading, isAuthenticated } = useAuth();
-  const router = useRouter();
+  const { isLoading, isAuthenticated } = useAuth();
+  const [hasRedirected, setHasRedirected] = useState(false);
 
   useEffect(() => {
-    if (!isLoading) {
+    if (!isLoading && !hasRedirected) {
+      setHasRedirected(true);
       if (isAuthenticated) {
         // User is authenticated, redirect to dashboard
-        router.push("/dashboard");
+        window.location.href = "/dashboard";
       } else {
         // User is not authenticated, redirect to login
-        router.push("/auth/login");
+        window.location.href = "/auth/login";
       }
     }
-  }, [isLoading, isAuthenticated, router]);
+  }, [isLoading, isAuthenticated, hasRedirected]);
 
   // Show loading spinner while checking auth status
   return (

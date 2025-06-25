@@ -72,7 +72,7 @@ export function SignupForm({
       }
 
       if (result.success) {
-        router.push("/dashboard");
+        window.location.href = "/dashboard";
       } else {
         setServerError("Signup failed. Please try again.");
       }

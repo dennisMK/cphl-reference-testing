@@ -2,6 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { checkTokenExpiration, getTokenFromCookie } from './token-utils';
+import { clearAuthCookie } from './auth-utils-client';
 
 interface User {
   id: number;
@@ -21,6 +23,7 @@ interface AuthContextType {
   login: (credentials: LoginCredentials) => Promise<void>;
   logout: () => Promise<void>;
   refreshUser: () => Promise<void>;
+  tokenExpiresAt: Date | null;
 }
 
 interface LoginCredentials {
@@ -38,11 +41,37 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [tokenExpiresAt, setTokenExpiresAt] = useState<Date | null>(null);
   const router = useRouter();
 
   // Check authentication status and fetch user data
   const checkAuth = async () => {
     try {
+      // First check token expiration client-side
+      const token = getTokenFromCookie();
+      if (token) {
+        const tokenInfo = checkTokenExpiration(token);
+        setTokenExpiresAt(tokenInfo.expiresAt);
+        
+        if (!tokenInfo.isValid) {
+          console.log('Token expired, clearing auth state');
+          // Don't call logout() to avoid infinite loops, just clear state
+          clearAuthCookie();
+          setUser(null);
+          setIsAuthenticated(false);
+          setTokenExpiresAt(null);
+          setIsLoading(false);
+          return;
+        }
+      } else {
+        // No token found, clear auth state
+        setUser(null);
+        setIsAuthenticated(false);
+        setTokenExpiresAt(null);
+        setIsLoading(false);
+        return;
+      }
+
       const response = await fetch('/api/auth/me');
       
       if (response.ok) {
@@ -50,13 +79,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUser(data.user);
         setIsAuthenticated(true);
       } else {
+        // If auth check fails (token expired/invalid), clear state
+        console.log('Server auth check failed, clearing auth state');
+        clearAuthCookie();
         setUser(null);
         setIsAuthenticated(false);
+        setTokenExpiresAt(null);
       }
     } catch (error) {
       console.error('Auth check failed:', error);
+      clearAuthCookie();
       setUser(null);
       setIsAuthenticated(false);
+      setTokenExpiresAt(null);
     } finally {
       setIsLoading(false);
     }
@@ -74,20 +109,26 @@ export function AuthProvider({ children }: AuthProviderProps) {
         body: JSON.stringify(credentials),
       });
 
-      if (response.ok) {
-        const data = await response.json();
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Update auth state immediately
         setUser(data.user);
         setIsAuthenticated(true);
-        router.push('/dashboard');
+        setIsLoading(false);
+        
+        // Redirect to dashboard
+        window.location.href = '/dashboard';
+        return; // Success - don't throw error
       } else {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+        // Login failed - throw error for form to handle
+        setIsLoading(false);
+        throw new Error(data.error || 'Invalid username or password');
       }
     } catch (error) {
       console.error('Login error:', error);
-      throw error;
-    } finally {
       setIsLoading(false);
+      throw error; // Re-throw for form error handling
     }
   };
 
@@ -98,10 +139,14 @@ export function AuthProvider({ children }: AuthProviderProps) {
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
+      // Clear client-side auth state and cookies
+      clearAuthCookie();
       setUser(null);
       setIsAuthenticated(false);
-      router.push('/auth/login');
-      router.refresh();
+      setTokenExpiresAt(null);
+      
+      // Use window.location.href for immediate redirect
+      window.location.href = '/auth/login';
     }
   };
 
@@ -110,10 +155,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await checkAuth();
   };
 
-  // Check authentication on mount
+  // Check authentication on mount only
   useEffect(() => {
     checkAuth();
-  }, []);
+  }, []); // Empty dependency array - only run on mount
+
+  // Set up periodic token validation
+  useEffect(() => {
+    // Check token validity every 5 minutes, but only if authenticated
+    const interval = setInterval(() => {
+      if (isAuthenticated) {
+        checkAuth();
+      }
+    }, 5 * 60 * 1000); // 5 minutes
+
+    return () => clearInterval(interval);
+  }, [isAuthenticated]);
 
   const value: AuthContextType = {
     user,
@@ -122,6 +179,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     login,
     logout,
     refreshUser,
+    tokenExpiresAt,
   };
 
   return (

@@ -1,7 +1,6 @@
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import { cookies } from 'next/headers';
-import { env } from '@/env';
 
 export interface User {
   id: number;
@@ -24,7 +23,7 @@ export interface JWTPayload {
   exp: number;
 }
 
-const JWT_SECRET = env.BETTER_AUTH_SECRET || 'your-secret-key-change-this';
+const JWT_SECRET = process.env.BETTER_AUTH_SECRET || process.env.JWT_SECRET || 'your-secret-key-change-this';
 const JWT_EXPIRES_IN = '7d';
 
 export function hashPassword(password: string): string {

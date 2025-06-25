@@ -92,12 +92,20 @@ export default function SettingsPage() {
 
         {/* Facility Information Card */}
         <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Building className="h-5 w-5" />
-              Facility Information
-            </CardTitle>
-            <CardDescription>Your assigned facility and hub details (read-only)</CardDescription>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="space-y-1">
+              <CardTitle className="flex items-center gap-2">
+                <Building className="h-5 w-5" />
+                Facility Information
+              </CardTitle>
+              <CardDescription>Your facility and hub assignment details</CardDescription>
+            </div>
+            <Link href="/settings/edit-facility">
+              <Button variant="outline" size="sm" className="flex items-center gap-2">
+                <Edit className="h-4 w-4" />
+                Edit Facility
+              </Button>
+            </Link>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -129,11 +137,6 @@ export default function SettingsPage() {
                   {user?.hub_name ? user.hub_name.split(' ')[0] : "Not specified"}
                 </p>
               </div>
-            </div>
-            <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-sm text-blue-800">
-                <strong>Note:</strong> Facility information is managed by your system administrator and cannot be changed here.
-              </p>
             </div>
           </CardContent>
         </Card>

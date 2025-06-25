@@ -3,6 +3,7 @@
 import React from "react";
 import { TopNav } from "@/components/top-nav";
 import { ProtectedRoute } from "../_components/auth/protected-route";
+import { TokenExpirationWarning } from "@/components/token-expiration-warning";
 
 export default function ProtectedLayout({
   children,
@@ -14,6 +15,9 @@ export default function ProtectedLayout({
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-white">
         <TopNav />
         <main className="pt-4">
+          <div className="container mx-auto px-4">
+            <TokenExpirationWarning />
+          </div>
           {children}
         </main>
       </div>

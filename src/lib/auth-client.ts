@@ -1,13 +1,18 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from 'react';
+import jwt from 'jsonwebtoken';
 
 export interface User {
   id: number;
   username: string;
   name: string;
+  email: string | null;
   facility_id: number | null;
   facility_name: string | null;
+  hub_id: number | null;
+  hub_name: string | null;
+  deactivated: number;
 }
 
 interface AuthContextType {
@@ -99,4 +104,23 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
+}
+
+export interface JWTPayload {
+  id: number;
+  username: string;
+  name: string;
+  facility_id: number | null;
+  iat: number;
+  exp: number;
+}
+
+const JWT_SECRET = process.env.NEXT_PUBLIC_JWT_SECRET || 'your-secret-key-change-this';
+
+export function verifyJWT(token: string): JWTPayload | null {
+  try {
+    return jwt.verify(token, JWT_SECRET) as JWTPayload;
+  } catch (error) {
+    return null;
+  }
 } 
