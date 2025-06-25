@@ -4,7 +4,6 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { signIn } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import Link from "next/link";
@@ -15,7 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 const loginSchema = z.object({
-  email: z.string().email("Please enter a valid email address"),
+  username: z.string().min(1, "Username is required"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -42,31 +41,27 @@ export function LoginForm({
     setIsLoading(true);
     setServerError("");
 
-    // Simulate API call delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
     try {
-      // Hardcoded credentials for development
-      const validCredentials = [
-        { email: "admin@uganda.gov.ug", password: "admin123" },
-        { email: "test@test.com", password: "test123" },
-        { email: "user@demo.com", password: "demo123" },
-      ];
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
 
-      const isValidCredential = validCredentials.some(
-        cred => cred.email === data.email && cred.password === data.password
-      );
+      const result = await response.json();
 
-      if (isValidCredential) {
-        // Store a simple auth flag in localStorage for demo
-        localStorage.setItem("isAuthenticated", "true");
-        localStorage.setItem("userEmail", data.email);
-        router.push("/dashboard");
+      if (response.ok && result.success) {
+        // Check if there's a redirect URL in the query params
+        const urlParams = new URLSearchParams(window.location.search);
+        const redirectTo = urlParams.get('redirect') || '/dashboard';
+        router.push(redirectTo);
       } else {
-        setServerError("Invalid email or password. Try: admin@uganda.gov.ug / admin123");
+        setServerError(result.error || "Invalid username or password");
       }
     } catch (err) {
-      setServerError("An unexpected error occurred");
+      setServerError("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -96,30 +91,30 @@ export function LoginForm({
         {/* Form Container - Apple Style Grouped Inputs */}
         <div className="mb-8">
           <form onSubmit={handleSubmit(onSubmit)}>
-            {/* Email Field */}
+            {/* Username Field */}
             <div className="mb-4">
               <div className="border border-gray-300 rounded-2xl overflow-hidden bg-white">
                 <div className="relative">
                   <Label 
-                    htmlFor="email" 
+                    htmlFor="username" 
                     className="absolute left-4 top-3 text-sm text-gray-500 pointer-events-none"
                   >
-                    Email or Phone Number
+                    Username
                   </Label>
                   <Input
-                    id="email"
-                    type="email"
+                    id="username"
+                    type="text"
                     placeholder=""
                     className={cn(
                       "h-16 px-4 pt-6 pb-2 border-0 rounded-2xl focus:ring-0 focus:border-0 text-gray-900 text-lg bg-transparent",
-                      errors.email && "bg-red-50"
+                      errors.username && "bg-red-50"
                     )}
-                    {...register("email")}
+                    {...register("username")}
                   />
                 </div>
               </div>
-              {errors.email && (
-                <p className="text-sm text-red-600 mt-2 ml-1">{errors.email.message}</p>
+              {errors.username && (
+                <p className="text-sm text-red-600 mt-2 ml-1">{errors.username.message}</p>
               )}
             </div>
             
@@ -201,9 +196,9 @@ export function LoginForm({
               Don't have an account?{" "}
               <Link
                 href="/auth/signup"
-                className="font-medium text-black hover:text-gray-700 transition-colors"
+                className="text-black hover:text-gray-700 font-medium"
               >
-                Create one now
+                Create Account
               </Link>
             </p>
           </div>
