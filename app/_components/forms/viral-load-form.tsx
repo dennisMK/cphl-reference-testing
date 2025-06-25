@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Textarea } from "@/components/ui/textarea";
 import { useTheme } from "@/lib/theme-context";
+import { useAuth } from "@/lib/auth-context";
 
 const viralLoadSchema = z.object({
   // Requesting Clinician
@@ -62,21 +63,12 @@ interface ViralLoadFormProps {
   isLoading?: boolean;
 }
 
-interface User {
-  id: number;
-  username: string;
-  name: string;
-  email: string | null;
-  facility_id: number | null;
-  facility_name: string | null;
-  hub_id: number | null;
-  hub_name: string | null;
-}
-
-export default function ViralLoadForm({ onSubmit, isLoading }: ViralLoadFormProps) {
+export function ViralLoadForm({ onSubmit, isLoading }: ViralLoadFormProps) {
   const { getColorsForType } = useTheme();
   const colors = getColorsForType('viral-load');
-  const [user, setUser] = useState<User | null>(null);
+  const { user, isLoading: authLoading } = useAuth();
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [submitError, setSubmitError] = useState<string | null>(null)
   
   const form = useForm<ViralLoadFormData>({
     resolver: zodResolver(viralLoadSchema),
@@ -84,23 +76,6 @@ export default function ViralLoadForm({ onSubmit, isLoading }: ViralLoadFormProp
       requestDate: new Date().toISOString().split('T')[0],
     },
   });
-
-  // Fetch user data on component mount
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch('/api/auth/me');
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data.user);
-        }
-      } catch (error) {
-        console.error('Failed to fetch user:', error);
-      }
-    };
-
-    fetchUser();
-  }, []);
 
   const handleSubmit = (data: ViralLoadFormData) => {
     console.log("Viral Load Form Data:", data);

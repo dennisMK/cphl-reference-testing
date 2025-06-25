@@ -111,8 +111,20 @@ const sampleData = {
   },
 }
 
+interface User {
+  id: number;
+  username: string;
+  name: string;
+  email: string | null;
+  facility_id: number | null;
+  facility_name: string | null;
+  hub_id: number | null;
+  hub_name: string | null;
+}
+
 export default function EditSamplePage({ params }: { params: { id: string } }) {
   const router = useRouter()
+  const [user, setUser] = React.useState<User | null>(null);
   
   // Get sample data
   const sample = sampleData[params.id as keyof typeof sampleData]
@@ -124,30 +136,35 @@ export default function EditSamplePage({ params }: { params: { id: string } }) {
   const [gender, setGender] = React.useState(sample?.gender || "")
   const [age, setAge] = React.useState(sample?.age?.toString() || "")
   const [contactNumber, setContactNumber] = React.useState(sample?.contactNumber || "")
-  const [facility, setFacility] = React.useState(sample?.facility || "")
-  const [district, setDistrict] = React.useState(sample?.district || "")
-  const [hub, setHub] = React.useState(sample?.hub || "")
   const [clinician, setClinician] = React.useState(sample?.clinician || "")
   const [sampleId, setSampleId] = React.useState(sample?.sampleId || "")
   const [barcode, setBarcode] = React.useState(sample?.barcode || "")
   const [sampleType, setSampleType] = React.useState(sample?.sampleType || "")
-  const [priority, setPriority] = React.useState(sample?.priority || "")
-  const [status, setStatus] = React.useState(sample?.status || "")
-  const [storageLocation, setStorageLocation] = React.useState(sample?.storageLocation || "")
-  const [collectedBy, setCollectedBy] = React.useState(sample?.collectedBy || "")
-  const [storageConsent, setStorageConsent] = React.useState(sample?.storageConsent || "")
-  const [processingNotes, setProcessingNotes] = React.useState(sample?.processingNotes || "")
+  const [dateCollected, setDateCollected] = React.useState("")
+  const [timeCollected, setTimeCollected] = React.useState("")
+  const [collectedBy, setCollectedBy] = React.useState("")
+  const [centrifugationTime, setCentrifugationTime] = React.useState("")
+  const [storageConsent, setStorageConsent] = React.useState("")
+  const [processingNotes, setProcessingNotes] = React.useState("")
   
-  // Date states
-  const [dateCollected, setDateCollected] = React.useState<Date | undefined>(
-    sample?.dateCollected ? new Date(sample.dateCollected) : undefined
-  )
-  const [dateReceived, setDateReceived] = React.useState<Date | undefined>(
-    sample?.dateReceived ? new Date(sample.dateReceived) : undefined
-  )
-  const [centrifugationTime, setCentrifugationTime] = React.useState<Date | undefined>(
-    sample?.centrifugationTime ? new Date(sample.centrifugationTime) : undefined
-  )
+  const [isSubmitting, setIsSubmitting] = React.useState(false)
+
+  // Fetch user data on component mount
+  React.useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   if (!sample) {
     return (
@@ -301,7 +318,7 @@ export default function EditSamplePage({ params }: { params: { id: string } }) {
           </CardContent>
         </Card>
 
-        {/* Facility Information */}
+        {/* Facility Information - Display Only */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
@@ -310,35 +327,24 @@ export default function EditSamplePage({ params }: { params: { id: string } }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="space-y-2">
-                <Label htmlFor="facility">Health Facility</Label>
-                <Input
-                  id="facility"
-                  value={facility}
-                  onChange={(e) => setFacility(e.target.value)}
-                  required
-                />
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Health Facility</Label>
+                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
+                  {user?.facility_name || "Not specified"}
+                </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="district">District</Label>
-                <Input
-                  id="district"
-                  value={district}
-                  onChange={(e) => setDistrict(e.target.value)}
-                  required
-                />
+              <div>
+                <Label className="text-sm font-medium text-gray-700">District</Label>
+                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
+                  {user?.hub_name ? user.hub_name.split(' ')[0] : "Not specified"}
+                </div>
               </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="hub">Hub</Label>
-                <Input
-                  id="hub"
-                  value={hub}
-                  onChange={(e) => setHub(e.target.value)}
-                  required
-                />
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Hub</Label>
+                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
+                  {user?.hub_name || "Not specified"}
+                </div>
               </div>
             </div>
           </CardContent>
@@ -387,7 +393,9 @@ export default function EditSamplePage({ params }: { params: { id: string } }) {
 
               <div className="space-y-2">
                 <Label htmlFor="priority">Priority</Label>
-                <Select value={priority} onValueChange={setPriority}>
+                <Select value={sample?.priority || ""} onValueChange={(value) => {
+                  // Handle priority change
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select priority" />
                   </SelectTrigger>
@@ -401,7 +409,9 @@ export default function EditSamplePage({ params }: { params: { id: string } }) {
 
               <div className="space-y-2">
                 <Label htmlFor="status">Status</Label>
-                <Select value={status} onValueChange={setStatus}>
+                <Select value={sample?.status || ""} onValueChange={(value) => {
+                  // Handle status change
+                }}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select status" />
                   </SelectTrigger>
@@ -435,8 +445,10 @@ export default function EditSamplePage({ params }: { params: { id: string } }) {
                 <Label htmlFor="storage-location">Storage Location</Label>
                 <Input
                   id="storage-location"
-                  value={storageLocation}
-                  onChange={(e) => setStorageLocation(e.target.value)}
+                  value={sample?.storageLocation || ""}
+                  onChange={(e) => {
+                    // Handle storage location change
+                  }}
                   placeholder="e.g., Freezer A, Shelf 2"
                 />
               </div>
@@ -473,14 +485,18 @@ export default function EditSamplePage({ params }: { params: { id: string } }) {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateCollected ? format(dateCollected, "PPP") : <span>Pick a date</span>}
+                      {dateCollected ? format(new Date(dateCollected), "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
-                      selected={dateCollected}
-                      onSelect={setDateCollected}
+                      selected={dateCollected ? new Date(dateCollected) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setDateCollected(date.toISOString().split('T')[0]);
+                        }
+                      }}
                       initialFocus
                     />
                   </PopoverContent>
@@ -499,14 +515,18 @@ export default function EditSamplePage({ params }: { params: { id: string } }) {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {dateReceived ? format(dateReceived, "PPP") : <span>Pick a date</span>}
+                      {dateReceived ? format(new Date(dateReceived), "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
-                      selected={dateReceived}
-                      onSelect={setDateReceived}
+                      selected={dateReceived ? new Date(dateReceived) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setDateReceived(date.toISOString().split('T')[0]);
+                        }
+                      }}
                       initialFocus
                     />
                   </PopoverContent>
@@ -525,14 +545,18 @@ export default function EditSamplePage({ params }: { params: { id: string } }) {
                       )}
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
-                      {centrifugationTime ? format(centrifugationTime, "PPP") : <span>Pick a date</span>}
+                      {centrifugationTime ? format(new Date(centrifugationTime), "PPP") : <span>Pick a date</span>}
                     </Button>
                   </PopoverTrigger>
                   <PopoverContent className="w-auto p-0">
                     <Calendar
                       mode="single"
-                      selected={centrifugationTime}
-                      onSelect={setCentrifugationTime}
+                      selected={centrifugationTime ? new Date(centrifugationTime) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          setCentrifugationTime(date.toISOString().split('T')[0]);
+                        }
+                      }}
                       initialFocus
                     />
                   </PopoverContent>

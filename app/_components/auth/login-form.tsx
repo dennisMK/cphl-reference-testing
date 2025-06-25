@@ -12,6 +12,7 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { useAuth } from "@/lib/auth-context";
 
 const loginSchema = z.object({
   username: z.string().min(1, "Username is required"),
@@ -25,9 +26,8 @@ export function LoginForm({
   ...props
 }: React.ComponentProps<"div">) {
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
   const [serverError, setServerError] = useState("");
-  const router = useRouter();
+  const { login, isLoading } = useAuth();
 
   const {
     register,
@@ -38,31 +38,12 @@ export function LoginForm({
   });
 
   const onSubmit = async (data: LoginForm) => {
-    setIsLoading(true);
     setServerError("");
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(data),
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
-        // Always redirect to dashboard after successful login
-        router.push('/dashboard');
-        router.refresh(); // Force refresh to ensure auth state is updated
-      } else {
-        setServerError(result.error || "Invalid username or password");
-      }
-    } catch (err) {
-      setServerError("An unexpected error occurred. Please try again.");
-    } finally {
-      setIsLoading(false);
+      await login(data);
+    } catch (error: any) {
+      setServerError(error.message || "Invalid username or password");
     }
   };
 

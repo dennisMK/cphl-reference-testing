@@ -18,16 +18,7 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
-interface User {
-  id: number;
-  username: string;
-  name: string;
-  email: string | null;
-  facility_id: number | null;
-  facility_name: string | null;
-  hub_id: number | null;
-  hub_name: string | null;
-}
+import { useAuth } from "@/lib/auth-context";
 
 const formSchema = z.object({
   // Requesting Clinician
@@ -71,7 +62,7 @@ type FormData = z.infer<typeof formSchema>;
 export default function NewViralLoadRequest(): React.JSX.Element {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const { user, isLoading } = useAuth();
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -81,23 +72,6 @@ export default function NewViralLoadRequest(): React.JSX.Element {
       clinicalNotes: "",
     },
   });
-
-  // Fetch user data on component mount
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch('/api/auth/me');
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data.user);
-        }
-      } catch (error) {
-        console.error('Failed to fetch user:', error);
-      }
-    };
-
-    fetchUser();
-  }, []);
 
   // Handle conditional logic for pregnancy field
   const watchedGender = form.watch("gender");

@@ -6,6 +6,7 @@ import { poppins } from "@/lib/fonts";
 
 import { TRPCReactProvider } from "@/trpc/react";
 import { ThemeProvider } from "@/lib/theme-context";
+import { AuthProvider } from "@/lib/auth-context";
 
 export const metadata: Metadata = {
   title: "Uganda Lab e-Test Requests",
@@ -24,9 +25,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={`${geist.variable} ${poppins.className}`}>
       <body>
-        <ThemeProvider>
-          <TRPCReactProvider>{children}</TRPCReactProvider>
-        </ThemeProvider>
+        <AuthProvider>
+          <ThemeProvider>
+            <TRPCReactProvider>{children}</TRPCReactProvider>
+          </ThemeProvider>
+        </AuthProvider>
       </body>
     </html>
   );

@@ -30,54 +30,16 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Badge } from "@/components/ui/badge"
-
-interface User {
-  id: number;
-  username: string;
-  name: string;
-  email: string | null;
-  facility_id: number | null;
-  facility_name: string | null;
-  hub_id: number | null;
-  hub_name: string | null;
-}
+import { useAuth } from "@/lib/auth-context"
 
 export function TopNav() {
   const router = useRouter()
   const pathname = usePathname()
   const [isTestModalOpen, setIsTestModalOpen] = React.useState(false)
-  const [user, setUser] = React.useState<User | null>(null)
-  const [isLoading, setIsLoading] = React.useState(true)
-
-  // Fetch user data on component mount
-  React.useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch('/api/auth/me');
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data.user);
-        }
-      } catch (error) {
-        console.error('Failed to fetch user:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
+  const { user, isLoading, logout } = useAuth()
 
   const handleSignOut = async () => {
-    try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-      router.push("/auth/login");
-      router.refresh();
-    } catch (error) {
-      console.error('Logout failed:', error);
-      // Fallback: redirect anyway
-      router.push("/auth/login");
-    }
+    await logout()
   }
 
   const handleNewRequest = () => {

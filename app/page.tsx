@@ -2,47 +2,31 @@
 
 // import { useSession } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useAuth } from "@/lib/auth-context";
 
 export default function Home() {
   // Comment out real auth for demo
   // const { data: session, isPending } = useSession();
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, isLoading, isAuthenticated } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/me');
-        
-        if (response.ok) {
-          // User is authenticated, redirect to dashboard
-          router.push("/dashboard");
-        } else {
-          // User is not authenticated, redirect to login
-          router.push("/auth/login");
-        }
-      } catch (error) {
-        console.error('Auth check failed:', error);
-        // On error, redirect to login
+    if (!isLoading) {
+      if (isAuthenticated) {
+        // User is authenticated, redirect to dashboard
+        router.push("/dashboard");
+      } else {
+        // User is not authenticated, redirect to login
         router.push("/auth/login");
-      } finally {
-        setIsLoading(false);
       }
-    };
-
-    checkAuth();
-  }, [router]);
+    }
+  }, [isLoading, isAuthenticated, router]);
 
   // Show loading spinner while checking auth status
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  // This return should rarely be seen as we redirect immediately
-  return null;
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+    </div>
+  );
 }
