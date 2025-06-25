@@ -58,9 +58,13 @@ export default function SettingsPage() {
                 <label className="text-sm font-medium text-gray-700">Username</label>
                 <p className="text-gray-900">{user?.username || "Not specified"}</p>
               </div>
-              <div className="md:col-span-2">
+              <div>
                 <label className="text-sm font-medium text-gray-700">Email</label>
                 <p className="text-gray-900">{user?.email || "Not specified"}</p>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">Telephone</label>
+                <p className="text-gray-900">{user?.telephone || "Not specified"}</p>
               </div>
             </div>
           </CardContent>
@@ -131,12 +135,32 @@ export default function SettingsPage() {
                   )}
                 </div>
               </div>
-              <div>
-                <label className="text-sm font-medium text-gray-700">District</label>
-                <p className="text-gray-900">
-                  {user?.hub_name ? user.hub_name.split(' ')[0] : "Not specified"}
-                </p>
-              </div>
+
+              {user?.other_facilities && (
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium text-gray-700">Other Facilities</label>
+                  <p className="text-gray-900">{user.other_facilities}</p>
+                </div>
+              )}
+              {(user?.ip_id || user?.ip_name) && (
+                <div className="md:col-span-2">
+                  <label className="text-sm font-medium text-gray-700">IP Information</label>
+                  <div className="flex items-center gap-2">
+                    <p className="text-gray-900">{user?.ip_name || "Not specified"}</p>
+                    {user?.ip_id && (
+                      <Badge variant="outline" className="text-xs">
+                        IP ID: {user.ip_id}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+              {user?.requesting_facility_id && (
+                <div>
+                  <label className="text-sm font-medium text-gray-700">Requesting Facility ID</label>
+                  <p className="text-gray-900">{user.requesting_facility_id}</p>
+                </div>
+              )}
             </div>
           </CardContent>
         </Card>

@@ -24,44 +24,37 @@ import { ArrowLeft, Save, Loader2, Building, AlertCircle, CheckCircle } from "lu
 
 const facilitySchema = z.object({
   facility_name: z.string().min(1, "Facility name is required").min(2, "Facility name must be at least 2 characters"),
-  district: z.string().min(1, "District is required"),
   hub_name: z.string().min(1, "Hub name is required"),
   facility_id: z.string().optional(),
   hub_id: z.string().optional(),
+  other_facilities: z.string().optional(),
+  requesting_facility_id: z.string().optional(),
 });
 
 type FacilityFormData = z.infer<typeof facilitySchema>;
 
-// Sample Uganda districts and their hubs
-const ugandaHubs = [
-  { district: "Kampala", hubs: ["Kampala Hub", "Mulago Hub", "Kiruddu Hub"] },
-  { district: "Wakiso", hubs: ["Wakiso Hub", "Entebbe Hub"] },
-  { district: "Mukono", hubs: ["Mukono Hub", "Lugazi Hub"] },
-  { district: "Jinja", hubs: ["Jinja Hub", "Iganga Hub"] },
-  { district: "Mbale", hubs: ["Mbale Hub", "Tororo Hub"] },
-  { district: "Gulu", hubs: ["Gulu Hub", "Lira Hub"] },
-  { district: "Mbarara", hubs: ["Mbarara Hub", "Bushenyi Hub"] },
-  { district: "Fort Portal", hubs: ["Fort Portal Hub", "Kasese Hub"] },
-  { district: "Masaka", hubs: ["Masaka Hub", "Rakai Hub"] },
-  { district: "Soroti", hubs: ["Soroti Hub", "Kumi Hub"] },
+// All available hubs from the database
+const availableHubs = [
+  "Kampala Hub", "Mulago Hub", "Kiruddu Hub",
+  "Wakiso Hub", "Entebbe Hub",
+  "Mukono Hub", "Lugazi Hub",
+  "Jinja Hub", "Iganga Hub",
+  "Mbale Hub", "Tororo Hub",
+  "Gulu Hub", "Lira Hub",
+  "Mbarara Hub", "Bushenyi Hub",
+  "Fort Portal Hub", "Kasese Hub",
+  "Masaka Hub", "Rakai Hub",
+  "Soroti Hub", "Kumi Hub",
+  "Kayunga Hub", "Kawolo Hub",
+  "Gombe Hub", "Mubende Hub",
+  "Maddu Hub", "Mityana Hub",
+  "Luwero Hub", "Amolatar Hub",
+  "Moroto Hub"
 ];
 
-interface User {
-  id: number;
-  name: string;
-  email: string | null;
-  username: string;
-  telephone: string | null;
-  facility_id: number | null;
-  facility_name: string | null;
-  hub_id: number | null;
-  hub_name: string | null;
-  deactivated: number;
-  other_facilities: string | null;
-  ip_id: number | null;
-  ip_name: string | null;
-  requesting_facility_id: number | null;
-}
+import type { ApiUser } from '@/server/db/schemas/users';
+
+interface User extends ApiUser {}
 
 interface FacilityFormProps {
   user: User;
@@ -72,62 +65,33 @@ export default function FacilityForm({ user, onSuccess }: FacilityFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
-  const [selectedDistrict, setSelectedDistrict] = useState<string>("");
 
-    const form = useForm<FacilityFormData>({
+  const form = useForm<FacilityFormData>({
     resolver: zodResolver(facilitySchema),
     defaultValues: {
       facility_name: "",
-      district: "",
       hub_name: "",
       facility_id: "",
       hub_id: "",
+      other_facilities: "",
+      requesting_facility_id: "",
     },
   });
 
   // Initialize form with user data
   useEffect(() => {
     if (user) {
-      console.log('🏥 User data:', user);
-      
-      // Find the district that contains the user's hub
-      let currentDistrict = "";
-      if (user.hub_name) {
-        const districtData = ugandaHubs.find(d => 
-          d.hubs.includes(user.hub_name!)
-        );
-        if (districtData) {
-          currentDistrict = districtData.district;
-        }
-      }
-      
-      setSelectedDistrict(currentDistrict);
-      
-      // Set form values
-      const formData = {
+      // Set form values using only actual database fields
+      form.reset({
         facility_name: user.facility_name || "",
-        district: currentDistrict,
         hub_name: user.hub_name || "",
         facility_id: user.facility_id?.toString() || "",
         hub_id: user.hub_id?.toString() || "",
-      };
-      
-      console.log('📝 Form data being set:', formData);
-      form.reset(formData);
+        other_facilities: user.other_facilities || "",
+        requesting_facility_id: user.requesting_facility_id?.toString() || "",
+      });
     }
   }, [user, form]);
-
-  const handleDistrictChange = (district: string) => {
-    setSelectedDistrict(district);
-    form.setValue("district", district);
-    form.setValue("hub_name", ""); // Reset hub selection when district changes
-  };
-
-  const getAvailableHubs = () => {
-    const currentDistrict = form.watch("district") || selectedDistrict;
-    const districtData = ugandaHubs.find(d => d.district === currentDistrict);
-    return districtData ? districtData.hubs : [];
-  };
 
   const onSubmit = async (data: FacilityFormData) => {
     setIsSubmitting(true);
@@ -144,6 +108,8 @@ export default function FacilityForm({ user, onSuccess }: FacilityFormProps) {
           hub_name: data.hub_name,
           facility_id: data.facility_id ? parseInt(data.facility_id) : null,
           hub_id: data.hub_id ? parseInt(data.hub_id) : null,
+          other_facilities: data.other_facilities || null,
+          requesting_facility_id: data.requesting_facility_id ? parseInt(data.requesting_facility_id) : null,
         }),
       });
 
@@ -230,35 +196,6 @@ export default function FacilityForm({ user, onSuccess }: FacilityFormProps) {
                 )}
               />
 
-              {/* District Selection */}
-              <FormField
-                control={form.control}
-                name="district"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>District *</FormLabel>
-                    <FormControl>
-                      <Select onValueChange={(value) => {
-                        field.onChange(value);
-                        handleDistrictChange(value);
-                      }} value={field.value}>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select district" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {ugandaHubs.map((district) => (
-                            <SelectItem key={district.district} value={district.district}>
-                              {district.district}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               {/* Hub Selection */}
               <FormField
                 control={form.control}
@@ -267,16 +204,12 @@ export default function FacilityForm({ user, onSuccess }: FacilityFormProps) {
                   <FormItem>
                     <FormLabel>Testing Hub *</FormLabel>
                     <FormControl>
-                      <Select 
-                        onValueChange={field.onChange}
-                        value={field.value}
-                        disabled={!form.watch("district")}
-                      >
+                      <Select onValueChange={field.onChange} value={field.value}>
                         <SelectTrigger>
-                          <SelectValue placeholder={form.watch("district") ? "Select testing hub" : "Select district first"} />
+                          <SelectValue placeholder="Select testing hub" />
                         </SelectTrigger>
                         <SelectContent>
-                          {getAvailableHubs().map((hub) => (
+                          {availableHubs.map((hub) => (
                             <SelectItem key={hub} value={hub}>
                               {hub}
                             </SelectItem>
@@ -325,6 +258,48 @@ export default function FacilityForm({ user, onSuccess }: FacilityFormProps) {
                     </FormControl>
                     <FormDescription>
                       Leave blank if you don't know your hub ID.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Other Facilities (Optional) */}
+              <FormField
+                control={form.control}
+                name="other_facilities"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Other Facilities (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter other facilities if applicable"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      Additional facilities associated with your account.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Requesting Facility ID (Optional) */}
+              <FormField
+                control={form.control}
+                name="requesting_facility_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Requesting Facility ID (Optional)</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Enter requesting facility ID if known"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      ID of the facility making requests.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

@@ -3,16 +3,9 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 
-interface User {
-  id: number;
-  username: string;
-  name: string;
-  email: string | null;
-  facility_id: number | null;
-  facility_name: string | null;
-  hub_id: number | null;
-  hub_name: string | null;
-}
+import type { ApiUser } from '@/server/db/schemas/users';
+
+interface User extends ApiUser {}
 
 interface AuthContextType {
   user: User | null;

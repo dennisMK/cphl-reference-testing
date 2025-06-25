@@ -38,10 +38,15 @@ export async function GET() {
         username: foundUser.username,
         name: foundUser.name,
         email: foundUser.email,
+        telephone: foundUser.telephone,
         facility_id: foundUser.facility_id,
         facility_name: foundUser.facility_name,
         hub_id: foundUser.hub_id,
         hub_name: foundUser.hub_name,
+        other_facilities: foundUser.other_facilities,
+        ip_id: foundUser.ip_id,
+        ip_name: foundUser.ip_name,
+        requesting_facility_id: foundUser.requesting_facility_id,
       },
     });
   } catch (error) {

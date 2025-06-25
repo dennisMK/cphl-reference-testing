@@ -7,12 +7,15 @@ import {
   tinyint,
 } from "drizzle-orm/mysql-core";
 
-// Users table from etest_users database
+// Users table from etest_users database - matches exact database schema
 export const users = mysqlTable("users", {
   id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
   email: varchar("email", { length: 255 }),
   password: varchar("password", { length: 60 }).notNull(),
+  remember_token: varchar("remember_token", { length: 100 }),
+  created_at: timestamp("created_at").defaultNow().notNull(),
+  updated_at: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
   username: varchar("username", { length: 64 }).notNull().unique(),
   telephone: varchar("telephone", { length: 64 }),
   facility_id: int("facility_id"),
@@ -24,7 +27,24 @@ export const users = mysqlTable("users", {
   ip_id: int("ip_id"),
   ip_name: varchar("ip_name", { length: 255 }),
   requesting_facility_id: int("requesting_facility_id"),
-  remember_token: varchar("remember_token", { length: 100 }),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-}); 
+});
+
+// Type for the complete user object from database
+export type User = typeof users.$inferSelect;
+
+// Type for user data returned by API (subset of full user)
+export type ApiUser = {
+  id: number;
+  username: string;
+  name: string;
+  email: string | null;
+  telephone: string | null;
+  facility_id: number | null;
+  facility_name: string | null;
+  hub_id: number | null;
+  hub_name: string | null;
+  other_facilities: string | null;
+  ip_id: number | null;
+  ip_name: string | null;
+  requesting_facility_id: number | null;
+}; 
