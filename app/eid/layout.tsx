@@ -4,8 +4,8 @@ import React from "react";
 import { Baby, ArrowLeft, Settings, Menu } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
-import { ProtectedRoute } from "@/_components/auth/protected-route";
 import { IoChevronBack } from "react-icons/io5";
+import { ProtectedRoute } from "@/_components/auth/protected-route";
 
 export default function EIDLayout({
   children,
@@ -21,10 +21,10 @@ export default function EIDLayout({
             <div className="flex items-center justify-between h-14 sm:h-16">
               {/* Left side - Navigation */}
               <div className="flex items-center space-x-2 sm:space-x-4 flex-1 min-w-0">
-                <Link href="/eid" className="flex items-center hover:opacity-80 transition-opacity">
+                <Link href="/dashboard" className="flex items-center hover:opacity-80 transition-opacity">
                   <Button variant="ghost" size="sm" className="text-white hover:text-blue-200 p-2 sm:px-3">
                     <IoChevronBack className="h-4 w-4 sm:mr-2" />
-                    <span className="hidden sm:inline">Dashboard</span>
+                    <span className="hidden sm:inline">Home</span>
                   </Button>
                 </Link>
                 

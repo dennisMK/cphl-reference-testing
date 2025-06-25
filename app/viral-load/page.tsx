@@ -3,20 +3,20 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, Clock, Package } from "lucide-react";
+import { Plus, Clock, Package, FileText } from "lucide-react";
 import Link from "next/link";
 
 export default function page() {
   const actions = [
     { 
-      title: "New Request", 
+      title: "New Test Request", 
       icon: Plus, 
       href: "/viral-load/new-request", 
       action: "create",
       description: "Create a new HIV viral load test request for a patient"
     },
     { 
-      title: "Pending Collection", 
+      title: "Pending Sample Collection", 
       icon: Clock, 
       href: "/viral-load/pending-collection", 
       action: "view",
@@ -28,6 +28,13 @@ export default function page() {
       href: "/viral-load/package-samples", 
       action: "view",
       description: "Prepare and package collected samples for laboratory shipment"
+    },
+    { 
+      title: "VL Results", 
+      icon: FileText, 
+      href: "/viral-load/view", 
+      action: "view",
+      description: "View and manage HIV viral load test results from the laboratory"
     }
   ];
 
@@ -38,7 +45,7 @@ export default function page() {
         <p className="text-muted-foreground">Manage HIV viral load test requests, sample collection, and packaging for laboratory processing.</p>
       </div>
       
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         {actions.map((action, index) => {
           const IconComponent = action.icon;
           return (

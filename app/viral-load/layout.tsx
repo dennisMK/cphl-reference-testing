@@ -24,7 +24,7 @@ export default function ViralLoadLayout({
                 <Link href="/dashboard" className="flex items-center group transition-all duration-200">
                   <Button variant="ghost" size="sm" className="text-white/90 hover:text-white hover:bg-white/10 rounded-full px-4 py-2 transition-all duration-200">
                     <IoChevronBack className="h-4 w-4 mr-2" />
-                    <span className="font-medium">Dashboard</span>
+                    <span className="font-medium">Home</span>
                   </Button>
                 </Link>
                 

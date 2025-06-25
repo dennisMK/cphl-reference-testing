@@ -10,7 +10,7 @@ import { ThemeProvider } from "@/lib/theme-context";
 export const metadata: Metadata = {
   title: "Uganda Lab e-Test Requests",
   description: "Comprehensive viral load management system for Uganda",
-  icons: [{ rel: "icon", url: "/favicon.ico" }],
+  icons: [{ rel: "icon", url: "/uganda-flag.png" }],
 };
 
 const geist = Geist({

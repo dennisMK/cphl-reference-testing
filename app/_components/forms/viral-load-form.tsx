@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -14,11 +14,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { useTheme } from "@/lib/theme-context";
 
 const viralLoadSchema = z.object({
-  // Facility Information
-  facility: z.string().min(1, "Facility name is required"),
-  district: z.string().min(1, "District is required"),
-  hub: z.string().min(1, "Hub is required"),
-  
   // Requesting Clinician
   clinicianName: z.string().min(1, "Clinician name is required"),
   requestDate: z.string().min(1, "Request date is required"),
@@ -67,19 +62,45 @@ interface ViralLoadFormProps {
   isLoading?: boolean;
 }
 
+interface User {
+  id: number;
+  username: string;
+  name: string;
+  email: string | null;
+  facility_id: number | null;
+  facility_name: string | null;
+  hub_id: number | null;
+  hub_name: string | null;
+}
+
 export default function ViralLoadForm({ onSubmit, isLoading }: ViralLoadFormProps) {
   const { getColorsForType } = useTheme();
   const colors = getColorsForType('viral-load');
+  const [user, setUser] = useState<User | null>(null);
   
   const form = useForm<ViralLoadFormData>({
     resolver: zodResolver(viralLoadSchema),
     defaultValues: {
-      facility: "Butabika Hospital",
-      district: "Kampala",
-      hub: "Kampala Hub",
       requestDate: new Date().toISOString().split('T')[0],
     },
   });
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   const handleSubmit = (data: ViralLoadFormData) => {
     console.log("Viral Load Form Data:", data);
@@ -102,51 +123,30 @@ export default function ViralLoadForm({ onSubmit, isLoading }: ViralLoadFormProp
           <Form {...form}>
             <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-8">
               
-              {/* Facility Information */}
+              {/* Facility Information - Display Only */}
               <div className="space-y-4">
                 <h3 className="text-lg font-semibold text-gray-900 border-b-2 pb-2" style={{ borderColor: colors.primary }}>
                   Facility Information
                 </h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <FormField
-                    control={form.control}
-                    name="facility"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Facility</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="district"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>District</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control}
-                    name="hub"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Hub</FormLabel>
-                        <FormControl>
-                          <Input {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Facility</Label>
+                    <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
+                      {user?.facility_name || "Not specified"}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">District</Label>
+                    <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
+                      {user?.hub_name ? user.hub_name.split(' ')[0] : "Not specified"}
+                    </div>
+                  </div>
+                  <div>
+                    <Label className="text-sm font-medium text-gray-700">Hub</Label>
+                    <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
+                      {user?.hub_name || "Not specified"}
+                    </div>
+                  </div>
                 </div>
               </div>
 
@@ -161,9 +161,9 @@ export default function ViralLoadForm({ onSubmit, isLoading }: ViralLoadFormProp
                     name="clinicianName"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name</FormLabel>
+                        <FormLabel>Clinician Name</FormLabel>
                         <FormControl>
-                          <Input {...field} placeholder="Dr. John Doe" />
+                          <Input {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -174,7 +174,7 @@ export default function ViralLoadForm({ onSubmit, isLoading }: ViralLoadFormProp
                     name="requestDate"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Date</FormLabel>
+                        <FormLabel>Request Date</FormLabel>
                         <FormControl>
                           <Input {...field} type="date" />
                         </FormControl>

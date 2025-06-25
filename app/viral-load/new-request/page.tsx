@@ -18,13 +18,18 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
 
+interface User {
+  id: number;
+  username: string;
+  name: string;
+  email: string | null;
+  facility_id: number | null;
+  facility_name: string | null;
+  hub_id: number | null;
+  hub_name: string | null;
+}
+
 const formSchema = z.object({
-  // Facility Information
-  facilityName: z.string().min(1, "Facility name is required"),
-  facilityCode: z.string().min(1, "Facility code is required"),
-  district: z.string().min(1, "District is required"),
-  hub: z.string().min(1, "Hub is required"),
-  
   // Requesting Clinician
   clinicianName: z.string().min(1, "Clinician name is required"),
   clinicianPhone: z.string().min(10, "Valid phone number required"),
@@ -66,18 +71,33 @@ type FormData = z.infer<typeof formSchema>;
 export default function NewViralLoadRequest(): React.JSX.Element {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      facilityName: "Butabika Hospital",
-      district: "Kampala", 
-      hub: "Kampala Hub",
       clinicianEmail: "",
       phoneNumber: "",
       clinicalNotes: "",
     },
   });
+
+  // Fetch user data on component mount
+  useEffect(() => {
+    const fetchUser = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        if (response.ok) {
+          const data = await response.json();
+          setUser(data.user);
+        }
+      } catch (error) {
+        console.error('Failed to fetch user:', error);
+      }
+    };
+
+    fetchUser();
+  }, []);
 
   // Handle conditional logic for pregnancy field
   const watchedGender = form.watch("gender");
@@ -121,72 +141,31 @@ export default function NewViralLoadRequest(): React.JSX.Element {
       <div className="">
         <form id="viral-load-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 
-          {/* Facility Information */}
+          {/* Facility Information - Display Only */}
           <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
             <div className="pb-3 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">
                 Facility Information
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
               <div>
-                <Label htmlFor="facilityName" className="text-sm font-medium text-gray-700">
-                  Facility Name *
-                </Label>
-                <Input
-                  id="facilityName"
-                  {...form.register("facilityName")}
-                  placeholder="Enter facility name"
-                  className="mt-2 h-10"
-                />
-                {form.formState.errors.facilityName && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.facilityName.message}</p>
-                )}
+                <Label className="text-sm font-medium text-gray-700">Facility Name</Label>
+                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
+                  {user?.facility_name || "Not specified"}
+                </div>
               </div>
-
               <div>
-                <Label htmlFor="facilityCode" className="text-sm font-medium text-gray-700">
-                  Facility Code *
-                </Label>
-                <Input
-                  id="facilityCode"
-                  {...form.register("facilityCode")}
-                  placeholder="Enter facility code"
-                  className="mt-2 h-10"
-                />
-                {form.formState.errors.facilityCode && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.facilityCode.message}</p>
-                )}
+                <Label className="text-sm font-medium text-gray-700">District</Label>
+                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
+                  {user?.hub_name ? user.hub_name.split(' ')[0] : "Not specified"}
+                </div>
               </div>
-
               <div>
-                <Label htmlFor="district" className="text-sm font-medium text-gray-700">
-                  District *
-                </Label>
-                <Input
-                  id="district"
-                  {...form.register("district")}
-                  placeholder="Enter district"
-                  className="mt-2 h-10"
-                />
-                {form.formState.errors.district && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.district.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="hub" className="text-sm font-medium text-gray-700">
-                  Testing Hub *
-                </Label>
-                <Input
-                  id="hub"
-                  {...form.register("hub")}
-                  placeholder="Enter testing hub"
-                  className="mt-2 h-10"
-                />
-                {form.formState.errors.hub && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.hub.message}</p>
-                )}
+                <Label className="text-sm font-medium text-gray-700">Testing Hub</Label>
+                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
+                  {user?.hub_name || "Not specified"}
+                </div>
               </div>
             </div>
           </div>

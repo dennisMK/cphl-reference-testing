@@ -9,7 +9,7 @@ import Link from "next/link";
 export default function page() {
   const actions = [
     { 
-      title: "Create Request", 
+      title: "New Test Request", 
       icon: Plus, 
       href: "/eid/create-request", 
       action: "create",
@@ -28,7 +28,7 @@ export default function page() {
     <main className="md:container mx-auto px-4 py-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">Early Infant Diagnosis (EID)</h1>
-        <p className="text-muted-foreground">Manage EID test requests and sample collection for infant HIV diagnosis.</p>
+        <p className="text-muted-foreground">Request for EID testing and access results electronically for infant HIV diagnosis.</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

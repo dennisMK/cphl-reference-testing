@@ -94,7 +94,7 @@ export function TopNav() {
 
   const navItems = [
     {
-      name: "Dashboard",
+      name: "Home",
       href: "/dashboard",
       icon: IconChartBar,
     },
@@ -102,11 +102,21 @@ export function TopNav() {
       name: "Viral Load",
       href: "/viral-load",
       icon: IconTestPipe,
+      dropdownItems: [
+        { name: "VL Test Requests", href: "/viral-load/new-request" },
+        { name: "VL Results", href: "/viral-load/view" },
+        { name: "VL Packages", href: "/viral-load/package-samples" },
+      ]
     },
     {
       name: "Early Infant Diagnosis",
       href: "/eid",
       icon: IconBabyCarriage,
+      dropdownItems: [
+        { name: "EID Test Requests", href: "/eid/new-request" },
+        { name: "EID Results", href: "/eid/view" },
+        { name: "EID Packages", href: "/eid/package-samples" },
+      ]
     },
   ]
 
@@ -123,7 +133,7 @@ export function TopNav() {
       <header className="sticky top-0 z-50 w-full border-b border-gray-200 bg-white">
         <div className="flex h-16 items-center justify-between px-4">
           <div className="flex items-center space-x-3">
-            <img src="/uganda.png" alt="Uganda" className="h-8 w-8 rounded-full" />
+            <img src="/uganda-flag.png" alt="Uganda Flag" className="h-8 w-12 object-cover rounded-sm" />
             <span className="text-lg font-semibold text-gray-900">Uganda Lab e-Test Requests</span>
           </div>
           <div className="animate-pulse h-7 w-7 bg-gray-200 rounded-full"></div>
@@ -140,7 +150,7 @@ export function TopNav() {
           <div className="flex items-center space-x-8">
             {/* Brand */}
             <div className="flex items-center space-x-3">
-              <img src="/uganda.png" alt="Uganda" className="h-8 w-8 rounded-full" />
+              <img src="/uganda-flag.png" alt="Uganda Flag" className="h-8 w-12 object-cover rounded-sm" />
               <span className="text-lg font-semibold text-gray-900">Uganda Lab e-Test Requests</span>
               <div className="h-6 w-px bg-gray-300" />
             </div>
@@ -151,6 +161,39 @@ export function TopNav() {
               {navItems.map((item) => {
                 const IconComponent = item.icon
                 const active = isActive(item.href)
+                
+                if (item.dropdownItems) {
+                  return (
+                    <DropdownMenu key={item.href}>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className={`flex items-center rounded-full space-x-2 px-4 py-2 text-sm font-medium transition-all duration-200 ${
+                            active
+                              ? "bg-black text-white hover:bg-black hover:text-white"
+                              : "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                          }`}
+                        >
+                          <IconComponent className="h-4 w-4" />
+                          <span>{item.name}</span>
+                          <IconChevronDown className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="start">
+                        <DropdownMenuLabel>{item.name}</DropdownMenuLabel>
+                        <DropdownMenuSeparator />
+                        {item.dropdownItems.map((dropdownItem) => (
+                          <DropdownMenuItem key={dropdownItem.href} asChild>
+                            <Link href={dropdownItem.href}>
+                              {dropdownItem.name}
+                            </Link>
+                          </DropdownMenuItem>
+                        ))}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  )
+                }
+                
                 return (
                   <Link key={item.href} href={item.href}>
                     <Button
