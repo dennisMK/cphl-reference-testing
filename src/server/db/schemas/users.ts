@@ -7,7 +7,7 @@ import {
   tinyint,
 } from "drizzle-orm/mysql-core";
 
-// Users table matching the existing etest_users.users structure
+// Users table from etest_users database
 export const users = mysqlTable("users", {
   id: int("id").primaryKey().autoincrement(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -27,4 +27,4 @@ export const users = mysqlTable("users", {
   remember_token: varchar("remember_token", { length: 100 }),
   created_at: timestamp("created_at").defaultNow().notNull(),
   updated_at: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-});
+}); 

@@ -8,6 +8,8 @@ export const env = createEnv({
    */
   server: {
     DATABASE_URL: z.string().url(),
+    DATABASE_URL_EID: z.string().url(),
+    DATABASE_URL_VL_LIMS: z.string().url(),
     NODE_ENV: z
       .enum(["development", "test", "production"])
       .default("development"),
@@ -30,6 +32,8 @@ export const env = createEnv({
    */
   runtimeEnv: {
     DATABASE_URL: process.env.DATABASE_URL,
+    DATABASE_URL_EID: process.env.DATABASE_URL_EID,
+    DATABASE_URL_VL_LIMS: process.env.DATABASE_URL_VL_LIMS,
     NODE_ENV: process.env.NODE_ENV,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,

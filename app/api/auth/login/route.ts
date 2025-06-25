@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
-import { getDb } from '@/server/db';
-import { users } from '@/server/db/schema';
+import { getUsersDb } from '@/server/db';
+import { users } from '@/server/db/schemas/users';
 import { verifyPassword, signJWT, setAuthCookie } from '@/lib/auth';
 
 export async function POST(request: NextRequest) {
@@ -15,24 +15,20 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get database connection
-    const db = await getDb();
+    // Get database connection for users
+    const db = await getUsersDb();
 
     // Find user by username
-    const userResult = await db
-      .select()
-      .from(users)
-      .where(eq(users.username, username))
-      .limit(1);
+    const user = await db.select().from(users).where(eq(users.username, username)).limit(1);
 
-    if (userResult.length === 0) {
+    if (!user[0]) {
       return NextResponse.json(
         { error: 'Invalid username or password' },
         { status: 401 }
       );
     }
 
-    const foundUser = userResult[0]!; // Non-null assertion since we checked length above
+    const foundUser = user[0];
 
     // Check if user is deactivated
     if (foundUser.deactivated === 1) {
