@@ -40,7 +40,7 @@ export default function SettingsPage() {
                 User Information
               </CardTitle>
               <CardDescription>Your account details and contact information</CardDescription>
-            </div>
+        </div>
             <Link href="/settings/edit-profile">
               <Button variant="outline" size="sm" className="flex items-center gap-2">
                 <Edit className="h-4 w-4" />
@@ -50,11 +50,11 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+                <div>
                 <label className="text-sm font-medium text-gray-700">Name</label>
                 <p className="text-gray-900">{user?.name || "Not specified"}</p>
-              </div>
-              <div>
+                </div>
+                <div>
                 <label className="text-sm font-medium text-gray-700">Username</label>
                 <p className="text-gray-900">{user?.username || "Not specified"}</p>
               </div>
@@ -103,7 +103,7 @@ export default function SettingsPage() {
                 Facility Information
               </CardTitle>
               <CardDescription>Your facility and hub assignment details</CardDescription>
-            </div>
+                  </div>
             <Link href="/settings/edit-facility">
               <Button variant="outline" size="sm" className="flex items-center gap-2">
                 <Edit className="h-4 w-4" />
@@ -113,7 +113,7 @@ export default function SettingsPage() {
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
+                    <div>
                 <label className="text-sm font-medium text-gray-700">Facility</label>
                 <div className="flex items-center gap-2">
                   <p className="text-gray-900">{user?.facility_name || "Not specified"}</p>
@@ -122,9 +122,9 @@ export default function SettingsPage() {
                       ID: {user.facility_id}
                     </Badge>
                   )}
-                </div>
-              </div>
-              <div>
+                      </div>
+                    </div>
+                    <div>
                 <label className="text-sm font-medium text-gray-700">Hub</label>
                 <div className="flex items-center gap-2">
                   <p className="text-gray-900">{user?.hub_name || "Not specified"}</p>
@@ -133,14 +133,14 @@ export default function SettingsPage() {
                       ID: {user.hub_id}
                     </Badge>
                   )}
-                </div>
-              </div>
-
+                      </div>
+                    </div>
+                    
               {user?.other_facilities && (
                 <div className="md:col-span-2">
                   <label className="text-sm font-medium text-gray-700">Other Facilities</label>
                   <p className="text-gray-900">{user.other_facilities}</p>
-                </div>
+                      </div>
               )}
               {(user?.ip_id || user?.ip_name) && (
                 <div className="md:col-span-2">
@@ -156,7 +156,7 @@ export default function SettingsPage() {
                 </div>
               )}
               {user?.requesting_facility_id && (
-                <div>
+                    <div>
                   <label className="text-sm font-medium text-gray-700">Requesting Facility ID</label>
                   <p className="text-gray-900">{user.requesting_facility_id}</p>
                 </div>
@@ -164,7 +164,7 @@ export default function SettingsPage() {
             </div>
           </CardContent>
         </Card>
-      </div>
+        </div>
     </div>
   );
 } 

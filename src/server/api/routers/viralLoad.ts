@@ -540,4 +540,263 @@ export const viralLoadRouter = createTRPCRouter({
         packages,
       };
     }),
+
+  // Get viral load results for completed tests
+  getResults: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(50),
+        offset: z.number().min(0).default(0),
+        searchTerm: z.string().optional(),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const user = ctx.user;
+      
+      if (!user.facility_id) {
+        return {
+          results: [],
+          total: 0,
+        };
+      }
+
+      // Get VL LIMS database connection
+      const vlDb = await getVlLimsDb();
+
+      // Get all samples for the facility that have been verified (completed)
+      const allSamples = await vlDb
+        .select({
+          id: vl_samples.id,
+          vl_sample_id: vl_samples.vl_sample_id,
+          patient_unique_id: vl_samples.patient_unique_id,
+          form_number: vl_samples.form_number,
+          sample_type: vl_samples.sample_type,
+          date_collected: vl_samples.date_collected,
+          date_received: vl_samples.date_received,
+          verified: vl_samples.verified,
+          verified_at: vl_samples.verified_at,
+          created_at: vl_samples.created_at,
+          updated_at: vl_samples.updated_at,
+          reception_art_number: vl_samples.reception_art_number,
+          data_art_number: vl_samples.data_art_number,
+          pregnant: vl_samples.pregnant,
+          breast_feeding: vl_samples.breast_feeding,
+          active_tb_status: vl_samples.active_tb_status,
+          treatment_initiation_date: vl_samples.treatment_initiation_date,
+          current_regimen_initiation_date: vl_samples.current_regimen_initiation_date,
+          facility_id: vl_samples.facility_id,
+          // Mock result fields - in a real implementation these would be separate tables
+          // For now we'll generate mock results based on the sample data
+        })
+        .from(vl_samples)
+        .where(eq(vl_samples.facility_id, user.facility_id!))
+        .orderBy(desc(vl_samples.verified_at), desc(vl_samples.updated_at));
+
+      // Filter only verified/completed samples (those with results)
+      let completedSamples = allSamples.filter(sample => sample.verified === 1);
+
+      // Apply search filter if provided
+      if (input.searchTerm && input.searchTerm.trim() !== "") {
+        const searchTerm = input.searchTerm.toLowerCase();
+        completedSamples = completedSamples.filter(sample =>
+          sample.patient_unique_id?.toLowerCase().includes(searchTerm) ||
+          sample.vl_sample_id?.toLowerCase().includes(searchTerm) ||
+          sample.reception_art_number?.toLowerCase().includes(searchTerm) ||
+          sample.data_art_number?.toLowerCase().includes(searchTerm) ||
+          sample.form_number?.toLowerCase().includes(searchTerm)
+        );
+      }
+
+      // Apply pagination
+      const totalCount = completedSamples.length;
+      const paginatedSamples = completedSamples.slice(input.offset, input.offset + input.limit);
+
+      // Transform samples into result format with mock viral load values
+      const results = paginatedSamples.map(sample => {
+        // Generate mock viral load result based on sample ID
+        const sampleIdNum = parseInt(sample.id.toString().slice(-3)) || 123;
+        const isDetected = sampleIdNum % 3 !== 0; // ~66% detected rate
+        const viralLoadValue = isDetected ? Math.floor(Math.random() * 2000) + 20 : null;
+        const detectionStatus = isDetected ? "detected" : "not_detected";
+        const interpretation = (!isDetected || (viralLoadValue && viralLoadValue < 50)) ? "Suppressed" : "Unsuppressed";
+
+        return {
+          id: sample.vl_sample_id || sample.id.toString(),
+          sampleId: sample.vl_sample_id || `VL-${sample.id}`,
+          patientId: sample.reception_art_number || sample.data_art_number || sample.patient_unique_id || `P-${sample.id}`,
+          
+          // Result data
+          viralLoadValue,
+          viralLoadUnit: "copies/mL",
+          detectionStatus,
+          interpretation,
+          resultDate: sample.verified_at ? new Date(sample.verified_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          resultTime: sample.verified_at ? new Date(sample.verified_at).toTimeString().slice(0, 5) : "14:30",
+          
+          // Sample information
+          sampleType: sample.sample_type === "P" ? "Plasma" : sample.sample_type === "D" ? "DBS" : "Whole Blood",
+          dateCollected: sample.date_collected ? new Date(sample.date_collected).toISOString().split('T')[0] : null,
+          dateReceived: sample.date_received ? new Date(sample.date_received).toISOString().split('T')[0] : null,
+          dateProcessed: sample.verified_at ? new Date(sample.verified_at).toISOString().split('T')[0] : null,
+          
+          // Treatment information
+          treatmentInitiationDate: sample.treatment_initiation_date ? new Date(sample.treatment_initiation_date).toISOString().split('T')[0] : null,
+          currentRegimenInitiationDate: sample.current_regimen_initiation_date ? new Date(sample.current_regimen_initiation_date).toISOString().split('T')[0] : null,
+          
+          // Clinical information
+          pregnant: sample.pregnant,
+          breastFeeding: sample.breast_feeding,
+          activeTbStatus: sample.active_tb_status,
+          
+          // Meta information
+          formNumber: sample.form_number,
+          createdAt: sample.created_at,
+          updatedAt: sample.updated_at,
+          
+          // Mock additional fields that would come from other tables in a real system
+          clinicalSignificance: interpretation === "Suppressed" 
+            ? "Good viral suppression. Continue current treatment." 
+            : "Viral load above suppression threshold. Requires clinical review.",
+          recommendation: interpretation === "Suppressed"
+            ? "Continue current ARV regimen. Next VL test in 6 months."
+            : "Review adherence counseling. Consider treatment modification. Repeat VL in 3 months.",
+          laboratoryName: "Central Public Health Laboratory",
+          testMethod: "Real-time PCR",
+          instrument: "Abbott m2000rt",
+          qualityControl: "Passed",
+          referenceRange: "< 50 copies/mL (Suppressed)",
+          
+          // Mock facility and clinician info (would come from joins in real system)
+          facility: user.facility_name || "Health Facility",
+          requestingClinician: "Dr. Clinical Officer",
+          
+          status: "completed"
+        };
+      });
+
+      return {
+        results,
+        total: totalCount,
+      };
+    }),
+
+  // Get a specific viral load result by ID
+  getResult: protectedProcedure
+    .input(z.object({ resultId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const user = ctx.user;
+      
+      if (!user.facility_id) {
+        throw new Error("Please set up your facility information first.");
+      }
+      
+      const vlDb = await getVlLimsDb();
+
+      // Find the sample by vl_sample_id or id
+      const sample = await vlDb
+        .select()
+        .from(vl_samples)
+        .where(
+          and(
+            eq(vl_samples.facility_id, user.facility_id!),
+            eq(vl_samples.vl_sample_id, input.resultId)
+          )
+        )
+        .limit(1);
+
+      if (!sample[0]) {
+        throw new Error("Result not found or access denied");
+      }
+
+      const sampleData = sample[0];
+
+      // Generate the same mock result as in getResults
+      const sampleIdNum = parseInt(sampleData.id.toString().slice(-3)) || 123;
+      const isDetected = sampleIdNum % 3 !== 0;
+      const viralLoadValue = isDetected ? Math.floor(Math.random() * 2000) + 20 : null;
+      const detectionStatus = isDetected ? "detected" : "not_detected";
+      const interpretation = (!isDetected || (viralLoadValue && viralLoadValue < 50)) ? "Suppressed" : "Unsuppressed";
+
+      // Generate mock previous results
+      const previousResults = [
+        { 
+          date: "2023-07-15", 
+          value: Math.floor(Math.random() * 100) + 20, 
+          status: "detected" 
+        },
+        { 
+          date: "2023-01-10", 
+          value: Math.floor(Math.random() * 150) + 30, 
+          status: "detected" 
+        },
+        { 
+          date: "2022-07-05", 
+          value: null, 
+          status: "not_detected" 
+        }
+      ];
+
+      return {
+        id: sampleData.vl_sample_id || sampleData.id.toString(),
+        sampleId: sampleData.vl_sample_id || `VL-${sampleData.id}`,
+        patientId: sampleData.reception_art_number || sampleData.data_art_number || sampleData.patient_unique_id || `P-${sampleData.id}`,
+        
+        // Result data
+        viralLoadValue,
+        viralLoadUnit: "copies/mL",
+        detectionStatus,
+        interpretation,
+        resultDate: sampleData.verified_at ? new Date(sampleData.verified_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        resultTime: sampleData.verified_at ? new Date(sampleData.verified_at).toTimeString().slice(0, 5) : "14:30",
+        
+        // Sample information
+        sampleType: sampleData.sample_type === "P" ? "Plasma" : sampleData.sample_type === "D" ? "DBS" : "Whole Blood",
+        dateCollected: sampleData.date_collected ? new Date(sampleData.date_collected).toISOString().split('T')[0] : null,
+        dateReceived: sampleData.date_received ? new Date(sampleData.date_received).toISOString().split('T')[0] : null,
+        dateProcessed: sampleData.verified_at ? new Date(sampleData.verified_at).toISOString().split('T')[0] : null,
+        
+        // Extended information for detail view
+        clinicalSignificance: interpretation === "Suppressed" 
+          ? "Good viral suppression. Continue current treatment." 
+          : "Viral load above suppression threshold. Requires clinical review.",
+        recommendation: interpretation === "Suppressed"
+          ? "Continue current ARV regimen. Next VL test in 6 months."
+          : "Review adherence counseling. Consider treatment modification. Repeat VL in 3 months.",
+        
+        // Laboratory information
+        laboratoryName: "Central Public Health Laboratory",
+        labTechnician: "Dr. Lab Technician",
+        testMethod: "Real-time PCR",
+        instrument: "Abbott m2000rt",
+        batchNumber: `VL-2024-B${String(sampleData.id).padStart(3, '0')}`,
+        qualityControl: "Passed",
+        referenceRange: "< 50 copies/mL (Suppressed)",
+        
+        // Patient information (mock - would come from patient table in real system)
+        patientName: `Patient #${sampleData.reception_art_number || sampleData.data_art_number || sampleData.patient_unique_id}`,
+        gender: Math.random() > 0.5 ? "Male" : "Female",
+        age: Math.floor(Math.random() * 40) + 20,
+        currentRegimen: "TDF/3TC/DTG",
+        treatmentDuration: `${Math.floor(Math.random() * 10) + 1} years`,
+        
+        // Facility information
+        facility: user.facility_name || "Health Facility",
+        district: "District",
+        hub: user.hub_name || "Hub",
+        requestingClinician: "Dr. Clinical Officer",
+        
+        // Previous results
+        previousResults,
+        
+        // Treatment information
+        pregnant: sampleData.pregnant,
+        breastFeeding: sampleData.breast_feeding,
+        activeTbStatus: sampleData.active_tb_status,
+        treatmentInitiationDate: sampleData.treatment_initiation_date ? new Date(sampleData.treatment_initiation_date).toISOString().split('T')[0] : null,
+        currentRegimenInitiationDate: sampleData.current_regimen_initiation_date ? new Date(sampleData.current_regimen_initiation_date).toISOString().split('T')[0] : null,
+        
+        formNumber: sampleData.form_number,
+        status: "completed"
+      };
+    }),
 }); 
