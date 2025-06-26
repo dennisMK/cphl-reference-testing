@@ -39,6 +39,14 @@ const updateEIDRequestSchema = z.object({
   infant_age_units: z.string().optional(),
   infant_dob: z.string().optional(),
   infant_is_breast_feeding: z.enum(["YES", "NO", "UNKNOWN"]).optional(),
+  infant_contact_phone: z.string().optional(),
+  mother_htsnr: z.string().optional(),
+  mother_artnr: z.string().optional(),
+  mother_nin: z.string().optional(),
+  test_type: z.string().optional(),
+  pcr: z.enum(["FIRST", "SECOND", "THIRD", "NON_ROUTINE", "UNKNOWN"]).optional(),
+  PCR_test_requested: z.enum(["YES", "NO"]).optional(),
+  SCD_test_requested: z.enum(["YES", "NO"]).optional(),
   date_dbs_taken: z.string().optional(),
   testing_completed: z.enum(["YES", "NO"]).optional(),
   accepted_result: z.enum(["POSITIVE", "NEGATIVE", "INVALID", "SAMPLE_WAS_REJECTED"]).optional(),
@@ -385,6 +393,14 @@ export const eidRouter = createTRPCRouter({
       if (input.infant_age_units !== undefined) updateData.infant_age_units = input.infant_age_units;
       if (input.infant_dob !== undefined) updateData.infant_dob = input.infant_dob ? new Date(input.infant_dob) : null;
       if (input.infant_is_breast_feeding !== undefined) updateData.infant_is_breast_feeding = input.infant_is_breast_feeding;
+      if (input.infant_contact_phone !== undefined) updateData.infant_contact_phone = input.infant_contact_phone;
+      if (input.mother_htsnr !== undefined) updateData.mother_htsnr = input.mother_htsnr;
+      if (input.mother_artnr !== undefined) updateData.mother_artnr = input.mother_artnr;
+      if (input.mother_nin !== undefined) updateData.mother_nin = input.mother_nin;
+      if (input.test_type !== undefined) updateData.test_type = input.test_type;
+      if (input.pcr !== undefined) updateData.pcr = input.pcr;
+      if (input.PCR_test_requested !== undefined) updateData.PCR_test_requested = input.PCR_test_requested;
+      if (input.SCD_test_requested !== undefined) updateData.SCD_test_requested = input.SCD_test_requested;
       if (input.date_dbs_taken !== undefined) updateData.date_dbs_taken = input.date_dbs_taken ? new Date(input.date_dbs_taken) : null;
       if (input.testing_completed !== undefined) updateData.testing_completed = input.testing_completed;
       if (input.accepted_result !== undefined) updateData.accepted_result = input.accepted_result;

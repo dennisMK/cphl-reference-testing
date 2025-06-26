@@ -1,7 +1,7 @@
 "use client"
 
 import React from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -20,33 +20,51 @@ import { toast } from "sonner";
 import { api } from "@/trpc/react";
 
 const updateEIDRequestSchema = z.object({
-  infant_name: z.string().min(1, "Infant name is required"),
-  infant_gender: z.enum(["MALE", "FEMALE", "NOT_RECORDED"]).optional(),
+  infant_name: z.string().min(1, "Infant name is required").trim(),
+  infant_gender: z.enum(["MALE", "FEMALE", "NOT_RECORDED"], {
+    errorMap: () => ({ message: "Please select a valid gender" })
+  }).optional(),
   infant_age: z.string().optional(),
-  infant_age_units: z.enum(["DAYS", "WEEKS", "MONTHS", "YEARS"]).optional(),
-  infant_dob: z.string().optional(),
-  infant_is_breast_feeding: z.enum(["YES", "NO", "UNKNOWN"]).optional(),
-  infant_contact_phone: z.string().optional(),
+  infant_age_units: z.enum(["DAYS", "WEEKS", "MONTHS", "YEARS"], {
+    errorMap: () => ({ message: "Please select valid age units" })
+  }).optional(),
+  infant_dob: z.string().optional().refine((val) => {
+    if (!val) return true;
+    const date = new Date(val);
+    return !isNaN(date.getTime()) && date <= new Date();
+  }, "Date of birth must be a valid date in the past"),
+  infant_is_breast_feeding: z.enum(["YES", "NO", "UNKNOWN"], {
+    errorMap: () => ({ message: "Please select breastfeeding status" })
+  }).optional(),
+  infant_contact_phone: z.string().optional().refine((val) => {
+    if (!val) return true;
+    return /^[\+]?[0-9\s\-\(\)]{7,15}$/.test(val);
+  }, "Please enter a valid phone number"),
   mother_htsnr: z.string().optional(),
   mother_artnr: z.string().optional(),
-  mother_nin: z.string().optional(),
+  mother_nin: z.string().optional().refine((val) => {
+    if (!val) return true;
+    return val.length >= 10;
+  }, "NIN must be at least 10 characters"),
   test_type: z.string().optional(),
-  pcr: z.enum(["FIRST", "SECOND", "THIRD", "NON_ROUTINE", "UNKNOWN"]).optional(),
-  PCR_test_requested: z.enum(["YES", "NO"]).optional(),
-  SCD_test_requested: z.enum(["YES", "NO"]).optional(),
+  pcr: z.enum(["FIRST", "SECOND", "THIRD", "NON_ROUTINE", "UNKNOWN"], {
+    errorMap: () => ({ message: "Please select a valid PCR type" })
+  }).optional(),
+  PCR_test_requested: z.enum(["YES", "NO"], {
+    errorMap: () => ({ message: "Please select if PCR test is requested" })
+  }).optional(),
+  SCD_test_requested: z.enum(["YES", "NO"], {
+    errorMap: () => ({ message: "Please select if SCD test is requested" })
+  }).optional(),
 });
 
 type UpdateEIDRequestData = z.infer<typeof updateEIDRequestSchema>;
 
-interface EditEIDRequestPageProps {
-  params: {
-    id: string;
-  };
-}
-
-export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) {
+export default function EditEIDRequestPage() {
   const router = useRouter();
-  const requestId = parseInt(params.id);
+  const params = useParams();
+  const requestId = parseInt(params.id as string);
+  const utils = api.useUtils();
 
   // Fetch EID request data
   const { data: request, isLoading: requestLoading, error: requestError } = api.eid.getRequest.useQuery(
@@ -56,12 +74,23 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
 
   // Update mutation
   const updateMutation = api.eid.updateRequest.useMutation({
-    onSuccess: () => {
+    onSuccess: (result) => {
+      console.log("Update success:", result);
+      toast.dismiss(); // Dismiss loading toast
       toast.success("EID request updated successfully!");
+      // Invalidate queries to refresh data
+      utils.eid.getRequest.invalidate({ id: requestId });
+      utils.eid.getRequests.invalidate();
       router.push(`/eid/${requestId}`);
     },
     onError: (error) => {
+      console.error("Update error:", error);
+      toast.dismiss(); // Dismiss loading toast
       toast.error(error.message || "Failed to update EID request");
+    },
+    onMutate: () => {
+      console.log("Update mutation started");
+      toast.loading("Updating EID request...");
     },
   });
 
@@ -88,7 +117,8 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
   // Update form when data is loaded
   React.useEffect(() => {
     if (request) {
-      form.reset({
+      console.log("Loading request data:", request);
+      const formData = {
         infant_name: request.infant_name || "",
         infant_gender: request.infant_gender || "NOT_RECORDED",
         infant_age: request.infant_age || "",
@@ -103,16 +133,64 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
         pcr: request.pcr || "FIRST",
         PCR_test_requested: (request.PCR_test_requested as any) || "YES",
         SCD_test_requested: (request.SCD_test_requested as any) || "NO",
-      });
+      };
+      console.log("Setting form data:", formData);
+      form.reset(formData);
     }
   }, [request, form]);
 
   const onSubmit = (data: UpdateEIDRequestData) => {
+    console.log("Form submitted with data:", data);
+    console.log("Request ID:", requestId);
+    console.log("Form validation state:", {
+      isValid: form.formState.isValid,
+      isDirty: form.formState.isDirty,
+      isSubmitted: form.formState.isSubmitted,
+      errorCount: Object.keys(form.formState.errors).length
+    });
+    console.log("Form errors:", form.formState.errors);
+    
+    // Check if form is valid
+    if (!form.formState.isValid) {
+      console.log("Form validation failed:", form.formState.errors);
+      toast.error("Please fix the form errors before submitting");
+      return;
+    }
+    
+    // Validate required fields manually as backup
+    if (!data.infant_name || data.infant_name.trim() === "") {
+      toast.error("Infant name is required");
+      form.setError("infant_name", { message: "Infant name is required" });
+      return;
+    }
+    
+    console.log("Starting mutation with data:", data);
+    
     updateMutation.mutate({
       id: requestId,
       ...data,
       infant_dob: data.infant_dob ? data.infant_dob : undefined,
     });
+  };
+
+  const onError = (errors: any) => {
+    // Safely log form errors without circular references
+    const errorSummary = Object.keys(errors).reduce((acc, key) => {
+      acc[key] = errors[key]?.message || 'Unknown error';
+      return acc;
+    }, {} as Record<string, string>);
+    
+    console.log("Form validation errors:", errorSummary);
+    toast.error("Please fix the form errors before submitting");
+    
+    // Focus on first error field
+    const firstErrorField = Object.keys(errors)[0];
+    if (firstErrorField) {
+      const element = document.getElementById(firstErrorField);
+      if (element) {
+        element.focus();
+      }
+    }
   };
 
   const getStatusBadge = () => {
@@ -180,7 +258,7 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
       </div>
 
       {/* Form */}
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-8">
         {/* Infant Information */}
         <Card>
           <CardHeader>
@@ -228,6 +306,9 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
                   {...form.register("infant_dob")}
                   className="mt-2"
                 />
+                {form.formState.errors.infant_dob && (
+                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.infant_dob.message}</p>
+                )}
               </div>
 
               <div>
@@ -238,6 +319,9 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
                   className="mt-2"
                   placeholder="Phone number"
                 />
+                {form.formState.errors.infant_contact_phone && (
+                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.infant_contact_phone.message}</p>
+                )}
               </div>
 
               <div>
@@ -248,6 +332,9 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
                   className="mt-2"
                   placeholder="e.g., 6"
                 />
+                {form.formState.errors.infant_age && (
+                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.infant_age.message}</p>
+                )}
               </div>
 
               <div>
@@ -266,6 +353,9 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
                     <SelectItem value="YEARS">Years</SelectItem>
                   </SelectContent>
                 </Select>
+                {form.formState.errors.infant_age_units && (
+                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.infant_age_units.message}</p>
+                )}
               </div>
 
               <div className="md:col-span-2">
@@ -283,6 +373,9 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
                     <SelectItem value="UNKNOWN">Unknown</SelectItem>
                   </SelectContent>
                 </Select>
+                {form.formState.errors.infant_is_breast_feeding && (
+                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.infant_is_breast_feeding.message}</p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -302,6 +395,9 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
                   {...form.register("mother_htsnr")}
                   className="mt-2"
                 />
+                {form.formState.errors.mother_htsnr && (
+                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.mother_htsnr.message}</p>
+                )}
               </div>
 
               <div>
@@ -311,6 +407,9 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
                   {...form.register("mother_artnr")}
                   className="mt-2"
                 />
+                {form.formState.errors.mother_artnr && (
+                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.mother_artnr.message}</p>
+                )}
               </div>
 
               <div className="md:col-span-2">
@@ -320,6 +419,9 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
                   {...form.register("mother_nin")}
                   className="mt-2"
                 />
+                {form.formState.errors.mother_nin && (
+                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.mother_nin.message}</p>
+                )}
               </div>
             </div>
           </CardContent>
@@ -409,12 +511,7 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
                   {request?.facility_name || "Not specified"}
                 </div>
               </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-700">District</Label>
-                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
-                  {request?.facility_district || "Not specified"}
-                </div>
-              </div>
+            
             </div>
           </CardContent>
         </Card>
@@ -428,6 +525,9 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
             type="submit" 
             className="bg-blue-600 hover:bg-blue-700"
             disabled={updateMutation.isPending}
+            onClick={(e) => {
+              console.log("Submit button clicked!");
+            }}
           >
             {updateMutation.isPending ? (
               <>
@@ -442,6 +542,8 @@ export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) 
             )}
           </Button>
         </div>
+
+      
       </form>
     </div>
   );

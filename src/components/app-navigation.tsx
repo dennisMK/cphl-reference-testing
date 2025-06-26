@@ -315,32 +315,38 @@ export function AppNavigation() {
 
       {/* Mobile Navigation - Quick Access */}
       <div className={cn(
-        "md:hidden border-t px-4 py-2",
+        "md:hidden border-t px-2 py-3",
         currentSection === "dashboard" ? "border-gray-200 bg-white" : "border-white/20"
       )}>
-        <div className="flex items-center justify-center space-x-4">
+        <div className="flex items-center justify-between space-x-1">
           {navigationSections.map((section) => {
             const IconComponent = section.icon;
             const active = isActive(section.href);
             
             return (
-              <Link key={section.href} href={section.href}>
+              <Link key={section.href} href={section.href} className="flex-1">
                 <Button
                   variant="ghost"
                   size="sm"
                   className={cn(
-                    "flex flex-col items-center space-y-1 px-3 py-2 h-auto",
+                    "flex flex-col items-center justify-center space-y-1.5 px-2 py-3 h-auto w-full min-h-[60px] rounded-lg transition-all duration-200",
                     active
                       ? currentSection === "dashboard"
-                        ? "bg-primary text-primary-foreground"
-                        : "bg-white/20 text-white"
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "bg-white/20 text-white backdrop-blur-sm shadow-sm"
                       : currentSection === "dashboard"
-                        ? "text-gray-600"
-                        : "text-white/80"
+                        ? "text-gray-600 hover:text-gray-900 hover:bg-gray-100"
+                        : "text-white/80 hover:text-white hover:bg-white/10"
                   )}
                 >
-                  <IconComponent className="h-4 w-4" />
-                  <span className="text-xs">{section.name}</span>
+                  <IconComponent className="h-5 w-5" />
+                  <span className="text-xs font-medium leading-tight text-center">{section.name}</span>
+                  {active && (
+                    <div className={cn(
+                      "h-1 w-8 rounded-full",
+                      currentSection === "dashboard" ? "bg-primary-foreground/30" : "bg-white/40"
+                    )} />
+                  )}
                 </Button>
               </Link>
             );
