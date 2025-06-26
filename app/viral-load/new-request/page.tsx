@@ -13,11 +13,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CalendarIcon, TestTube, AlertTriangle, Settings } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { toast } from "sonner";
 
 import { useAuth } from "@/lib/auth-context";
 import { api } from "@/trpc/react";
@@ -55,17 +55,39 @@ type FormData = z.infer<typeof formSchema>;
 export default function NewViralLoadRequest(): React.JSX.Element {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submitError, setSubmitError] = useState<string | null>(null);
   const { user, isLoading } = useAuth();
 
   const createRequest = api.viralLoad.createRequest.useMutation({
     onSuccess: (data) => {
       console.log("Request created successfully:", data);
+      toast.success("Viral load request created successfully!", {
+        description: `Sample ID: ${data.sampleId}`,
+        action: {
+          label: "View Requests",
+          onClick: () => router.push("/viral-load/pending-collection"),
+        },
+      });
       router.push("/viral-load/pending-collection");
     },
     onError: (error) => {
       console.error("Error creating request:", error);
-      setSubmitError(error.message);
+      
+      // Show error toast with action to go to settings if it's a facility error
+      if (error.message.includes("facility information")) {
+        toast.error("Facility Setup Required", {
+          description: error.message,
+          action: {
+            label: "Go to Settings",
+            onClick: () => router.push("/settings/edit-facility"),
+          },
+          duration: 10000, // Show longer for important actions
+        });
+      } else {
+        toast.error("Failed to create request", {
+          description: error.message,
+        });
+      }
+      
       setIsSubmitting(false);
     },
   });
@@ -88,17 +110,25 @@ export default function NewViralLoadRequest(): React.JSX.Element {
 
   const onSubmit = async (data: FormData): Promise<void> => {
     setIsSubmitting(true);
-    setSubmitError(null); // Clear previous errors
     
     try {
+      // Ensure dates exist before converting
+      if (!data.dob || !data.treatment_initiation_date || !data.current_regimen_initiation_date) {
+        toast.error("Missing required dates", {
+          description: "Please fill in all required date fields",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
       await createRequest.mutateAsync({
         patient_unique_id: data.patient_unique_id,
         art_number: data.art_number,
         other_id: data.other_id || undefined,
         gender: data.gender,
-        dob: data.dob.toISOString().split('T')[0], // Convert to YYYY-MM-DD format
-        treatment_initiation_date: data.treatment_initiation_date.toISOString().split('T')[0],
-        current_regimen_initiation_date: data.current_regimen_initiation_date.toISOString().split('T')[0],
+        dob: data.dob!.toISOString().split('T')[0], // Convert to YYYY-MM-DD format
+        treatment_initiation_date: data.treatment_initiation_date!.toISOString().split('T')[0],
+        current_regimen_initiation_date: data.current_regimen_initiation_date!.toISOString().split('T')[0],
         pregnant: data.pregnant,
         anc_number: data.anc_number || undefined,
         breast_feeding: data.breast_feeding,
@@ -127,24 +157,6 @@ export default function NewViralLoadRequest(): React.JSX.Element {
           </div>
         </div>
       </div>
-
-      {/* Error Alert */}
-      {submitError && (
-        <Alert className="mb-6 border-red-200 bg-red-50">
-          <AlertTriangle className="h-4 w-4 text-red-600" />
-          <AlertDescription className="text-red-800">
-            <div className="flex flex-col gap-2">
-              <span>{submitError}</span>
-              {submitError.includes("facility information") && (
-                <Link href="/settings/edit-facility" className="inline-flex items-center gap-1 text-blue-600 hover:text-blue-800 underline">
-                  <Settings className="h-4 w-4" />
-                  Go to Settings → Edit Facility
-                </Link>
-              )}
-            </div>
-          </AlertDescription>
-        </Alert>
-      )}
 
       <div className="">
         <form id="viral-load-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">

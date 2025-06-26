@@ -10,7 +10,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import {
   Form,
   FormControl,
@@ -20,7 +19,8 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { ArrowLeft, Save, Loader2, Building, AlertCircle, CheckCircle } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Building } from "lucide-react";
+import { toast } from "sonner";
 import { useAuth } from "@/lib/auth-context";
 
 const facilitySchema = z.object({
@@ -57,7 +57,6 @@ export default function FacilityForm() {
   const { user, isLoading, refreshUser } = useAuth();
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const form = useForm<FacilityFormData>({
     resolver: zodResolver(facilitySchema),
@@ -87,28 +86,43 @@ export default function FacilityForm() {
 
   const onSubmit = async (data: FacilityFormData) => {
     setIsSubmitting(true);
-    setMessage(null);
 
     try {
+      console.log("🏥 Submitting facility form data:", data);
+      
+      const requestBody = {
+        facility_name: data.facility_name,
+        hub_name: data.hub_name,
+        facility_id: data.facility_id ? parseInt(data.facility_id) : null,
+        hub_id: data.hub_id ? parseInt(data.hub_id) : null,
+        other_facilities: data.other_facilities || null,
+        requesting_facility_id: data.requesting_facility_id ? parseInt(data.requesting_facility_id) : null,
+      };
+      
+      console.log("📤 Request body:", requestBody);
+      
       const response = await fetch('/api/auth/update-facility', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          facility_name: data.facility_name,
-          hub_name: data.hub_name,
-          facility_id: data.facility_id ? parseInt(data.facility_id) : null,
-          hub_id: data.hub_id ? parseInt(data.hub_id) : null,
-          other_facilities: data.other_facilities || null,
-          requesting_facility_id: data.requesting_facility_id ? parseInt(data.requesting_facility_id) : null,
-        }),
+        body: JSON.stringify(requestBody),
       });
 
+      console.log("📥 Response status:", response.status);
+      
       const result = await response.json();
+      console.log("📥 Response data:", result);
 
       if (response.ok) {
-        setMessage({ type: "success", text: "Facility information updated successfully!" });
+        toast.success("Facility information updated successfully!", {
+          description: `Facility: ${data.facility_name} | Hub: ${data.hub_name}`,
+          action: {
+            label: "View Settings",
+            onClick: () => router.push('/settings'),
+          },
+        });
+        
         await refreshUser(); // Refresh user data in context
         
         // Redirect back to settings after a short delay
@@ -116,11 +130,16 @@ export default function FacilityForm() {
           router.push('/settings');
         }, 1500);
       } else {
-        setMessage({ type: "error", text: result.error || "Failed to update facility information" });
+        console.error("❌ Update failed:", result);
+        toast.error("Failed to update facility information", {
+          description: result.error || "Please check your input and try again",
+        });
       }
     } catch (error: any) {
-      console.error("Facility update error:", error);
-      setMessage({ type: "error", text: "An unexpected error occurred" });
+      console.error("💥 Facility update error:", error);
+      toast.error("An unexpected error occurred", {
+        description: error.message,
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -137,24 +156,6 @@ export default function FacilityForm() {
         <h1 className="text-3xl font-bold text-gray-900">Edit Facility Information</h1>
         <p className="text-gray-600 mt-2">Update your facility and hub assignment details</p>
       </div>
-
-      {/* Success/Error Messages */}
-      {message && (
-        <Alert className={`mb-6 ${
-          message.type === "success" 
-            ? "border-green-200 bg-green-50" 
-            : "border-red-200 bg-red-50"
-        }`}>
-          {message.type === "success" ? (
-            <CheckCircle className="h-4 w-4 text-green-600" />
-          ) : (
-            <AlertCircle className="h-4 w-4 text-red-600" />
-          )}
-          <AlertDescription className={message.type === "success" ? "text-green-800" : "text-red-800"}>
-            {message.text}
-          </AlertDescription>
-        </Alert>
-      )}
 
       {/* Edit Form */}
       <Card>

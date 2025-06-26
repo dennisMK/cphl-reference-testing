@@ -74,20 +74,35 @@ export async function getCurrentUser(): Promise<User | null> {
   const payload = verifyJWT(token);
   if (!payload) return null;
 
-  // For tRPC, we'll use the JWT payload data
-  // In production, you might want to fetch fresh data from the database
-  // to ensure the user is still active and get the latest information
-  return {
-    id: payload.id,
-    username: payload.username,
-    name: payload.name,
-    email: null, // Will be fetched from DB when needed
-    facility_id: payload.facility_id,
-    facility_name: null, // Will be fetched from DB when needed
-    hub_id: null,
-    hub_name: null,
-    deactivated: 0,
-  };
+  // Fetch fresh user data from the database to ensure we have the latest information
+  try {
+    const { getUsersDb } = await import('@/server/db');
+    const { users } = await import('@/server/db/schemas/users');
+    const { eq } = await import('drizzle-orm');
+    
+    const db = await getUsersDb();
+    const user = await db.select().from(users).where(eq(users.id, payload.id)).limit(1);
+
+    if (!user[0] || user[0].deactivated === 1) {
+      return null;
+    }
+
+    const foundUser = user[0];
+    return {
+      id: foundUser.id,
+      username: foundUser.username,
+      name: foundUser.name,
+      email: foundUser.email,
+      facility_id: foundUser.facility_id,
+      facility_name: foundUser.facility_name,
+      hub_id: foundUser.hub_id,
+      hub_name: foundUser.hub_name,
+      deactivated: foundUser.deactivated,
+    };
+  } catch (error) {
+    console.error('Error fetching current user:', error);
+    return null;
+  }
 }
 
 export async function logout() {

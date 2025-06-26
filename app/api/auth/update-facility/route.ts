@@ -1,25 +1,31 @@
 import { NextRequest, NextResponse } from "next/server";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getUsersDb } from "@/server/db";
 import { users } from "@/server/db/schemas/users";
 import { getAuthToken, verifyJWT } from "@/lib/auth";
 
 export async function PUT(request: NextRequest) {
   try {
+    console.log("🏥 Update facility request received");
+    
     // Get the token from cookies
     const token = await getAuthToken();
 
     if (!token) {
+      console.log("🍪 Token found: No");
       return NextResponse.json(
         { error: "Authentication required" },
         { status: 401 }
       );
     }
+    
+    console.log("🍪 Token found: Yes");
 
     // Verify the token
     const payload = verifyJWT(token);
     
     if (!payload) {
+      console.log("🔐 Token payload: Invalid");
       return NextResponse.json(
         { error: "Invalid or expired token" },
         { status: 401 }
@@ -27,13 +33,16 @@ export async function PUT(request: NextRequest) {
     }
 
     const userId = payload.id;
+    console.log("🔐 Token payload: User ID:", userId);
 
     // Parse the request body
     const body = await request.json();
+    console.log("📝 Request body:", body);
     const { facility_name, hub_name, facility_id, hub_id } = body;
 
     // Validate required fields
     if (!facility_name || !hub_name) {
+      console.log("❌ Validation failed: Missing required fields");
       return NextResponse.json(
         { error: "Facility name and hub name are required" },
         { status: 400 }
@@ -42,19 +51,66 @@ export async function PUT(request: NextRequest) {
 
     // Get database connection
     const db = await getUsersDb();
+    console.log("💾 Database connection established");
+
+    // If facility_id is not provided, generate a unique one
+    let finalFacilityId = null;
+    
+    if (facility_id) {
+      // Try to parse the facility_id
+      const parsedFacilityId = parseInt(facility_id);
+      if (isNaN(parsedFacilityId)) {
+        console.log("❌ Invalid facility_id provided:", facility_id);
+        return NextResponse.json(
+          { error: "Invalid facility ID format" },
+          { status: 400 }
+        );
+      }
+      finalFacilityId = parsedFacilityId;
+      console.log("✅ Using provided facility ID:", finalFacilityId);
+    } else {
+      console.log("🔢 Generating new facility ID...");
+      // Get the highest existing facility_id
+      const maxFacilityResult = await db
+        .select({ maxId: sql<number>`MAX(facility_id)` })
+        .from(users)
+        .where(sql`facility_id IS NOT NULL`);
+      
+      const maxFacilityId = maxFacilityResult[0]?.maxId || 0;
+      finalFacilityId = maxFacilityId + 1;
+      console.log("🔢 Generated facility ID:", finalFacilityId);
+    }
+
+    // Parse hub_id if provided
+    let finalHubId = null;
+    if (hub_id) {
+      const parsedHubId = parseInt(hub_id);
+      if (isNaN(parsedHubId)) {
+        console.log("❌ Invalid hub_id provided:", hub_id);
+        return NextResponse.json(
+          { error: "Invalid hub ID format" },
+          { status: 400 }
+        );
+      }
+      finalHubId = parsedHubId;
+    }
 
     const updateData = {
       facility_name: facility_name.trim(),
       hub_name: hub_name.trim(),
-      facility_id: facility_id ? parseInt(facility_id) : null,
-      hub_id: hub_id ? parseInt(hub_id) : null,
+      facility_id: finalFacilityId,
+      hub_id: finalHubId,
     };
+
+    console.log("📊 Update data:", updateData);
 
     // Update the user's facility information
     await db
       .update(users)
       .set(updateData)
       .where(eq(users.id, userId));
+
+    console.log("✅ Database update completed");
 
     // Fetch the updated user data
     const updatedUserResult = await db
@@ -79,6 +135,12 @@ export async function PUT(request: NextRequest) {
         { status: 404 }
       );
     }
+
+    console.log("👤 Updated user data:", { 
+      id: updatedUser.id, 
+      facility_name: updatedUser.facility_name, 
+      facility_id: updatedUser.facility_id 
+    });
 
     // Create user object without password for response
     const userResponse = {

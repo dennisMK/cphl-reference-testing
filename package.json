@@ -21,8 +21,7 @@
     "format:write": "prettier --write \"**/*.{ts,tsx,js,jsx,mdx}\" --cache",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
-    "scrap": "bun scrap.ts",
-    "postinstall": "drizzle-kit push"
+    "scrap": "bun scrap.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",
