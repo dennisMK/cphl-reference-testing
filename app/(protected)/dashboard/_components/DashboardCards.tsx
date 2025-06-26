@@ -1,10 +1,17 @@
+"use client";
+
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, Baby } from "lucide-react";
 import Link from "next/link";
 import React from "react";
+import { api } from "@/trpc/react";
 
 export default function DashboardCards() {
+  // Fetch real data from APIs
+  const { data: viralLoadStats, isLoading: vlLoading } = api.viralLoad.getDashboardStats.useQuery();
+  const { data: eidStats, isLoading: eidLoading } = api.eid.getDashboardStats.useQuery();
+
   const actions = [
     {
       title: "HIV Viral Load",
@@ -12,10 +19,11 @@ export default function DashboardCards() {
       href: "/viral-load",
       icon: Activity,
       action: "View",
-      count: 145,
-      requests: 23,
-      collections: 18,
+      count: viralLoadStats?.totalSamples || 0,
+      requests: viralLoadStats?.pendingSamples || 0,
+      collections: viralLoadStats?.collectedSamples || 0,
       theme: "red",
+      isLoading: vlLoading,
     },
     {
       title: "HIV-Positive Mothers", 
@@ -23,10 +31,11 @@ export default function DashboardCards() {
       href: "/eid",
       icon: Baby,
       action: "View",
-      count: 67,
-      requests: 12,
-      collections: 8,
+      count: eidStats?.totalSamples || 0,
+      requests: eidStats?.pendingSamples || 0,
+      collections: eidStats?.collectedSamples || 0,
       theme: "blue",
+      isLoading: eidLoading,
     },
   ];
 
@@ -45,20 +54,38 @@ export default function DashboardCards() {
             <CardContent>
               <p className="text-sm text-muted-foreground mb-4">{action.description}</p>
               
-              <div className="text-2xl font-bold mb-4">{action.count}</div>
+              <div className="text-2xl font-bold mb-4">
+                {action.isLoading ? (
+                  <div className="h-8 w-16 bg-gray-200 animate-pulse rounded"></div>
+                ) : (
+                  action.count
+                )}
+              </div>
               
               {/* Analytics */}
               <div className="grid grid-cols-2 gap-4 mb-4">
                 <div className="flex items-center space-x-2">
                   <div>
                     <p className="text-sm text-muted-foreground">Requests</p>
-                    <p className="text-lg font-semibold">{action.requests}</p>
+                    <p className="text-lg font-semibold">
+                      {action.isLoading ? (
+                        <div className="h-6 w-8 bg-gray-200 animate-pulse rounded"></div>
+                      ) : (
+                        action.requests
+                      )}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
                   <div>
                     <p className="text-sm text-muted-foreground">Collections</p>
-                    <p className="text-lg font-semibold">{action.collections}</p>
+                    <p className="text-lg font-semibold">
+                      {action.isLoading ? (
+                        <div className="h-6 w-8 bg-gray-200 animate-pulse rounded"></div>
+                      ) : (
+                        action.collections
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>

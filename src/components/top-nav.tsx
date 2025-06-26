@@ -66,7 +66,7 @@ export function TopNav() {
       icon: IconTestPipe,
       dropdownItems: [
         { name: "VL Test Requests", href: "/viral-load/new-request" },
-        { name: "VL Results", href: "/viral-load/view" },
+        { name: "VL Results", href: "/viral-load/results" },
         { name: "VL Packages", href: "/viral-load/package-samples" },
       ]
     },
@@ -76,7 +76,7 @@ export function TopNav() {
       icon: IconBabyCarriage,
       dropdownItems: [
         { name: "EID Test Requests", href: "/eid/new-request" },
-        { name: "EID Results", href: "/eid/view" },
+        { name: "EID Results", href: "/eid/results" },
         { name: "EID Packages", href: "/eid/package-samples" },
       ]
     },

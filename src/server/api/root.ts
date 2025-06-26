@@ -1,5 +1,6 @@
 import { createCallerFactory, createTRPCRouter } from "@/server/api/trpc";
 import { viralLoadRouter } from "@/server/api/routers/viralLoad";
+import { eidRouter } from "@/server/api/routers/eid";
 
 /**
  * This is the primary router for your server.
@@ -8,6 +9,7 @@ import { viralLoadRouter } from "@/server/api/routers/viralLoad";
  */
 export const appRouter = createTRPCRouter({
   viralLoad: viralLoadRouter,
+  eid: eidRouter,
 });
 
 // export type definition of API
