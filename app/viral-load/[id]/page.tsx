@@ -15,94 +15,11 @@ import {
   ArrowLeft,
   Edit,
   Download,
-  Printer
+  Printer,
+  Loader2
 } from "lucide-react"
 import { useRouter } from "next/navigation"
-
-// Mock data - in real app this would come from API
-const sampleData = {
-  VL001: {
-    id: "VL001",
-    artNumber: "ART-2024-001",
-    sampleId: "VL-001-2024",
-    sampleType: "Plasma",
-    dateCollected: "2024-01-15",
-    dateReceived: "2024-01-16",
-    status: "pending",
-    patientName: "John Doe",
-    facility: "Mulago Hospital",
-    district: "Kampala",
-    hub: "Kampala Hub",
-    patientClinicId: "95/24",
-    gender: "Male",
-    requestedOn: "17 Jun 2025",
-    age: 34,
-    contactNumber: "+256-700-123456",
-    collectedBy: "Dr. Sarah Wilson",
-    processingNotes: "Sample awaiting processing",
-    storageLocation: "Freezer A, Shelf 2",
-    barcode: "VL001234567890",
-    testType: "Viral Load",
-    priority: "Routine",
-    clinician: "Dr. Michael Johnson",
-    centrifugationTime: "2024-01-15 14:30",
-    storageConsent: "Yes"
-  },
-  VL002: {
-    id: "VL002", 
-    artNumber: "ART-2024-002",
-    sampleId: "VL-002-2024",
-    sampleType: "Dried Blood Spot",
-    dateCollected: "2024-01-14",
-    dateReceived: "2024-01-15",
-    status: "collected",
-    patientName: "Jane Smith",
-    facility: "Butabika Hospital",
-    district: "Kampala",
-    hub: "Kampala Hub",
-    patientClinicId: "102/24",
-    gender: "Female",
-    requestedOn: "16 Jun 2025",
-    age: 28,
-    contactNumber: "+256-700-234567",
-    collectedBy: "Nurse Mary Nakato",
-    processingNotes: "Sample collected and ready for testing",
-    storageLocation: "Freezer B, Shelf 1",
-    barcode: "VL002345678901",
-    testType: "Viral Load",
-    priority: "Urgent",
-    clinician: "Dr. Peter Mukasa",
-    centrifugationTime: "2024-01-14 16:45",
-    storageConsent: "Yes"
-  },
-  VL003: {
-    id: "VL003",
-    artNumber: "ART-2024-003", 
-    sampleId: "VL-003-2024",
-    sampleType: "Plasma",
-    dateCollected: "2024-01-13",
-    dateReceived: null,
-    status: "pending",
-    patientName: "Bob Johnson",
-    facility: "Kiruddu Hospital",
-    district: "Wakiso",
-    hub: "Wakiso Hub",
-    patientClinicId: "78/24",
-    gender: "Male",
-    requestedOn: "15 Jun 2025",
-    age: 42,
-    contactNumber: "+256-700-345678",
-    collectedBy: null,
-    processingNotes: "Pending collection",
-    storageLocation: null,
-    barcode: "VL003456789012",
-    testType: "Viral Load",
-    priority: "Routine",
-    clinician: "Dr. Grace Nalongo",
-    centrifugationTime: null,
-    storageConsent: "Pending"
-  },
-}
+import { api } from "@/trpc/react"
 
 const getStatusBadge = (status: string) => {
   switch (status) {
@@ -137,8 +54,39 @@ const getPriorityBadge = (priority: string) => {
 export default function SampleDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   
-  // Get sample data
-  const sample = sampleData[params.id as keyof typeof sampleData]
+  // Fetch sample data using tRPC
+  const { data: sample, isLoading, error } = api.viralLoad.getSample.useQuery(
+    { sampleId: params.id },
+    {
+      retry: false,
+      refetchOnWindowFocus: false,
+    }
+  )
+
+  if (isLoading) {
+    return (
+      <main className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Loading sample details...</span>
+          </div>
+        </div>
+      </main>
+    )
+  }
+
+  if (error) {
+    return (
+      <main className="container mx-auto px-4 py-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Error Loading Sample</h1>
+          <p className="text-muted-foreground mb-4">{error.message}</p>
+          <Button onClick={() => router.back()}>Go Back</Button>
+        </div>
+      </main>
+    )
+  }
 
   if (!sample) {
     return (
@@ -151,6 +99,16 @@ export default function SampleDetailPage({ params }: { params: { id: string } })
       </main>
     )
   }
+
+  // Determine status based on sample data
+  const getSampleStatus = () => {
+    if (sample.verified === 1) return "completed"
+    if (sample.date_received) return "processing"
+    if (sample.date_collected) return "collected"
+    return "pending"
+  }
+
+  const status = getSampleStatus()
 
   return (
     <main className="container mx-auto px-4 py-6 max-w-6xl">
@@ -166,14 +124,14 @@ export default function SampleDetailPage({ params }: { params: { id: string } })
             Back
           </Button>
           <div>
-            <h1 className="text-3xl font-bold">{sample.sampleId}</h1>
+            <h1 className="text-3xl font-bold">{sample.vl_sample_id}</h1>
             <p className="text-muted-foreground">Viral Load Sample Details</p>
           </div>
         </div>
         
         <div className="flex items-center gap-2">
-          {getStatusBadge(sample.status)}
-          {getPriorityBadge(sample.priority)}
+          {getStatusBadge(status)}
+          <Badge variant="outline">Routine</Badge>
         </div>
       </div>
 
@@ -209,77 +167,40 @@ export default function SampleDetailPage({ params }: { params: { id: string } })
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Patient Name</p>
-                <p className="font-medium">{sample.patientName}</p>
+                <p className="text-sm font-medium text-muted-foreground">Patient ID</p>
+                <p className="font-medium">{sample.patient_unique_id}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">ART Number</p>
-                <p className="font-medium">{sample.artNumber}</p>
+                <p className="font-medium">{sample.art_number || "Not specified"}</p>
               </div>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Patient ID</p>
-                <p className="font-medium">{sample.patientClinicId}</p>
+                <p className="text-sm font-medium text-muted-foreground">Sample ID</p>
+                <p className="font-medium">{sample.vl_sample_id}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Gender</p>
-                <p className="font-medium">{sample.gender}</p>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Age</p>
-                <p className="font-medium">{sample.age} years</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Contact</p>
-                <p className="font-medium">{sample.contactNumber}</p>
-              </div>
-            </div>
-
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Clinician</p>
-              <p className="font-medium">{sample.clinician}</p>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Facility Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MapPin className="h-5 w-5" />
-              Facility Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <p className="text-sm font-medium text-muted-foreground">Health Facility</p>
-              <p className="font-medium">{sample.facility}</p>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">District</p>
-                <p className="font-medium">{sample.district}</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Hub</p>
-                <p className="font-medium">{sample.hub}</p>
+                <p className="text-sm font-medium text-muted-foreground">Form Number</p>
+                <p className="font-medium">{sample.form_number}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Test Type</p>
-                <p className="font-medium">{sample.testType}</p>
+                <p className="text-sm font-medium text-muted-foreground">Sample Type</p>
+                <Badge variant="outline">
+                  {sample.sample_type === "P" ? "Plasma" : 
+                   sample.sample_type === "D" ? "DBS" : 
+                   sample.sample_type === "W" ? "Whole Blood" : sample.sample_type}
+                </Badge>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Priority</p>
-                {getPriorityBadge(sample.priority)}
+                <p className="text-sm font-medium text-muted-foreground">Verified</p>
+                <Badge variant={sample.verified === 1 ? "secondary" : "outline"}>
+                  {sample.verified === 1 ? "Yes" : "No"}
+                </Badge>
               </div>
             </div>
           </CardContent>
@@ -297,38 +218,42 @@ export default function SampleDetailPage({ params }: { params: { id: string } })
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Sample ID</p>
-                <p className="font-mono text-sm font-medium">{sample.sampleId}</p>
+                <p className="font-mono text-sm font-medium">{sample.vl_sample_id}</p>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Barcode</p>
-                <p className="font-mono text-sm">{sample.barcode}</p>
+                <p className="text-sm font-medium text-muted-foreground">Form Number</p>
+                <p className="font-mono text-sm">{sample.form_number}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Sample Type</p>
-                <Badge variant="outline">{sample.sampleType}</Badge>
+                <Badge variant="outline">
+                  {sample.sample_type === "P" ? "Plasma" : 
+                   sample.sample_type === "D" ? "DBS" : 
+                   sample.sample_type === "W" ? "Whole Blood" : sample.sample_type}
+                </Badge>
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Storage Consent</p>
-                <Badge variant={sample.storageConsent === "Yes" ? "secondary" : "outline"}>
-                  {sample.storageConsent}
+                <p className="text-sm font-medium text-muted-foreground">In Worksheet</p>
+                <Badge variant={sample.in_worksheet === 1 ? "secondary" : "outline"}>
+                  {sample.in_worksheet === 1 ? "Yes" : "No"}
                 </Badge>
               </div>
             </div>
 
-            {sample.storageLocation && (
+            {sample.pregnant && (
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Storage Location</p>
-                <p className="font-medium">{sample.storageLocation}</p>
+                <p className="text-sm font-medium text-muted-foreground">Pregnant</p>
+                <p className="font-medium">{sample.pregnant}</p>
               </div>
             )}
 
-            {sample.collectedBy && (
+            {sample.anc_number && (
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Collected By</p>
-                <p className="font-medium">{sample.collectedBy}</p>
+                <p className="text-sm font-medium text-muted-foreground">ANC Number</p>
+                <p className="font-medium">{sample.anc_number}</p>
               </div>
             )}
           </CardContent>
@@ -347,60 +272,88 @@ export default function SampleDetailPage({ params }: { params: { id: string } })
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-sm font-medium">Requested</span>
+                  <span className="text-sm font-medium">Created</span>
                 </div>
-                <span className="text-sm">{sample.requestedOn}</span>
+                <span className="text-sm">
+                  {sample.created_at ? new Date(sample.created_at).toLocaleDateString() : "Not specified"}
+                </span>
               </div>
 
-              {sample.dateCollected && (
+              {sample.date_collected && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Collected</span>
                   </div>
-                  <span className="text-sm">{new Date(sample.dateCollected).toLocaleDateString()}</span>
+                  <span className="text-sm">{new Date(sample.date_collected).toLocaleDateString()}</span>
                 </div>
               )}
 
-              {sample.centrifugationTime && (
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-sm font-medium">Centrifuged</span>
-                  </div>
-                  <span className="text-sm">{sample.centrifugationTime}</span>
-                </div>
-              )}
-
-              {sample.dateReceived && (
+              {sample.date_received && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Received</span>
                   </div>
-                  <span className="text-sm">{new Date(sample.dateReceived).toLocaleDateString()}</span>
+                  <span className="text-sm">{new Date(sample.date_received).toLocaleDateString()}</span>
+                </div>
+              )}
+
+              {sample.updated_at && (
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Calendar className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Last Updated</span>
+                  </div>
+                  <span className="text-sm">{new Date(sample.updated_at).toLocaleDateString()}</span>
                 </div>
               )}
             </div>
           </CardContent>
         </Card>
+
+        {/* Additional Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Additional Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {sample.treatment_initiation_date && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Treatment Initiation Date</p>
+                <p className="font-medium">{new Date(sample.treatment_initiation_date).toLocaleDateString()}</p>
+              </div>
+            )}
+
+            {sample.current_regimen_initiation_date && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Current Regimen Initiation Date</p>
+                <p className="font-medium">{new Date(sample.current_regimen_initiation_date).toLocaleDateString()}</p>
+              </div>
+            )}
+
+            {sample.breast_feeding && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Breast Feeding</p>
+                <p className="font-medium">{sample.breast_feeding}</p>
+              </div>
+            )}
+
+            {sample.active_tb_status && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Active TB Status</p>
+                <p className="font-medium">{sample.active_tb_status}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
-      {/* Processing Notes */}
-      <Card className="mt-6">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5" />
-            Processing Notes
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm">{sample.processingNotes}</p>
-        </CardContent>
-      </Card>
-
       {/* Quick Actions */}
-      {sample.status === "pending" && (
+      {status === "pending" && (
         <Card className="mt-6">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
@@ -408,7 +361,7 @@ export default function SampleDetailPage({ params }: { params: { id: string } })
           <CardContent>
             <div className="flex gap-4">
               <Button 
-                onClick={() => router.push(`/viral-load/${sample.id}/collect`)}
+                onClick={() => router.push(`/viral-load/${sample.vl_sample_id}/collect`)}
                 className="bg-blue-600 hover:bg-blue-700"
               >
                 <Package className="h-4 w-4 mr-2" />
@@ -416,7 +369,7 @@ export default function SampleDetailPage({ params }: { params: { id: string } })
               </Button>
               <Button 
                 variant="outline"
-                onClick={() => router.push(`/viral-load/${sample.id}/edit`)}
+                onClick={() => router.push(`/viral-load/${sample.vl_sample_id}/edit`)}
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Update Details

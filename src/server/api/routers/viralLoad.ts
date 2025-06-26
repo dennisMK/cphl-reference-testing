@@ -174,7 +174,7 @@ export const viralLoadRouter = createTRPCRouter({
         .from(vl_samples)
         .where(
           and(
-            eq(vl_samples.vl_sample_id, input.sampleId),
+            eq(vl_samples.id, input.sampleId),
             eq(vl_samples.facility_id, user.facility_id)
           )
         )

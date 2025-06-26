@@ -12,7 +12,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { Badge } from "@/components/ui/badge"
-import { CalendarIcon, Package, MapPin } from "lucide-react"
+import { CalendarIcon, Package, MapPin, Loader2 } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import {
   Popover,
@@ -24,61 +24,21 @@ import { cn } from "@/lib/utils"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import Link from "next/link"
-
-// Mock data - in real app this would come from API
-const sampleData = {
-  VL001: {
-    id: "VL001",
-    artNumber: "ART-2024-001",
-    sampleId: "VL-001-2024",
-    sampleType: "Plasma",
-    dateCollected: "2024-01-15",
-    dateReceived: null,
-    status: "pending",
-    patientName: "John Doe",
-    facility: "Mulago Hospital",
-    district: "Kampala",
-    hub: "Kampala Hub",
-    patientClinicId: "95/24",
-    gender: "Male",
-    requestedOn: "17 Jun 2025"
-  },
-  VL002: {
-    id: "VL002", 
-    artNumber: "ART-2024-002",
-    sampleId: "VL-002-2024",
-    sampleType: "Dried Blood Spot",
-    dateCollected: "2024-01-14",
-    dateReceived: "2024-01-15",
-    status: "collected",
-    patientName: "Jane Smith",
-    facility: "Butabika Hospital",
-    district: "Kampala",
-    hub: "Kampala Hub",
-    patientClinicId: "102/24",
-    gender: "Female",
-    requestedOn: "16 Jun 2025"
-  },
-  VL003: {
-    id: "VL003",
-    artNumber: "ART-2024-003", 
-    sampleId: "VL-003-2024",
-    sampleType: "Plasma",
-    dateCollected: "2024-01-13",
-    dateReceived: null,
-    status: "pending",
-    patientName: "Bob Johnson",
-    facility: "Kiruddu Hospital",
-    district: "Wakiso",
-    hub: "Wakiso Hub",
-    patientClinicId: "78/24",
-    gender: "Male",
-    requestedOn: "15 Jun 2025"
-  },
-}
+import { api } from "@/trpc/react"
 
 export default function CollectSamplePage({ params }: { params: { id: string } }) {
   const router = useRouter()
+  
+  // Fetch sample data using tRPC
+  const { data: sample, isLoading, error } = api.viralLoad.getSample.useQuery(
+    { sampleId: params.id },
+    {
+      retry: false,
+      refetchOnWindowFocus: false,
+    }
+  )
+
+  // Form state
   const [collectionDateTime, setCollectionDateTime] = React.useState<Date>()
   const [centrifugationDateTime, setCentrifugationDateTime] = React.useState<Date>()
   const [sampleIdBarcode, setSampleIdBarcode] = React.useState("")
@@ -86,8 +46,51 @@ export default function CollectSamplePage({ params }: { params: { id: string } }
   const [specimenName, setSpecimenName] = React.useState("")
   const [storageConsent, setStorageConsent] = React.useState("")
 
-  // Get sample data
-  const sample = sampleData[params.id as keyof typeof sampleData]
+  // Update sample status mutation
+  const updateSampleMutation = api.viralLoad.updateSampleStatus.useMutation({
+    onSuccess: () => {
+      toast.success("Sample collection submitted successfully!")
+      setTimeout(() => {
+        router.push("/viral-load/pending-collection")
+      }, 1000)
+    },
+    onError: (error) => {
+      toast.error(`Failed to submit collection: ${error.message}`)
+    },
+  })
+
+  // Initialize form with sample data
+  React.useEffect(() => {
+    if (sample) {
+      setSampleIdBarcode(sample.vl_sample_id || "")
+      setSampleType(sample.sample_type || "")
+    }
+  }, [sample])
+
+  if (isLoading) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex items-center gap-2">
+            <Loader2 className="h-6 w-6 animate-spin" />
+            <span>Loading sample details...</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="container mx-auto px-4 py-6">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold mb-4">Error Loading Sample</h1>
+          <p className="text-muted-foreground mb-4">{error.message}</p>
+          <Button onClick={() => router.back()}>Go Back</Button>
+        </div>
+      </div>
+    )
+  }
 
   if (!sample) {
     return (
@@ -104,20 +107,12 @@ export default function CollectSamplePage({ params }: { params: { id: string } }
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     
-    // Here you would typically make an API call to update the sample
-    toast.promise(
-      new Promise((resolve) => setTimeout(resolve, 2000)),
-      {
-        loading: "Submitting request...",
-        success: "Sample collection request submitted successfully!",
-        error: "Failed to submit request",
-      }
-    )
-
-    // After successful collection, navigate back to pending collection
-    setTimeout(() => {
-      router.push("/viral-load/pending-collection")
-    }, 2500)
+    // Update sample status to collected
+    updateSampleMutation.mutate({
+      sampleId: params.id,
+      status: "collected",
+      notes: `Sample collected on ${collectionDateTime ? format(collectionDateTime, "PPP") : "today"}. Sample type: ${sampleType}. Specimen: ${specimenName}. Storage consent: ${storageConsent}.`
+    })
   }
 
   const formatDateTime = (date: Date | undefined) => {
@@ -138,16 +133,15 @@ export default function CollectSamplePage({ params }: { params: { id: string } }
               Complete the viral load sample collection form
             </p>
           </div>
-        
         </div>
       </div>
 
-      {/* Facility Information Banner */}
-      <div className="mb-6 p-4 bg-red-50 rounded-lg border border-red-200">
-        <div className="flex items-center gap-2 text-red-800">
-          <MapPin className="h-4 w-4" />
+      {/* Sample Information Banner */}
+      <div className="mb-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="flex items-center gap-2 text-blue-800">
+          <Package className="h-4 w-4" />
           <span className="font-medium">
-            Facility: {sample.facility} | District: {sample.district} | Hub: {sample.hub}
+            Sample ID: {sample.vl_sample_id} | Patient ID: {sample.patient_unique_id} | Form: {sample.form_number}
           </span>
         </div>
       </div>
@@ -165,38 +159,35 @@ export default function CollectSamplePage({ params }: { params: { id: string } }
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="patient-clinic-id" className="text-sm font-medium text-gray-700">
-                  Patient Clinic ID/ART #
+                  Patient ID
                 </Label>
                 <Input
                   id="patient-clinic-id"
-                  value={sample.patientClinicId}
+                  value={sample.patient_unique_id || ""}
                   readOnly
                   className="mt-2 h-10 bg-gray-50"
                 />
               </div>
               
               <div>
-                <Label htmlFor="gender" className="text-sm font-medium text-gray-700">
-                  Gender
+                <Label htmlFor="sample-id" className="text-sm font-medium text-gray-700">
+                  Sample ID
                 </Label>
-                <Select value={sample.gender} disabled>
-                  <SelectTrigger className="mt-2 h-10 bg-gray-50 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Male">Male</SelectItem>
-                    <SelectItem value="Female">Female</SelectItem>
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="sample-id"
+                  value={sample.vl_sample_id || ""}
+                  readOnly
+                  className="mt-2 h-10 bg-gray-50"
+                />
               </div>
 
               <div>
-                <Label htmlFor="requested-on" className="text-sm font-medium text-gray-700">
-                  Requested on
+                <Label htmlFor="form-number" className="text-sm font-medium text-gray-700">
+                  Form Number
                 </Label>
                 <Input
-                  id="requested-on"
-                  value={sample.requestedOn}
+                  id="form-number"
+                  value={sample.form_number || ""}
                   readOnly
                   className="mt-2 h-10 bg-gray-50"
                 />
@@ -208,7 +199,7 @@ export default function CollectSamplePage({ params }: { params: { id: string } }
           <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
             <div className="pb-3 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">
-                Sample Details
+                Sample Collection Details
               </h2>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -263,10 +254,9 @@ export default function CollectSamplePage({ params }: { params: { id: string } }
                     <SelectValue placeholder="Select one" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="plasma">Plasma</SelectItem>
-                    <SelectItem value="dried-blood-spot">Dried Blood Spot</SelectItem>
-                    <SelectItem value="whole-blood">Whole Blood</SelectItem>
-                    <SelectItem value="serum">Serum</SelectItem>
+                    <SelectItem value="P">Plasma</SelectItem>
+                    <SelectItem value="D">Dried Blood Spot</SelectItem>
+                    <SelectItem value="W">Whole Blood</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -334,15 +324,23 @@ export default function CollectSamplePage({ params }: { params: { id: string } }
           <div className="bg-white rounded-lg border border-gray-200 p-6">
             <div className="flex items-center justify-end space-x-4">
               <Link href="/viral-load/pending-collection">
-                <Button variant="outline" className="h-10 px-6">
+                <Button variant="outline" className="h-10 px-6" disabled={updateSampleMutation.isPending}>
                   Cancel
                 </Button>
               </Link>
               <Button
                 type="submit"
                 className="bg-red-600 hover:bg-red-700 h-10 px-8"
+                disabled={updateSampleMutation.isPending}
               >
-                Submit Collection
+                {updateSampleMutation.isPending ? (
+                  <>
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    Submitting...
+                  </>
+                ) : (
+                  "Submit Collection"
+                )}
               </Button>
             </div>
           </div>
