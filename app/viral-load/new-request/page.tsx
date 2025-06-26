@@ -52,7 +52,7 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function NewViralLoadRequest(): React.JSX.Element {
+export default function NewVirwqalLoadRequest(): React.JSX.Element {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, isLoading } = useAuth();

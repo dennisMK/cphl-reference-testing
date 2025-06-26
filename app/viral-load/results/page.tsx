@@ -27,7 +27,9 @@ import {
   TrendingDown,
   Minus,
   Activity,
-  Loader2
+  Loader2,
+  Filter,
+  RefreshCw
 } from "lucide-react";
 import Link from "next/link";
 import { api } from "@/trpc/react";
@@ -42,7 +44,7 @@ export default function VLResultsPage() {
   
   const [selectedResult, setSelectedResult] = useState<any>(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [pageSize, setPageSize] = useState(50);
+  const [pageSize, setPageSize] = useState(25);
   const [currentPage, setCurrentPage] = useState(1);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
@@ -50,7 +52,7 @@ export default function VLResultsPage() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1); // Reset to first page when searching
+      setCurrentPage(1);
     }, 300);
 
     return () => clearTimeout(timer);
@@ -70,7 +72,7 @@ export default function VLResultsPage() {
     offset: offset,
     searchTerm: debouncedSearchTerm || undefined,
   }, {
-    enabled: !resultId, // Only fetch list when not viewing specific result
+    enabled: !resultId,
   });
 
   // Fetch specific result when resultId is provided
@@ -106,299 +108,198 @@ export default function VLResultsPage() {
   const getResultBadge = (interpretation: string, value: number | null) => {
     if (interpretation === "Suppressed") {
       return (
-        <Badge className="bg-green-100 text-green-800 border-green-300 flex items-center gap-1">
-          <CheckCircle className="h-3 w-3" />
+        <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
+          <CheckCircle className="h-3 w-3 mr-1" />
           Suppressed
         </Badge>
       );
     } else if (interpretation === "Unsuppressed") {
       return (
-        <Badge className="bg-red-100 text-red-800 border-red-300 flex items-center gap-1">
-          <AlertTriangle className="h-3 w-3" />
+        <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">
+          <AlertTriangle className="h-3 w-3 mr-1" />
           Unsuppressed
         </Badge>
       );
     }
-    return <Badge variant="outline">Unknown</Badge>;
-  };
-
-  const getTrendIcon = (currentValue: number | null, previousValue: number | null) => {
-    if (!currentValue || !previousValue) return <Minus className="h-4 w-4 text-gray-400" />;
-    
-    if (currentValue > previousValue) {
-      return <TrendingUp className="h-4 w-4 text-red-500" />;
-    } else if (currentValue < previousValue) {
-      return <TrendingDown className="h-4 w-4 text-green-500" />;
-    }
-    return <Minus className="h-4 w-4 text-gray-400" />;
+    return (
+      <Badge variant="outline" className="text-gray-600">
+        <XCircle className="h-3 w-3 mr-1" />
+        Unknown
+      </Badge>
+    );
   };
 
   const formatViralLoadValue = (value: number | null, detectionStatus: string) => {
     if (detectionStatus === "not_detected") {
-      return "Target Not Detected";
+      return "Not Detected";
     }
-    return value ? `${value.toLocaleString()} copies/mL` : "N/A";
+    return value ? `${value.toLocaleString()}` : "N/A";
   };
 
-  const InfoField = ({ label, value, icon }: { label: string; value: string; icon?: React.ReactNode }) => (
-    <div className="space-y-1">
-      <div className="flex items-center space-x-2">
-        {icon}
-        <label className="text-sm font-medium text-gray-700">{label}</label>
-      </div>
-      <div className="p-2 bg-gray-50 rounded border text-sm text-gray-900">
-        {value || "Not specified"}
-      </div>
-    </div>
-  );
-
-  // Error handling
+  // Error state
   if (resultsError || specificError) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="text-center">
-          <p className="text-red-600 mb-4">
-            Error loading results: {resultsError?.message || specificError?.message}
-          </p>
-          <Button 
-            onClick={() => { 
-              refetchResults(); 
-            }} 
-            variant="outline"
-          >
-            Try Again
-          </Button>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
+        <Card className="w-full max-w-md">
+          <CardContent className="text-center py-8">
+            <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Error Loading Results</h3>
+            <p className="text-gray-600 mb-4">
+              {resultsError?.message || specificError?.message || "Something went wrong"}
+            </p>
+            <Button 
+              onClick={() => refetchResults()} 
+              variant="outline"
+              className="w-full"
+            >
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Try Again
+            </Button>
+          </CardContent>
+        </Card>
       </div>
     );
   }
 
-  // Loading state for specific result
-  if (resultId && isLoadingSpecific) {
+  // Loading state
+  if ((resultId && isLoadingSpecific) || isLoadingResults) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4" />
-          <p>Loading result details...</p>
+          <Loader2 className="h-8 w-8 animate-spin mx-auto mb-4 text-blue-600" />
+          <p className="text-gray-600">Loading results...</p>
         </div>
       </div>
     );
   }
 
-  // If viewing a specific result
+  // Individual result view
   if (selectedResult) {
     return (
-      <div className="px-4 py-6 sm:px-0 min-h-screen bg-gray-50">
-        {/* Header */}
-        <div className="mb-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-4">
+      <div className="min-h-screen">
+        <div className="md:container mx-auto">
+          {/* Header */}
+          <div className="mb-6">
+            <div className="flex items-center gap-4 mb-4">
               <Link href="/viral-load/results">
-                <ArrowLeft className="h-6 w-6 text-gray-600 hover:text-gray-800" />
+                <Button variant="ghost" size="sm">
+                  <ArrowLeft className="h-4 w-4 mr-2" />
+                  Back to Results
+                </Button>
               </Link>
-              <div>
-                <h1 className="text-xl md:text-2xl font-bold text-gray-900">Viral Load Result</h1>
-                <p className="text-gray-600">Result for {selectedResult.patientId} - {selectedResult.sampleId}</p>
-              </div>
             </div>
             
-            <div className="flex items-center space-x-3">
-              {getResultBadge(selectedResult.interpretation, selectedResult.viralLoadValue)}
-              <Button variant="outline" size="sm">
-                <Printer className="h-4 w-4 mr-1" />
-                Print
-              </Button>
-              <Button variant="outline" size="sm">
-                <Download className="h-4 w-4 mr-1" />
-                Download
-              </Button>
-            </div>
-          </div>
-        </div>
-
-        <div className="max-w-4xl mx-auto space-y-6">
-          
-          {/* Test Results - Main Card */}
-          <Card className="border-2" style={{ borderColor: selectedResult.interpretation === "Suppressed" ? "#10b981" : "#ef4444" }}>
-            <CardHeader style={{ backgroundColor: selectedResult.interpretation === "Suppressed" ? "#ecfdf5" : "#fef2f2" }}>
-              <CardTitle className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <Activity className="h-6 w-6" style={{ color: selectedResult.interpretation === "Suppressed" ? "#10b981" : "#ef4444" }} />
-                  <span>Viral Load Result</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  {selectedResult.previousResults && selectedResult.previousResults[0] && 
-                    getTrendIcon(selectedResult.viralLoadValue, selectedResult.previousResults[0]?.value)
-                  }
-                  <span className="text-sm text-gray-600">vs. previous</span>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2">Result Value</h3>
-                    <div className="text-3xl font-bold" style={{ color: selectedResult.interpretation === "Suppressed" ? "#10b981" : "#ef4444" }}>
-                      {formatViralLoadValue(selectedResult.viralLoadValue, selectedResult.detectionStatus)}
-                    </div>
-                    <p className="text-sm text-gray-600 mt-1">Reference: {selectedResult.referenceRange}</p>
-                  </div>
-                  
-                  <div>
-                    <h4 className="font-medium text-gray-900">Interpretation</h4>
-                    <p className="text-sm text-gray-700">{selectedResult.clinicalSignificance}</p>
-                  </div>
-                </div>
-                
-                <div className="space-y-4">
-                  <InfoField 
-                    label="Result Date" 
-                    value={`${selectedResult.resultDate} at ${selectedResult.resultTime}`}
-                    icon={<Calendar className="h-4 w-4 text-gray-500" />}
-                  />
-                  <InfoField 
-                    label="Test Method" 
-                    value={selectedResult.testMethod}
-                    icon={<TestTube className="h-4 w-4 text-gray-500" />}
-                  />
-                  <InfoField 
-                    label="Laboratory" 
-                    value={selectedResult.laboratoryName}
-                    icon={<MapPin className="h-4 w-4 text-gray-500" />}
-                  />
-                </div>
+            <div className="flex items-center justify-between">
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">Viral Load Result</h1>
+                <p className="text-gray-600 mt-1">
+                  Patient: {selectedResult.patientId} • Sample: {selectedResult.sampleId}
+                </p>
               </div>
               
-              {/* Clinical Recommendation */}
-              <Alert className="mt-6 border-blue-200 bg-blue-50">
-                <FileText className="h-4 w-4 text-blue-600" />
-                <AlertDescription className="text-blue-800">
-                  <strong>Clinical Recommendation:</strong> {selectedResult.recommendation}
-                </AlertDescription>
-              </Alert>
-            </CardContent>
-          </Card>
+              <div className="flex items-center gap-3">
+                {getResultBadge(selectedResult.interpretation, selectedResult.viralLoadValue)}
+                <Button variant="outline" size="sm">
+                  <Download className="h-4 w-4 mr-2" />
+                  Download
+                </Button>
+              </div>
+            </div>
+          </div>
 
-          {/* Sample Information */}
-          <Card>
-            <CardHeader style={{ backgroundColor: colors.primaryLight }}>
-              <CardTitle className="flex items-center space-x-2" style={{ color: colors.primaryDark }}>
-                <TestTube className="h-5 w-5" />
-                <span>Sample Information</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <InfoField label="Sample ID" value={selectedResult.sampleId} />
-                <InfoField label="Sample Type" value={selectedResult.sampleType} />
-                <InfoField label="Batch Number" value={selectedResult.batchNumber} />
-                <InfoField label="Date Collected" value={selectedResult.dateCollected} />
-                <InfoField label="Date Received" value={selectedResult.dateReceived} />
-                <InfoField label="Date Processed" value={selectedResult.dateProcessed} />
-                <InfoField label="Instrument" value={selectedResult.instrument} />
-                <InfoField label="Lab Technician" value={selectedResult.labTechnician} />
-                <InfoField label="Quality Control" value={selectedResult.qualityControl} />
+          {/* Main Result Card */}
+          <Card className="mb-6">
+            <CardContent className="p-8">
+              <div className="text-center">
+                <div className="mb-4">
+                  <h2 className="text-sm font-medium text-gray-600 mb-2">Viral Load Result</h2>
+                  <div className={`text-4xl font-bold ${
+                    selectedResult.interpretation === "Suppressed" ? "text-green-600" : "text-red-600"
+                  }`}>
+                    {formatViralLoadValue(selectedResult.viralLoadValue, selectedResult.detectionStatus)}
+                  </div>
+                  {selectedResult.detectionStatus !== "not_detected" && (
+                    <p className="text-gray-500 mt-1">copies/mL</p>
+                  )}
+                </div>
+                
+                <div className="max-w-2xl mx-auto">
+                  <Alert className={`${
+                    selectedResult.interpretation === "Suppressed" 
+                      ? "border-green-200 bg-green-50" 
+                      : "border-red-200 bg-red-50"
+                  }`}>
+                    <AlertDescription className="text-center">
+                      <strong>Clinical Interpretation:</strong> {selectedResult.clinicalSignificance}
+                    </AlertDescription>
+                  </Alert>
+                </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Patient & Facility Information */}
+          {/* Details Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Sample Information */}
             <Card>
-              <CardHeader style={{ backgroundColor: colors.primaryLight }}>
-                <CardTitle className="flex items-center space-x-2" style={{ color: colors.primaryDark }}>
-                  <User className="h-5 w-5" />
-                  <span>Patient Information</span>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <TestTube className="h-5 w-5 text-blue-600" />
+                  Sample Details
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <InfoField label="Patient ID" value={selectedResult.patientId} />
-                  <InfoField label="Gender" value={selectedResult.gender} />
-                  <InfoField label="Age" value={`${selectedResult.age} years`} />
-                  <InfoField label="Current Regimen" value={selectedResult.currentRegimen} />
-                  <InfoField label="Treatment Duration" value={selectedResult.treatmentDuration} />
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-gray-600">Sample ID</p>
+                    <p className="font-medium">{selectedResult.sampleId}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Type</p>
+                    <p className="font-medium">{selectedResult.sampleType}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Collected</p>
+                    <p className="font-medium">{selectedResult.dateCollected || "N/A"}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Processed</p>
+                    <p className="font-medium">{selectedResult.dateProcessed || "N/A"}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
 
+            {/* Patient Information */}
             <Card>
-              <CardHeader style={{ backgroundColor: colors.primaryLight }}>
-                <CardTitle className="flex items-center space-x-2" style={{ color: colors.primaryDark }}>
-                  <MapPin className="h-5 w-5" />
-                  <span>Facility Information</span>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <User className="h-5 w-5 text-green-600" />
+                  Patient Details
                 </CardTitle>
               </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-4">
-                  <InfoField label="Facility" value={selectedResult.facility} />
-                  <InfoField label="District" value={selectedResult.district} />
-                  <InfoField label="Hub" value={selectedResult.hub} />
-                  <InfoField label="Requesting Clinician" value={selectedResult.requestingClinician} />
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-gray-600">Patient ID</p>
+                    <p className="font-medium">{selectedResult.patientId}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Facility</p>
+                    <p className="font-medium">{selectedResult.facility}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Result Date</p>
+                    <p className="font-medium">{selectedResult.resultDate}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Result Time</p>
+                    <p className="font-medium">{selectedResult.resultTime}</p>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
-
-          {/* Previous Results */}
-          {selectedResult.previousResults && selectedResult.previousResults.length > 0 && (
-            <Card>
-              <CardHeader style={{ backgroundColor: colors.primaryLight }}>
-                <CardTitle className="flex items-center space-x-2" style={{ color: colors.primaryDark }}>
-                  <TrendingUp className="h-5 w-5" />
-                  <span>Previous Results</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6">
-                <div className="space-y-3">
-                  {selectedResult.previousResults.map((result: any, index: number) => (
-                    <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-3">
-                        <Calendar className="h-4 w-4 text-gray-500" />
-                        <span className="text-sm font-medium">{result.date}</span>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <span className="text-sm">
-                          {result.status === "not_detected" ? "Target Not Detected" : `${result.value} copies/mL`}
-                        </span>
-                        <Badge variant={result.status === "not_detected" || result.value < 50 ? "default" : "destructive"}>
-                          {result.status === "not_detected" || result.value < 50 ? "Suppressed" : "Unsuppressed"}
-                        </Badge>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Action Buttons */}
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex flex-wrap gap-3 justify-center">
-                <Button 
-                  className="text-white"
-                  style={{ backgroundColor: colors.primary }}
-                >
-                  <Printer className="h-4 w-4 mr-2" />
-                  Print Result
-                </Button>
-                
-                <Button variant="outline">
-                  <Download className="h-4 w-4 mr-2" />
-                  Download PDF
-                </Button>
-                
-                <Link href="/viral-load/results">
-                  <Button variant="outline">
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Back to Results
-                  </Button>
-                </Link>
-              </div>
-            </CardContent>
-          </Card>
         </div>
       </div>
     );
@@ -406,131 +307,127 @@ export default function VLResultsPage() {
 
   // Main results list view
   return (
-    <div className="px-4 py-6 sm:px-0 min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-4">
+    <div className="min-h-screen bg-gray-50 p-6">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="mb-6">
+          <div className="flex items-center gap-4 mb-4">
             <Link href="/viral-load">
-              <ArrowLeft className="h-6 w-6 text-gray-600 hover:text-gray-800" />
+              <Button variant="ghost" size="sm">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Viral Load
+              </Button>
             </Link>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-xl md:text-2xl font-bold text-gray-900">Viral Load Results</h1>
-              <p className="text-gray-600">View and manage viral load test results ({totalResults} total)</p>
+              <h1 className="text-2xl font-bold text-gray-900">Viral Load Results</h1>
+              <p className="text-gray-600 mt-1">
+                {totalResults > 0 ? `${totalResults} results found` : "No results available"}
+              </p>
             </div>
+            
+            <Button
+              onClick={() => refetchResults()}
+              variant="outline"
+              size="sm"
+              disabled={isLoadingResults}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${isLoadingResults ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
           </div>
         </div>
 
-        {/* Search */}
-        <div className="max-w-md">
-          <Label htmlFor="search" className="sr-only">Search results</Label>
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              id="search"
-              type="text"
-              placeholder="Search by Patient ID, Sample ID, ART Number..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Loading State */}
-      {isLoadingResults && (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin mr-2" />
-          <span>Loading results...</span>
-        </div>
-      )}
-
-      {/* Results List */}
-      {!isLoadingResults && (
-        <>
-          {/* Results Table */}
-          {results.length > 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-              <div className="pb-3 border-b border-gray-100 flex items-center justify-between">
-                <h2 className="text-lg font-semibold text-gray-900">
-                  Test Results ({totalResults} total)
-                </h2>
-                <div className="flex items-center space-x-2">
-                  <Label className="text-sm font-medium text-gray-700">Show</Label>
-                  <Select 
-                    value={pageSize.toString()} 
-                    onValueChange={(value) => {
-                      setPageSize(Number(value))
-                      setCurrentPage(1)
-                    }}
-                  >
-                    <SelectTrigger className="w-20 h-8">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="25">25</SelectItem>
-                      <SelectItem value="50">50</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
-                    </SelectContent>
-                  </Select>
-                  <Label className="text-sm font-medium text-gray-700">rows</Label>
-                </div>
+        {/* Controls */}
+        <Card className="mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col sm:flex-row gap-4">
+              {/* Search */}
+              <div className="flex-1 relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Search by patient ID, sample ID, or ART number..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
               </div>
+              
+              {/* Page Size */}
+              <div className="flex items-center gap-2">
+                <Label className="text-sm text-gray-600">Show:</Label>
+                <Select 
+                  value={pageSize.toString()} 
+                  onValueChange={(value) => {
+                    setPageSize(Number(value))
+                    setCurrentPage(1)
+                  }}
+                >
+                  <SelectTrigger className="w-20">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-              {/* Debug info - remove this in production */}
-              {process.env.NODE_ENV === 'development' && (
-                <div className="text-xs text-gray-500 bg-gray-50 p-2 rounded">
-                  Debug: Results={results.length}, Total={totalResults}, Pages={totalPages}, Current={currentPage}, Offset={offset}
-                </div>
-              )}
-
-              <div className="rounded-md border">
+        {/* Results */}
+        {results.length > 0 ? (
+          <Card>
+            <CardContent className="p-0">
+              <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
-                    <TableRow>
-                      <TableHead>Patient ID</TableHead>
-                      <TableHead>Sample ID</TableHead>
-                      <TableHead>Result</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Date</TableHead>
-                      <TableHead>Sample Type</TableHead>
-                      <TableHead>Facility</TableHead>
-                      <TableHead>Actions</TableHead>
+                    <TableRow className="border-b">
+                      <TableHead className="font-semibold">Patient</TableHead>
+                      <TableHead className="font-semibold">Sample</TableHead>
+                      <TableHead className="font-semibold">Result</TableHead>
+                      <TableHead className="font-semibold">Status</TableHead>
+                      <TableHead className="font-semibold">Date</TableHead>
+                      <TableHead className="font-semibold">Type</TableHead>
+                      <TableHead className="font-semibold">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {results.map((result) => (
-                      <TableRow key={result.id}>
+                      <TableRow key={result.id} className="hover:bg-gray-50">
                         <TableCell className="font-medium">{result.patientId}</TableCell>
-                        <TableCell className="font-mono text-sm">{result.sampleId}</TableCell>
+                        <TableCell className="font-mono text-sm text-gray-600">
+                          {result.sampleId}
+                        </TableCell>
                         <TableCell>
-                          <div className="flex flex-col space-y-1">
+                          <div>
                             <span className="font-medium">
                               {formatViralLoadValue(result.viralLoadValue, result.detectionStatus)}
                             </span>
-                            <span className="text-xs text-gray-500">{result.viralLoadUnit}</span>
+                            {result.detectionStatus !== "not_detected" && (
+                              <span className="text-xs text-gray-500 ml-1">copies/mL</span>
+                            )}
                           </div>
                         </TableCell>
                         <TableCell>
                           {getResultBadge(result.interpretation, result.viralLoadValue)}
                         </TableCell>
-                        <TableCell>
-                          <div className="flex flex-col space-y-1">
-                            <span className="text-sm">{result.resultDate}</span>
-                            <span className="text-xs text-gray-500">{result.resultTime}</span>
-                          </div>
+                        <TableCell className="text-sm text-gray-600">
+                          {result.resultDate}
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-xs">
                             {result.sampleType}
                           </Badge>
                         </TableCell>
-                        <TableCell className="text-sm text-gray-600">{result.facility}</TableCell>
                         <TableCell>
                           <Link href={`/viral-load/results?id=${result.id}`}>
-                            <Button variant="outline" size="sm">
+                            <Button variant="ghost" size="sm" className="h-8">
                               <FileText className="h-4 w-4 mr-1" />
                               View
                             </Button>
@@ -541,14 +438,15 @@ export default function VLResultsPage() {
                   </TableBody>
                 </Table>
               </div>
-
+              
               {/* Pagination */}
               {totalResults > 0 && (
-                <div className="flex items-center justify-between px-2">
-                  <div className="text-sm text-gray-500">
-                    {offset + 1} to {Math.min(offset + pageSize, totalResults)} of {totalResults}
+                <div className="flex items-center justify-between p-4 border-t bg-gray-50">
+                  <div className="text-sm text-gray-600">
+                    Showing {offset + 1} to {Math.min(offset + pageSize, totalResults)} of {totalResults} results
                   </div>
-                  <div className="flex items-center space-x-2">
+                  
+                  <div className="flex items-center gap-2">
                     <Button
                       variant="outline"
                       size="sm"
@@ -557,8 +455,9 @@ export default function VLResultsPage() {
                     >
                       Previous
                     </Button>
+                    
                     {totalPages > 1 && (
-                      <div className="flex items-center space-x-1">
+                      <div className="flex items-center gap-1">
                         {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => {
                           let page: number
                           if (totalPages <= 5) {
@@ -585,6 +484,7 @@ export default function VLResultsPage() {
                         })}
                       </div>
                     )}
+                    
                     <Button
                       variant="outline"
                       size="sm"
@@ -596,21 +496,32 @@ export default function VLResultsPage() {
                   </div>
                 </div>
               )}
-            </div>
-          ) : (
-            /* No Results */
-            <Card>
-              <CardContent className="p-8 text-center">
-                <TestTube className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">No Results Found</h3>
-                <p className="text-gray-600">
-                  {searchTerm ? `No results match "${searchTerm}"` : "No viral load results available."}
-                </p>
-              </CardContent>
-            </Card>
-          )}
-        </>
-      )}
+            </CardContent>
+          </Card>
+        ) : (
+          <Card>
+            <CardContent className="text-center py-12">
+              <TestTube className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">No Results Found</h3>
+              <p className="text-gray-600 mb-4">
+                {searchTerm 
+                  ? `No results match "${searchTerm}". Try adjusting your search.` 
+                  : "No viral load results are available yet."
+                }
+              </p>
+              {searchTerm && (
+                <Button 
+                  variant="outline" 
+                  onClick={() => setSearchTerm("")}
+                  size="sm"
+                >
+                  Clear Search
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 } 

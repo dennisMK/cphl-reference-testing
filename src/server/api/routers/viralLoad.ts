@@ -28,8 +28,8 @@ export const viralLoadRouter = createTRPCRouter({
       // Get VL LIMS database connection
       const vlDb = await getVlLimsDb();
 
-      // Get viral load samples for the user's facility
-      const samples = await vlDb
+      // First, get all samples for the facility to apply filtering
+      const allSamples = await vlDb
         .select({
           id: vl_samples.id,
           patient_unique_id: vl_samples.patient_unique_id,
@@ -44,19 +44,34 @@ export const viralLoadRouter = createTRPCRouter({
         })
         .from(vl_samples)
         .where(eq(vl_samples.facility_id, user.facility_id!))
-        .orderBy(desc(vl_samples.created_at))
-        .limit(input.limit)
-        .offset(input.offset);
+        .orderBy(desc(vl_samples.created_at));
 
-      // Get total count
-      const totalResult = await vlDb
-        .select({ count: count() })
-        .from(vl_samples)
-        .where(eq(vl_samples.facility_id, user.facility_id!));
+      // Apply status filtering if specified
+      let filteredSamples = allSamples;
+      if (input.status) {
+        filteredSamples = allSamples.filter(sample => {
+          switch (input.status) {
+            case "pending":
+              return !sample.date_collected; // Not yet collected
+            case "collected":
+              return sample.date_collected && !sample.date_received; // Collected but not received/packaged
+            // case "processing":
+            //   return sample.date_received && !sample.verified; // Received but not verified
+            case "completed":
+              return sample.verified === 1; // Verified/completed
+            default:
+              return true;
+          }
+        });
+      }
+
+      // Apply pagination
+      const totalCount = filteredSamples.length;
+      const paginatedSamples = filteredSamples.slice(input.offset, input.offset + input.limit);
 
       return {
-        samples,
-        total: totalResult[0]?.count ?? 0,
+        samples: paginatedSamples,
+        total: totalCount,
       };
     }),
 
@@ -359,15 +374,17 @@ export const viralLoadRouter = createTRPCRouter({
       
       const vlDb = await getVlLimsDb();
 
-      // For each sample, update it to indicate it's been packaged
-      // In a real system, you might have a separate packages table
+      // For each sample, update it to indicate it's been packaged and received
+      const currentDate = new Date();
       const updatePromises = input.sampleIds.map(sampleId =>
         vlDb
           .update(vl_samples)
           .set({
             // Use facility_reference field to store package identifier
             facility_reference: input.packageIdentifier,
-            updated_at: new Date(),
+            // Set date_received when packaging (indicates sample has been received at lab)
+            date_received: currentDate,
+            updated_at: currentDate,
             updated_by_id: user.id,
           })
           .where(
@@ -443,8 +460,9 @@ export const viralLoadRouter = createTRPCRouter({
         .where(and(...whereConditions))
         .orderBy(desc(vl_samples.updated_at));
 
-      // Filter packaged samples (samples with facility_reference)
+      // Filter packaged samples (samples with date_received and facility_reference)
       let packagedSamples = allSamples.filter(sample => 
+        sample.date_received && // Has been received (packaged)
         sample.facility_reference && sample.facility_reference.trim() !== ""
       );
 
@@ -797,6 +815,56 @@ export const viralLoadRouter = createTRPCRouter({
         
         formNumber: sampleData.form_number,
         status: "completed"
+      };
+    }),
+
+  // Update sample collection status
+  updateSampleCollection: protectedProcedure
+    .input(
+      z.object({
+        sampleId: z.string().min(1, "Sample ID is required"),
+        collected: z.boolean(),
+        collectionDate: z.date().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = ctx.user;
+      
+      if (!user.facility_id) {
+        throw new Error("Please set up your facility information first.");
+      }
+      
+      const vlDb = await getVlLimsDb();
+
+      // Update the sample collection status
+      const updateData: any = {
+        updated_at: new Date(),
+        updated_by_id: user.id,
+      };
+
+      if (input.collected) {
+        // Set collection date (either provided or current date)
+        updateData.date_collected = input.collectionDate || new Date();
+      } else {
+        // Clear collection date if uncollecting
+        updateData.date_collected = null;
+      }
+
+      await vlDb
+        .update(vl_samples)
+        .set(updateData)
+        .where(
+          and(
+            eq(vl_samples.vl_sample_id, input.sampleId),
+            eq(vl_samples.facility_id, user.facility_id!)
+          )
+        );
+
+      return {
+        success: true,
+        message: input.collected 
+          ? `Sample ${input.sampleId} marked as collected` 
+          : `Sample ${input.sampleId} collection status cleared`,
       };
     }),
 }); 

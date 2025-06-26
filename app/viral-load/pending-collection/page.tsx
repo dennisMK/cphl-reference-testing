@@ -61,13 +61,13 @@ export type ViralLoadSample = {
 }
 
 const getStatusBadge = (sample: ViralLoadSample) => {
-  if (!sample.date_collected) {
+  if (!sample.date_received) {
     return <Badge variant="secondary" className="text-orange-600 bg-orange-50">Pending Collection</Badge>
   } else if (sample.date_collected && !sample.date_received) {
     return <Badge variant="secondary" className="text-blue-600 bg-blue-50">Collected</Badge>
-  } else if (sample.in_worksheet) {
+  } else if (sample.date_received && !sample.verified) {
     return <Badge variant="secondary" className="text-purple-600 bg-purple-50">Processing</Badge>
-  } else if (sample.verified) {
+  } else if (sample.verified === 1) {
     return <Badge variant="secondary" className="text-green-600 bg-green-50">Completed</Badge>
   } else {
     return <Badge variant="outline">Unknown</Badge>
@@ -278,8 +278,8 @@ export function ViralLoadDataTable() {
     return requestsData.samples.filter((sample) => {
       if (statusFilter === "pending") return !sample.date_collected
       if (statusFilter === "collected") return sample.date_collected && !sample.date_received
-      if (statusFilter === "processing") return sample.in_worksheet
-      if (statusFilter === "completed") return sample.verified
+      if (statusFilter === "processing") return sample.date_received && !sample.verified
+      if (statusFilter === "completed") return sample.verified === 1
       return true
     })
   }, [requestsData?.samples, statusFilter])
@@ -472,8 +472,10 @@ export default function page() {
   })
 
   const samples = requestsData?.samples || []
-  const pendingCount = samples.filter((sample) => !sample.date_collected).length
-  const collectedCount = samples.filter((sample) => sample.date_collected && !sample.date_received).length
+  const pendingCount = samples.filter((sample) => !sample.date_received).length
+  const collectedCount = samples.filter((sample) => sample.date_received && !sample.date_received).length
+  const processingCount = samples.filter((sample) => sample.date_received && !sample.verified).length
+  const completedCount = samples.filter((sample) => sample.date_received && sample.verified === 1).length
 
   return (
     <main className="container mx-auto px-4 py-6">
@@ -499,26 +501,39 @@ export default function page() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
+              <CheckCircle className="h-5 w-5 text-blue-500" />
               Collected Samples
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">{collectedCount}</div>
-            <p className="text-sm text-muted-foreground">Samples collected and ready</p>
+            <p className="text-sm text-muted-foreground">Samples collected, ready for packaging</p>
           </CardContent>
         </Card>
+
+        {/* <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-purple-500" />
+              Processing
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-4xl font-bold">{processingCount}</div>
+            <p className="text-sm text-muted-foreground">Samples being processed</p>
+          </CardContent>
+        </Card> */}
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-blue-500" />
-              Total Samples
+              <CheckCircle className="h-5 w-5 text-green-500" />
+              Completed
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">{samples.length}</div>
-            <p className="text-sm text-muted-foreground">Total samples in system</p>
+            <div className="text-4xl font-bold">{completedCount}</div>
+            <p className="text-sm text-muted-foreground">Results available</p>
           </CardContent>
         </Card>
       </div>
