@@ -11,7 +11,7 @@ import {
   smallint,
 } from "drizzle-orm/mysql-core";
 
-// VL Patients table from etest_vl_lims database
+// VL Patients table from etest_vl_lims database - matches actual database schema
 export const vl_patients = mysqlTable("vl_patients", {
   id: int("id").primaryKey().autoincrement(),
   unique_id: varchar("unique_id", { length: 128 }),
@@ -35,7 +35,7 @@ export const vl_patients = mysqlTable("vl_patients", {
   is_cleaned: tinyint("is_cleaned").default(0),
 });
 
-// VL Samples table from etest_vl_lims database
+// VL Samples table from etest_vl_lims database - matches actual database schema
 export const vl_samples = mysqlTable("vl_samples", {
   id: int("id").primaryKey().autoincrement(),
   patient_unique_id: varchar("patient_unique_id", { length: 128 }),
@@ -98,7 +98,7 @@ export const vl_samples = mysqlTable("vl_samples", {
   reception_art_number: varchar("reception_art_number", { length: 40 }),
   data_art_number: varchar("data_art_number", { length: 40 }),
   stage: tinyint("stage"),
-  required_verification: tinyint("required_verification"),
+  required_verification: tinyint("required_verification").notNull(),
   current_regimen_initiation_date: date("current_regimen_initiation_date"),
   hie_data_created_at: datetime("hie_data_created_at"),
   study_id: int("study_id"),
@@ -111,4 +111,10 @@ export const vl_samples = mysqlTable("vl_samples", {
   requested_on: date("requested_on"),
   only_sample_received: tinyint("only_sample_received"),
   agent_id: varchar("agent_id", { length: 255 }),
-}); 
+});
+
+// TypeScript types for the VL LIMS tables
+export type VLPatient = typeof vl_patients.$inferSelect;
+export type VLPatientInsert = typeof vl_patients.$inferInsert;
+export type VLSample = typeof vl_samples.$inferSelect;
+export type VLSampleInsert = typeof vl_samples.$inferInsert; 

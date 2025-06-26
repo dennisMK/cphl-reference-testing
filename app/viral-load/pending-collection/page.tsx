@@ -1,17 +1,18 @@
 "use client";
 
 import * as React from "react"
+import { api } from "@/trpc/react"
 import {
-  ColumnDef,
-  ColumnFiltersState,
+  type ColumnDef,
+  type ColumnFiltersState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
-  SortingState,
+  type SortingState,
   useReactTable,
-  VisibilityState,
+  type VisibilityState,
 } from "@tanstack/react-table"
 import { ArrowUpDown, ChevronDown, MoreHorizontal, Eye, Edit, Trash2, FileText, Package } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,91 +47,43 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 
-// Sample data with the requested columns
-const sampleData: ViralLoadSample[] = [
-  {
-    id: "VL001",
-    artNumber: "ART-2024-001",
-    sampleId: "VL-001-2024",
-    sampleType: "Plasma",
-    dateCollected: "2024-01-15",
-    dateReceived: "2024-01-16",
-    status: "pending",
-    patientName: "John Doe",
-    facility: "Mulago Hospital",
-  },
-  {
-    id: "VL002", 
-    artNumber: "ART-2024-002",
-    sampleId: "VL-002-2024",
-    sampleType: "Dried Blood Spot",
-    dateCollected: "2024-01-14",
-    dateReceived: "2024-01-15",
-    status: "collected",
-    patientName: "Jane Smith",
-    facility: "Butabika Hospital",
-  },
-  {
-    id: "VL003",
-    artNumber: "ART-2024-003", 
-    sampleId: "VL-003-2024",
-    sampleType: "Plasma",
-    dateCollected: "2024-01-13",
-    dateReceived: null,
-    status: "pending",
-    patientName: "Bob Johnson",
-    facility: "Kiruddu Hospital",
-  },
-  {
-    id: "VL004",
-    artNumber: "ART-2024-004",
-    sampleId: "VL-004-2024", 
-    sampleType: "Plasma",
-    dateCollected: "2024-01-12",
-    dateReceived: "2024-01-13",
-    status: "processing",
-    patientName: "Mary Wilson",
-    facility: "Nakasero Hospital",
-  },
-  {
-    id: "VL005",
-    artNumber: "ART-2024-005",
-    sampleId: "VL-005-2024",
-    sampleType: "Dried Blood Spot",
-    dateCollected: "2024-01-11",
-    dateReceived: "2024-01-12",
-    status: "collected",
-    patientName: "David Brown",
-    facility: "Mulago Hospital",
-  },
-]
-
 export type ViralLoadSample = {
-  id: string
-  artNumber: string
-  sampleId: string
-  sampleType: "Plasma" | "Dried Blood Spot" | "Whole Blood"
-  dateCollected: string
-  dateReceived: string | null
-  status: "pending" | "collected" | "processing" | "completed" | "rejected"
-  patientName: string
-  facility: string
+  id: number
+  patient_unique_id: string | null
+  vl_sample_id: string | null
+  form_number: string | null
+  date_collected: Date | null
+  date_received: Date | null
+  sample_type: string | null
+  created_at: Date
+  verified: number | null
+  in_worksheet: number | null
 }
 
-const getStatusBadge = (status: string) => {
-  switch (status) {
-    case "pending":
-      return <Badge variant="secondary" className="text-orange-600 bg-orange-50">Pending</Badge>
-    case "collected":
-      return <Badge variant="secondary" className="text-blue-600 bg-blue-50">Collected</Badge>
-    case "processing":
-      return <Badge variant="secondary" className="text-purple-600 bg-purple-50">Processing</Badge>
-    case "completed":
-      return <Badge variant="secondary" className="text-green-600 bg-green-50">Completed</Badge>
-    case "rejected":
-      return <Badge variant="secondary" className="text-red-600 bg-red-50">Rejected</Badge>
+const getStatusBadge = (sample: ViralLoadSample) => {
+  if (!sample.date_collected) {
+    return <Badge variant="secondary" className="text-orange-600 bg-orange-50">Pending Collection</Badge>
+  } else if (sample.date_collected && !sample.date_received) {
+    return <Badge variant="secondary" className="text-blue-600 bg-blue-50">Collected</Badge>
+  } else if (sample.in_worksheet) {
+    return <Badge variant="secondary" className="text-purple-600 bg-purple-50">Processing</Badge>
+  } else if (sample.verified) {
+    return <Badge variant="secondary" className="text-green-600 bg-green-50">Completed</Badge>
+  } else {
+    return <Badge variant="outline">Unknown</Badge>
+  }
+}
+
+const getSampleType = (type: string | null) => {
+  switch (type) {
+    case "P":
+      return "Plasma"
+    case "D":
+      return "Dried Blood Spot"
+    case "W":
+      return "Whole Blood"
     default:
-      return <Badge variant="outline">{status}</Badge>
+      return type || "Unknown"
   }
 }
 
@@ -158,7 +111,7 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "artNumber",
+    accessorKey: "patient_unique_id",
     header: ({ column }) => {
       return (
         <Button
@@ -166,17 +119,17 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-8 px-2"
         >
-          Art Number
+          Patient ID
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )
     },
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("artNumber")}</div>
+      <div className="font-medium">{row.getValue("patient_unique_id") || "N/A"}</div>
     ),
   },
   {
-    accessorKey: "sampleId",
+    accessorKey: "vl_sample_id",
     header: ({ column }) => {
       return (
         <Button
@@ -190,20 +143,20 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
       )
     },
     cell: ({ row }) => (
-      <div className="font-mono text-sm">{row.getValue("sampleId")}</div>
+      <div className="font-mono text-sm">{row.getValue("vl_sample_id") || "N/A"}</div>
     ),
   },
   {
-    accessorKey: "sampleType",
+    accessorKey: "sample_type",
     header: "Sample Type",
     cell: ({ row }) => (
       <Badge variant="outline" className="text-xs">
-        {row.getValue("sampleType")}
+        {getSampleType(row.getValue("sample_type"))}
       </Badge>
     ),
   },
   {
-    accessorKey: "dateCollected",
+    accessorKey: "date_collected",
     header: ({ column }) => {
       return (
         <Button
@@ -217,12 +170,12 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
       )
     },
     cell: ({ row }) => {
-      const date = new Date(row.getValue("dateCollected"))
-      return <div className="text-sm">{date.toLocaleDateString()}</div>
+      const date = row.getValue("date_collected") as Date | null
+      return <div className="text-sm">{date ? date.toLocaleDateString() : "Not collected"}</div>
     },
   },
   {
-    accessorKey: "dateReceived",
+    accessorKey: "date_received",
     header: ({ column }) => {
       return (
         <Button
@@ -236,19 +189,19 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
       )
     },
     cell: ({ row }) => {
-      const dateReceived = row.getValue("dateReceived") as string | null
+      const date = row.getValue("date_received") as Date | null
       return (
         <div className="text-sm">
-          {dateReceived ? new Date(dateReceived).toLocaleDateString() : "-"}
+          {date ? date.toLocaleDateString() : "Not received"}
         </div>
       )
     },
   },
   {
-    accessorKey: "status",
+    id: "status",
     header: "Status",
     cell: ({ row }) => {
-      return getStatusBadge(row.getValue("status"))
+      return getStatusBadge(row.original)
     },
   },
   {
@@ -269,7 +222,7 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(sample.sampleId)}
+              onClick={() => navigator.clipboard.writeText(sample.vl_sample_id || "")}
             >
               <FileText className="mr-2 h-4 w-4" />
               Copy Sample ID
@@ -281,7 +234,7 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
                 View Details
               </a>
             </DropdownMenuItem>
-            {sample.status === "pending" && (
+            {!sample.date_collected && (
               <DropdownMenuItem asChild>
                 <a href={`/viral-load/${sample.id}/collect`}>
                   <Package className="mr-2 h-4 w-4" />
@@ -313,10 +266,23 @@ export function ViralLoadDataTable() {
   const [rowSelection, setRowSelection] = React.useState({})
   const [statusFilter, setStatusFilter] = React.useState<string>("all")
 
+  // Fetch viral load requests from the API
+  const { data: requestsData, isLoading, error } = api.viralLoad.getRequests.useQuery({
+    limit: 50,
+    offset: 0,
+  })
+
   const data = React.useMemo(() => {
-    if (statusFilter === "all") return sampleData
-    return sampleData.filter(sample => sample.status === statusFilter)
-  }, [statusFilter])
+    if (!requestsData?.samples) return []
+    if (statusFilter === "all") return requestsData.samples
+    return requestsData.samples.filter((sample) => {
+      if (statusFilter === "pending") return !sample.date_collected
+      if (statusFilter === "collected") return sample.date_collected && !sample.date_received
+      if (statusFilter === "processing") return sample.in_worksheet
+      if (statusFilter === "completed") return sample.verified
+      return true
+    })
+  }, [requestsData?.samples, statusFilter])
 
   const table = useReactTable({
     data,
@@ -343,9 +309,9 @@ export function ViralLoadDataTable() {
         <div className="flex items-center space-x-2">
           <Input
             placeholder="Filter by Sample ID..."
-            value={(table.getColumn("sampleId")?.getFilterValue() as string) ?? ""}
+            value={(table.getColumn("vl_sample_id")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn("sampleId")?.setFilterValue(event.target.value)
+              table.getColumn("vl_sample_id")?.setFilterValue(event.target.value)
             }
             className="max-w-sm"
           />
@@ -499,8 +465,15 @@ export function ViralLoadDataTable() {
 }
 
 export default function page() {
-  const pendingCount = sampleData.filter(sample => sample.status === "pending").length
-  const collectedCount = sampleData.filter(sample => sample.status === "collected").length
+  // Fetch viral load requests from the API for stats
+  const { data: requestsData } = api.viralLoad.getRequests.useQuery({
+    limit: 100, // Get samples for stats
+    offset: 0,
+  })
+
+  const samples = requestsData?.samples || []
+  const pendingCount = samples.filter((sample) => !sample.date_collected).length
+  const collectedCount = samples.filter((sample) => sample.date_collected && !sample.date_received).length
 
   return (
     <main className="container mx-auto px-4 py-6">
@@ -544,7 +517,7 @@ export default function page() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">{sampleData.length}</div>
+            <div className="text-4xl font-bold">{samples.length}</div>
             <p className="text-sm text-muted-foreground">Total samples in system</p>
           </CardContent>
         </Card>
