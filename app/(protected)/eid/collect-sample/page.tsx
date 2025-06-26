@@ -1,26 +1,35 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import React from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
+  ColumnDef,
+  ColumnFiltersState,
+  SortingState,
+  VisibilityState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
   getPaginationRowModel,
   getSortedRowModel,
   useReactTable,
-} from "@tanstack/react-table"
-import type {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
-} from "@tanstack/react-table"
-import { ArrowUpDown, ChevronDown, MoreHorizontal, Eye, Edit, Trash2, FileText, Package } from "lucide-react"
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, CheckCircle, Baby } from "lucide-react";
-import { Button } from '@/components/ui/button'
-import { Checkbox } from "@/components/ui/checkbox"
-import { Badge } from '@/components/ui/badge'
+} from "@tanstack/react-table";
+import {
+  ArrowUpDown,
+  MoreHorizontal,
+  ChevronDown,
+  Eye,
+  Edit,
+  CheckCircle,
+  Clock,
+  Package,
+  Baby,
+} from "lucide-react";
+import { IconArrowLeft, IconTestPipe } from "@tabler/icons-react";
+
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -29,8 +38,8 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { Input } from '@/components/ui/input'
+} from "@/components/ui/dropdown-menu";
+import { Input } from "@/components/ui/input";
 import {
   Table,
   TableBody,
@@ -38,123 +47,60 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table"
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select"
-import { Label } from "@/components/ui/label"
-import { IconTestPipe, IconArrowLeft } from '@tabler/icons-react'
-import Link from 'next/link'
+} from "@/components/ui/table";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { api } from "@/trpc/react";
+import { toast } from "sonner";
 
-// EID requests data structure
 export type EIDRequest = {
-  id: string
-  infantName: string
-  mothersName: string
-  facility: string
-  district: string
-  testType: "Initial Test" | "Follow-up" | "Confirmatory"
-  priority: "STAT" | "Urgent" | "Routine"
-  requestDate: string
-  status: "Pending Collection" | "Ready for Collection" | "Collected" | "Processing"
-  age: string
-}
-
-// Sample data for EID requests pending collection
-const eidRequests: EIDRequest[] = [
-  {
-    id: "EID-001234",
-    infantName: "Baby Nakato",
-    mothersName: "Sarah Nakato",
-    facility: "Mulago Hospital",
-    district: "Kampala",
-    testType: "Initial Test",
-    priority: "Routine",
-    requestDate: "2024-01-15",
-    status: "Pending Collection",
-    age: "8 weeks"
-  },
-  {
-    id: "EID-001235", 
-    infantName: "Baby Okello",
-    mothersName: "Grace Okello",
-    facility: "Gulu Hospital",
-    district: "Gulu",
-    testType: "Follow-up",
-    priority: "Urgent",
-    requestDate: "2024-01-14",
-    status: "Pending Collection",
-    age: "16 weeks"
-  },
-  {
-    id: "EID-001236",
-    infantName: "Baby Nabirye",
-    mothersName: "Ruth Nabirye", 
-    facility: "Mbale Hospital",
-    district: "Mbale",
-    testType: "Confirmatory",
-    priority: "Routine",
-    requestDate: "2024-01-13",
-    status: "Pending Collection",
-    age: "15 months"
-  },
-  {
-    id: "EID-001237",
-    infantName: "Baby Musoke",
-    mothersName: "Jane Musoke",
-    facility: "Mbarara Hospital",
-    district: "Mbarara", 
-    testType: "Initial Test",
-    priority: "STAT",
-    requestDate: "2024-01-12",
-    status: "Pending Collection",
-    age: "6 weeks"
-  },
-  {
-    id: "EID-001238",
-    infantName: "Baby Lwanga",
-    mothersName: "Mary Lwanga",
-    facility: "Butabika Hospital",
-    district: "Kampala",
-    testType: "Follow-up",
-    priority: "Routine",
-    requestDate: "2024-01-11",
-    status: "Ready for Collection",
-    age: "12 weeks"
-  }
-]
+  id: number;
+  infant_name: string;
+  infant_exp_id: string | null;
+  infant_gender: "MALE" | "FEMALE" | "NOT_RECORDED";
+  infant_age: string | null;
+  infant_age_units: string | null;
+  mother_htsnr: string | null;
+  mother_artnr: string | null;
+  pcr: "FIRST" | "SECOND" | "NON_ROUTINE" | "UNKNOWN" | "THIRD";
+  test_type: string | null;
+  created_at: Date;
+  facility_name: string | null;
+  facility_district: string | null;
+};
 
 const getStatusBadge = (status: string) => {
   switch (status) {
     case "Pending Collection":
-      return <Badge variant="secondary" className="text-orange-600 bg-orange-50">Pending Collection</Badge>
-    case "Ready for Collection":
-      return <Badge variant="secondary" className="text-blue-600 bg-blue-50">Ready for Collection</Badge>
+      return <Badge variant="secondary" className="bg-orange-100 text-orange-800">Pending</Badge>;
     case "Collected":
-      return <Badge variant="secondary" className="text-blue-600 bg-blue-50">Collected</Badge>
-    case "Processing":
-      return <Badge variant="secondary" className="text-purple-600 bg-purple-50">Processing</Badge>
+      return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Collected</Badge>;
+    case "Completed":
+      return <Badge variant="secondary" className="bg-green-100 text-green-800">Completed</Badge>;
     default:
-      return <Badge variant="outline">{status}</Badge>
+      return <Badge variant="outline">Unknown</Badge>;
   }
-}
+};
 
-const getPriorityBadge = (priority: string) => {
-  switch (priority) {
-    case "STAT":
-      return <Badge className="bg-red-500 text-white">STAT</Badge>
-    case "Urgent":
-      return <Badge className="bg-orange-500 text-white">Urgent</Badge>
-    case "Routine":
-      return <Badge className="bg-blue-500 text-white">Routine</Badge>
+const getPriorityBadge = (pcr: string) => {
+  switch (pcr) {
+    case "FIRST":
+      return <Badge variant="default" className="bg-green-600">First PCR</Badge>;
+    case "SECOND":
+      return <Badge variant="default" className="bg-yellow-600">Second PCR</Badge>;
+    case "THIRD":
+      return <Badge variant="default" className="bg-red-600">Third PCR</Badge>;
+    case "NON_ROUTINE":
+      return <Badge variant="default" className="bg-purple-600">Non-Routine</Badge>;
     default:
-      return <Badge variant="outline">{priority}</Badge>
+      return <Badge variant="outline">Unknown</Badge>;
   }
-}
+};
+
+const formatAge = (age: string | null, units: string | null) => {
+  if (!age) return "Not specified";
+  return `${age} ${units || ""}`.trim();
+};
 
 export const columns: ColumnDef<EIDRequest>[] = [
   {
@@ -191,14 +137,16 @@ export const columns: ColumnDef<EIDRequest>[] = [
           Request ID
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      )
+      );
     },
     cell: ({ row }) => (
-      <div className="font-mono text-sm font-medium text-blue-600">{row.getValue("id")}</div>
+      <div className="font-mono text-sm font-medium text-blue-600">
+        EID-{String(row.getValue("id")).padStart(6, "0")}
+      </div>
     ),
   },
   {
-    accessorKey: "infantName",
+    accessorKey: "infant_name",
     header: ({ column }) => {
       return (
         <Button
@@ -206,60 +154,50 @@ export const columns: ColumnDef<EIDRequest>[] = [
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-8 px-2"
         >
-          Infant Details
+          Infant Name
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      )
+      );
     },
     cell: ({ row }) => (
-      <div>
-        <div className="font-medium text-gray-900">{row.getValue("infantName")}</div>
-        <div className="text-sm text-gray-500">Age: {row.original.age}</div>
+      <div className="font-medium text-gray-900">{row.getValue("infant_name")}</div>
+    ),
+  },
+  {
+    accessorKey: "mother_htsnr",
+    header: "Mother's HTS Number",
+    cell: ({ row }) => (
+      <div className="text-sm text-gray-600">
+        {row.getValue("mother_htsnr") || "Not provided"}
       </div>
     ),
   },
   {
-    accessorKey: "mothersName",
-    header: "Mother's Name",
-    cell: ({ row }) => (
-      <div className="text-gray-900">{row.getValue("mothersName")}</div>
-    ),
-  },
-  {
-    accessorKey: "facility",
+    accessorKey: "facility_name",
     header: "Facility",
     cell: ({ row }) => (
-      <div>
-        <div className="text-gray-900">{row.getValue("facility")}</div>
-        <div className="text-sm text-gray-500">{row.original.district}</div>
+      <div className="text-sm">
+        <div className="font-medium text-gray-900">{row.getValue("facility_name")}</div>
+        <div className="text-gray-500">{row.original.facility_district}</div>
       </div>
     ),
   },
   {
-    accessorKey: "testType",
+    accessorKey: "test_type",
     header: "Test Type",
     cell: ({ row }) => (
-      <Badge variant="outline" className="text-xs">
-        {row.getValue("testType")}
-      </Badge>
+      <div className="text-sm text-gray-600">
+        {row.getValue("test_type") || "Standard EID"}
+      </div>
     ),
   },
   {
-    accessorKey: "priority",
-    header: "Priority",
-    cell: ({ row }) => {
-      return getPriorityBadge(row.getValue("priority"))
-    },
+    accessorKey: "pcr",
+    header: "PCR Type",
+    cell: ({ row }) => getPriorityBadge(row.getValue("pcr")),
   },
   {
-    accessorKey: "status",
-    header: "Status",
-    cell: ({ row }) => {
-      return getStatusBadge(row.getValue("status"))
-    },
-  },
-  {
-    accessorKey: "requestDate",
+    accessorKey: "created_at",
     header: ({ column }) => {
       return (
         <Button
@@ -267,22 +205,35 @@ export const columns: ColumnDef<EIDRequest>[] = [
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-8 px-2"
         >
-          Date
+          Request Date
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
-      )
+      );
     },
     cell: ({ row }) => {
-      const date = new Date(row.getValue("requestDate"))
-      return <div className="text-sm">{date.toLocaleDateString()}</div>
+      const date = new Date(row.getValue("created_at"));
+      return <div className="text-sm text-gray-600">{date.toLocaleDateString()}</div>;
     },
+  },
+  {
+    id: "status",
+    header: "Status",
+    cell: () => getStatusBadge("Pending Collection"),
+  },
+  {
+    accessorKey: "infant_age",
+    header: "Age",
+    cell: ({ row }) => (
+      <div className="text-sm text-gray-600">
+        {formatAge(row.getValue("infant_age"), row.original.infant_age_units)}
+      </div>
+    ),
   },
   {
     id: "actions",
-    header: "Actions",
     enableHiding: false,
     cell: ({ row }) => {
-      const request = row.original
+      const request = row.original;
 
       return (
         <DropdownMenu>
@@ -292,60 +243,73 @@ export const columns: ColumnDef<EIDRequest>[] = [
               <MoreHorizontal className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuContent align="end">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(request.id)}
+              onClick={() =>
+                navigator.clipboard.writeText(
+                  `EID-${String(request.id).padStart(6, "0")}`
+                )
+              }
             >
-              <FileText className="mr-2 h-4 w-4" />
               Copy Request ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <a href={`/eid/${request.id}`}>
+              <Link href={`/eid/${request.id}`}>
                 <Eye className="mr-2 h-4 w-4" />
                 View Details
-              </a>
+              </Link>
             </DropdownMenuItem>
-            {request.status === "Pending Collection" && (
-              <DropdownMenuItem asChild>
-                <Link href={`/eid/${request.id}/collect`}>
-                  <Package className="mr-2 h-4 w-4" />
-                  Collect Sample
-                </Link>
-              </DropdownMenuItem>
-            )}
             <DropdownMenuItem asChild>
-              <a href={`/eid/${request.id}/edit`}>
+              <Link href={`/eid/${request.id}/edit`}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit Request
-              </a>
+              </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Request
+            <DropdownMenuItem className="text-green-600">
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Mark as Collected
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
-      )
+      );
     },
   },
-]
+];
 
 export function EIDDataTable() {
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
-  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
-  const [rowSelection, setRowSelection] = React.useState({})
-  const [statusFilter, setStatusFilter] = React.useState<string>("all")
+  const router = useRouter();
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+  const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
+  const [rowSelection, setRowSelection] = React.useState({});
+  const [pagination, setPagination] = React.useState({
+    pageIndex: 0,
+    pageSize: 10,
+  });
 
-  const data = React.useMemo(() => {
-    if (statusFilter === "all") return eidRequests
-    return eidRequests.filter(request => request.status === statusFilter)
-  }, [statusFilter])
+  // Fetch pending collections using tRPC
+  const { data: pendingData, isLoading, error, refetch } = api.eid.getPendingCollections.useQuery({
+    limit: pagination.pageSize,
+    offset: pagination.pageIndex * pagination.pageSize,
+  });
+
+  const collectSampleMutation = api.eid.collectSample.useMutation({
+    onSuccess: () => {
+      toast.success("Sample collected successfully!");
+      refetch();
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to collect sample");
+    },
+  });
+
+  const requests = pendingData?.samples || [];
+  const totalCount = pendingData?.total || 0;
 
   const table = useReactTable({
-    data,
+    data: requests,
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -355,65 +319,95 @@ export function EIDDataTable() {
     getFilteredRowModel: getFilteredRowModel(),
     onColumnVisibilityChange: setColumnVisibility,
     onRowSelectionChange: setRowSelection,
+    onPaginationChange: setPagination,
+    pageCount: Math.ceil(totalCount / pagination.pageSize),
+    manualPagination: true,
     state: {
       sorting,
       columnFilters,
       columnVisibility,
       rowSelection,
+      pagination,
     },
-  })
+  });
+
+  const handleCollectSelected = async () => {
+    const selectedRows = table.getFilteredSelectedRowModel().rows;
+    if (selectedRows.length === 0) {
+      toast.error("Please select samples to collect");
+      return;
+    }
+
+    try {
+      for (const row of selectedRows) {
+        await collectSampleMutation.mutateAsync({ id: row.original.id });
+      }
+      setRowSelection({});
+    } catch (error) {
+      // Error handling is done in mutation callbacks
+    }
+  };
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="text-center">
+          <p className="text-red-600 mb-2">Error loading EID requests</p>
+          <Button onClick={() => refetch()} variant="outline">
+            Try Again
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="w-full space-y-4 bg-white p-3 rounded-lg border border-gray-200">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center space-x-2">
-          <Input
-            placeholder="Filter by Request ID..."
-            value={(table.getColumn("id")?.getFilterValue() as string) ?? ""}
-            onChange={(event) =>
-              table.getColumn("id")?.setFilterValue(event.target.value)
-            }
-            className="max-w-sm"
-          />
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filter by status" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Status</SelectItem>
-              <SelectItem value="Pending Collection">Pending Collection</SelectItem>
-              <SelectItem value="Ready for Collection">Ready for Collection</SelectItem>
-              <SelectItem value="Collected">Collected</SelectItem>
-              <SelectItem value="Processing">Processing</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="ml-auto">
-              Columns <ChevronDown className="ml-2 h-4 w-4" />
+    <div className="w-full">
+      <div className="flex items-center py-4">
+        <Input
+          placeholder="Filter requests..."
+          value={(table.getColumn("infant_name")?.getFilterValue() as string) ?? ""}
+          onChange={(event) =>
+            table.getColumn("infant_name")?.setFilterValue(event.target.value)
+          }
+          className="max-w-sm"
+        />
+        <div className="ml-auto flex items-center space-x-2">
+          {table.getFilteredSelectedRowModel().rows.length > 0 && (
+            <Button
+              onClick={handleCollectSelected}
+              className="bg-green-600 hover:bg-green-700"
+              disabled={collectSampleMutation.isPending}
+            >
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Collect Selected ({table.getFilteredSelectedRowModel().rows.length})
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
-            {table
-              .getAllColumns()
-              .filter((column) => column.getCanHide())
-              .map((column) => {
-                return (
-                  <DropdownMenuCheckboxItem
-                    key={column.id}
-                    className="capitalize"
-                    checked={column.getIsVisible()}
-                    onCheckedChange={(value) =>
-                      column.toggleVisibility(!!value)
-                    }
-                  >
-                    {column.id}
-                  </DropdownMenuCheckboxItem>
-                )
-              })}
-          </DropdownMenuContent>
-        </DropdownMenu>
+          )}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="ml-auto">
+                Columns <ChevronDown className="ml-2 h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              {table
+                .getAllColumns()
+                .filter((column) => column.getCanHide())
+                .map((column) => {
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={column.id}
+                      className="capitalize"
+                      checked={column.getIsVisible()}
+                      onCheckedChange={(value) => column.toggleVisibility(!!value)}
+                    >
+                      {column.id}
+                    </DropdownMenuCheckboxItem>
+                  );
+                })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
       </div>
       <div className="rounded-md border">
         <Table>
@@ -425,173 +419,154 @@ export function EIDDataTable() {
                     <TableHead key={header.id}>
                       {header.isPlaceholder
                         ? null
-                        : flexRender(
-                            header.column.columnDef.header,
-                            header.getContext()
-                          )}
+                        : flexRender(header.column.columnDef.header, header.getContext())}
                     </TableHead>
-                  )
+                  );
                 })}
               </TableRow>
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  Loading EID requests...
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
-                <TableRow
-                  key={row.id}
-                  data-state={row.getIsSelected() && "selected"}
-                >
+                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(
-                        cell.column.columnDef.cell,
-                        cell.getContext()
-                      )}
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell
-                  colSpan={columns.length}
-                  className="h-24 text-center"
-                >
-                  No results.
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  No EID requests pending collection.
                 </TableCell>
               </TableRow>
             )}
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between px-2">
+      <div className="flex items-center justify-end space-x-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.
         </div>
-        <div className="flex items-center space-x-6 lg:space-x-8">
-          <div className="flex items-center space-x-2">
-            <Label htmlFor="rows-per-page" className="text-sm font-medium">
-              Rows per page
-            </Label>
-            <Select
-              value={`${table.getState().pagination.pageSize}`}
-              onValueChange={(value) => {
-                table.setPageSize(Number(value))
-              }}
-            >
-              <SelectTrigger className="h-8 w-[70px]" id="rows-per-page">
-                <SelectValue placeholder={table.getState().pagination.pageSize} />
-              </SelectTrigger>
-              <SelectContent side="top">
-                {[10, 20, 30, 40, 50].map((pageSize) => (
-                  <SelectItem key={pageSize} value={`${pageSize}`}>
-                    {pageSize}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex w-[100px] items-center justify-center text-sm font-medium">
-            Page {table.getState().pagination.pageIndex + 1} of{" "}
-            {table.getPageCount()}
-          </div>
-          <div className="flex items-center space-x-2">
-            <Button
-              variant="outline"
-              className="h-8 w-8 p-0"
-              onClick={() => table.previousPage()}
-              disabled={!table.getCanPreviousPage()}
-            >
-              <span className="sr-only">Go to previous page</span>
-              <ChevronDown className="h-4 w-4 rotate-90" />
-            </Button>
-            <Button
-              variant="outline"
-              className="h-8 w-8 p-0"
-              onClick={() => table.nextPage()}
-              disabled={!table.getCanNextPage()}
-            >
-              <span className="sr-only">Go to next page</span>
-              <ChevronDown className="h-4 w-4 -rotate-90" />
-            </Button>
-          </div>
+        <div className="space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.previousPage()}
+            disabled={!table.getCanPreviousPage()}
+          >
+            Previous
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => table.nextPage()}
+            disabled={!table.getCanNextPage()}
+          >
+            Next
+          </Button>
         </div>
       </div>
     </div>
-  )
+  );
 }
 
 export default function CollectSamplePage() {
-  const pendingCount = eidRequests.filter(request => request.status === "Pending Collection").length
-  const readyCount = eidRequests.filter(request => request.status === "Ready for Collection").length
-
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="container mx-auto p-6">
       {/* Header */}
       <div className="mb-8">
-        <div className="flex items-center space-x-4 mb-4">
-          <Link href="/eid">
-            <Button variant="ghost" size="sm" className="p-2">
-              <IconArrowLeft className="h-4 w-4" />
-            </Button>
-          </Link>
-          <div className="flex items-center space-x-3">
-            <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-blue-500">
-              <IconTestPipe className="h-6 w-6 text-white" />
-            </div>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-4">
+            <Link href="/eid">
+              <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                <IconArrowLeft className="h-4 w-4" />
+                <span>Back to EID</span>
+              </Button>
+            </Link>
             <div>
-              <h1 className="text-3xl font-bold text-gray-900">Collect Samples</h1>
-              <p className="text-gray-600">EID requests ready for sample collection</p>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
+                <Baby className="h-8 w-8 text-blue-600" />
+                <span>Collect EID Samples</span>
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Manage and collect DBS samples for Early Infant Diagnosis testing
+              </p>
             </div>
           </div>
+          <Link href="/eid/new-request">
+            <Button className="bg-blue-600 hover:bg-blue-700">
+              <IconTestPipe className="mr-2 h-4 w-4" />
+              New EID Request
+            </Button>
+          </Link>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Clock className="h-8 w-8 text-orange-500" />
+                <div>
+                  <p className="text-sm text-gray-600">Pending Collection</p>
+                  <p className="text-2xl font-bold text-orange-600">-</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <CheckCircle className="h-8 w-8 text-blue-500" />
+                <div>
+                  <p className="text-sm text-gray-600">Ready for Collection</p>
+                  <p className="text-2xl font-bold text-blue-600">-</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Package className="h-8 w-8 text-green-500" />
+                <div>
+                  <p className="text-sm text-gray-600">Collected Today</p>
+                  <p className="text-2xl font-bold text-green-600">-</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Baby className="h-8 w-8 text-purple-500" />
+                <div>
+                  <p className="text-sm text-gray-600">Total Samples</p>
+                  <p className="text-2xl font-bold text-purple-600">-</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Clock className="h-5 w-5 text-orange-500" />
-              Pending Collection
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold">{pendingCount}</div>
-            <p className="text-sm text-muted-foreground">Samples awaiting collection</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-blue-500" />
-              Ready for Collection
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold">{readyCount}</div>
-            <p className="text-sm text-muted-foreground">Samples ready for collection</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Baby className="h-5 w-5 text-blue-500" />
-              Total Requests
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold">{eidRequests.length}</div>
-            <p className="text-sm text-muted-foreground">Total EID requests</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      <EIDDataTable />
+      {/* Data Table */}
+      <Card>
+        <CardContent className="p-6">
+          <EIDDataTable />
+        </CardContent>
+      </Card>
     </div>
-  )
+  );
 } 
