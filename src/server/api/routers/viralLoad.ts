@@ -603,8 +603,11 @@ export const viralLoadRouter = createTRPCRouter({
           treatment_initiation_date: vl_samples.treatment_initiation_date,
           current_regimen_initiation_date: vl_samples.current_regimen_initiation_date,
           facility_id: vl_samples.facility_id,
-          // Mock result fields - in a real implementation these would be separate tables
-          // For now we'll generate mock results based on the sample data
+          
+          // Actual result fields from database
+          last_value: vl_samples.last_value,
+          last_test_date: vl_samples.last_test_date,
+          viral_load_testing_id: vl_samples.viral_load_testing_id,
         })
         .from(vl_samples)
         .where(eq(vl_samples.facility_id, user.facility_id!))
@@ -629,26 +632,60 @@ export const viralLoadRouter = createTRPCRouter({
       const totalCount = completedSamples.length;
       const paginatedSamples = completedSamples.slice(input.offset, input.offset + input.limit);
 
-      // Transform samples into result format with mock viral load values
+      // Transform samples into result format using real database values
       const results = paginatedSamples.map(sample => {
-        // Generate mock viral load result based on sample ID
-        const sampleIdNum = parseInt(sample.id.toString().slice(-3)) || 123;
-        const isDetected = sampleIdNum % 3 !== 0; // ~66% detected rate
-        const viralLoadValue = isDetected ? Math.floor(Math.random() * 2000) + 20 : null;
-        const detectionStatus = isDetected ? "detected" : "not_detected";
-        const interpretation = (!isDetected || (viralLoadValue && viralLoadValue < 50)) ? "Suppressed" : "Unsuppressed";
+        // Parse the actual viral load value from the database
+        let viralLoadValue: number | null = null;
+        let detectionStatus = "unknown";
+        let interpretation = "Pending";
+        
+        if (sample.last_value && typeof sample.last_value === 'string') {
+          const lastValueStr = sample.last_value.toLowerCase().trim();
+          
+          // Handle "not detected" cases
+          if (lastValueStr.includes('not detected') || lastValueStr.includes('undetected') || lastValueStr === 'nd') {
+            viralLoadValue = null;
+            detectionStatus = "not_detected";
+            interpretation = "Suppressed";
+          }
+          // Handle "detected" cases with numeric values
+          else if (lastValueStr.includes('detected') || !isNaN(Number(lastValueStr))) {
+            // Extract numeric value
+            const numericMatch = lastValueStr.match(/(\d+(?:\.\d+)?)/);
+            if (numericMatch && numericMatch[1]) {
+              viralLoadValue = parseInt(numericMatch[1]);
+              detectionStatus = "detected";
+              interpretation = viralLoadValue < 50 ? "Suppressed" : "Unsuppressed";
+            }
+          }
+          // Handle pure numeric values
+          else {
+            const numericValue = parseInt(lastValueStr);
+            if (!isNaN(numericValue)) {
+              viralLoadValue = numericValue;
+              detectionStatus = "detected";
+              interpretation = numericValue < 50 ? "Suppressed" : "Unsuppressed";
+            }
+          }
+        }
+        
+        // If no result available, show as pending
+        if (!sample.last_value && sample.verified === 1) {
+          interpretation = "Result Pending";
+        }
 
         return {
           id: sample.vl_sample_id || sample.id.toString(),
           sampleId: sample.vl_sample_id || `VL-${sample.id}`,
           patientId: sample.reception_art_number || sample.data_art_number || sample.patient_unique_id || `P-${sample.id}`,
           
-          // Result data
+          // Real result data from database
           viralLoadValue,
           viralLoadUnit: "copies/mL",
           detectionStatus,
           interpretation,
-          resultDate: sample.verified_at ? new Date(sample.verified_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+          resultDate: sample.last_test_date ? new Date(sample.last_test_date).toISOString().split('T')[0] : 
+                     (sample.verified_at ? new Date(sample.verified_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
           resultTime: sample.verified_at ? new Date(sample.verified_at).toTimeString().slice(0, 5) : "14:30",
           
           // Sample information
@@ -671,24 +708,30 @@ export const viralLoadRouter = createTRPCRouter({
           createdAt: sample.created_at,
           updatedAt: sample.updated_at,
           
-          // Mock additional fields that would come from other tables in a real system
+          // Clinical significance based on real results
           clinicalSignificance: interpretation === "Suppressed" 
             ? "Good viral suppression. Continue current treatment." 
-            : "Viral load above suppression threshold. Requires clinical review.",
+            : interpretation === "Unsuppressed"
+            ? "Viral load above suppression threshold. Requires clinical review."
+            : "Result pending laboratory processing.",
           recommendation: interpretation === "Suppressed"
             ? "Continue current ARV regimen. Next VL test in 6 months."
-            : "Review adherence counseling. Consider treatment modification. Repeat VL in 3 months.",
+            : interpretation === "Unsuppressed"
+            ? "Review adherence counseling. Consider treatment modification. Repeat VL in 3 months."
+            : "Await laboratory results before clinical decision.",
+          
+          // Laboratory information
           laboratoryName: "Central Public Health Laboratory",
           testMethod: "Real-time PCR",
           instrument: "Abbott m2000rt",
           qualityControl: "Passed",
           referenceRange: "< 50 copies/mL (Suppressed)",
           
-          // Mock facility and clinician info (would come from joins in real system)
+          // Facility and clinician info
           facility: user.facility_name || "Health Facility",
           requestingClinician: "Dr. Clinical Officer",
           
-          status: "completed"
+          status: sample.last_value ? "completed" : "pending"
         };
       });
 
@@ -712,7 +755,32 @@ export const viralLoadRouter = createTRPCRouter({
 
       // Find the sample by vl_sample_id or id
       const sample = await vlDb
-        .select()
+        .select({
+          id: vl_samples.id,
+          vl_sample_id: vl_samples.vl_sample_id,
+          patient_unique_id: vl_samples.patient_unique_id,
+          form_number: vl_samples.form_number,
+          sample_type: vl_samples.sample_type,
+          date_collected: vl_samples.date_collected,
+          date_received: vl_samples.date_received,
+          verified: vl_samples.verified,
+          verified_at: vl_samples.verified_at,
+          created_at: vl_samples.created_at,
+          updated_at: vl_samples.updated_at,
+          reception_art_number: vl_samples.reception_art_number,
+          data_art_number: vl_samples.data_art_number,
+          pregnant: vl_samples.pregnant,
+          breast_feeding: vl_samples.breast_feeding,
+          active_tb_status: vl_samples.active_tb_status,
+          treatment_initiation_date: vl_samples.treatment_initiation_date,
+          current_regimen_initiation_date: vl_samples.current_regimen_initiation_date,
+          facility_id: vl_samples.facility_id,
+          
+          // Actual result fields from database
+          last_value: vl_samples.last_value,
+          last_test_date: vl_samples.last_test_date,
+          viral_load_testing_id: vl_samples.viral_load_testing_id,
+        })
         .from(vl_samples)
         .where(
           and(
@@ -728,23 +796,56 @@ export const viralLoadRouter = createTRPCRouter({
 
       const sampleData = sample[0];
 
-      // Generate the same mock result as in getResults
-      const sampleIdNum = parseInt(sampleData.id.toString().slice(-3)) || 123;
-      const isDetected = sampleIdNum % 3 !== 0;
-      const viralLoadValue = isDetected ? Math.floor(Math.random() * 2000) + 20 : null;
-      const detectionStatus = isDetected ? "detected" : "not_detected";
-      const interpretation = (!isDetected || (viralLoadValue && viralLoadValue < 50)) ? "Suppressed" : "Unsuppressed";
+      // Parse the actual viral load value from the database (same logic as getResults)
+      let viralLoadValue: number | null = null;
+      let detectionStatus = "unknown";
+      let interpretation = "Pending";
+      
+      if (sampleData.last_value && typeof sampleData.last_value === 'string') {
+        const lastValueStr = sampleData.last_value.toLowerCase().trim();
+        
+        // Handle "not detected" cases
+        if (lastValueStr.includes('not detected') || lastValueStr.includes('undetected') || lastValueStr === 'nd') {
+          viralLoadValue = null;
+          detectionStatus = "not_detected";
+          interpretation = "Suppressed";
+        }
+        // Handle "detected" cases with numeric values
+        else if (lastValueStr.includes('detected') || !isNaN(Number(lastValueStr))) {
+          // Extract numeric value
+          const numericMatch = lastValueStr.match(/(\d+(?:\.\d+)?)/);
+          if (numericMatch && numericMatch[1]) {
+            viralLoadValue = parseInt(numericMatch[1]);
+            detectionStatus = "detected";
+            interpretation = viralLoadValue < 50 ? "Suppressed" : "Unsuppressed";
+          }
+        }
+        // Handle pure numeric values
+        else {
+          const numericValue = parseInt(lastValueStr);
+          if (!isNaN(numericValue)) {
+            viralLoadValue = numericValue;
+            detectionStatus = "detected";
+            interpretation = numericValue < 50 ? "Suppressed" : "Unsuppressed";
+          }
+        }
+      }
+      
+      // If no result available, show as pending
+      if (!sampleData.last_value && sampleData.verified === 1) {
+        interpretation = "Result Pending";
+      }
 
-      // Generate mock previous results
+      // Generate mock previous results (this would come from a proper results history table in production)
       const previousResults = [
         { 
           date: "2023-07-15", 
-          value: Math.floor(Math.random() * 100) + 20, 
+          value: 45, 
           status: "detected" 
         },
         { 
           date: "2023-01-10", 
-          value: Math.floor(Math.random() * 150) + 30, 
+          value: 125, 
           status: "detected" 
         },
         { 
@@ -759,12 +860,13 @@ export const viralLoadRouter = createTRPCRouter({
         sampleId: sampleData.vl_sample_id || `VL-${sampleData.id}`,
         patientId: sampleData.reception_art_number || sampleData.data_art_number || sampleData.patient_unique_id || `P-${sampleData.id}`,
         
-        // Result data
+        // Real result data from database
         viralLoadValue,
         viralLoadUnit: "copies/mL",
         detectionStatus,
         interpretation,
-        resultDate: sampleData.verified_at ? new Date(sampleData.verified_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
+        resultDate: sampleData.last_test_date ? new Date(sampleData.last_test_date).toISOString().split('T')[0] : 
+                   (sampleData.verified_at ? new Date(sampleData.verified_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
         resultTime: sampleData.verified_at ? new Date(sampleData.verified_at).toTimeString().slice(0, 5) : "14:30",
         
         // Sample information
@@ -776,10 +878,14 @@ export const viralLoadRouter = createTRPCRouter({
         // Extended information for detail view
         clinicalSignificance: interpretation === "Suppressed" 
           ? "Good viral suppression. Continue current treatment." 
-          : "Viral load above suppression threshold. Requires clinical review.",
+          : interpretation === "Unsuppressed"
+          ? "Viral load above suppression threshold. Requires clinical review."
+          : "Result pending laboratory processing.",
         recommendation: interpretation === "Suppressed"
           ? "Continue current ARV regimen. Next VL test in 6 months."
-          : "Review adherence counseling. Consider treatment modification. Repeat VL in 3 months.",
+          : interpretation === "Unsuppressed"
+          ? "Review adherence counseling. Consider treatment modification. Repeat VL in 3 months."
+          : "Await laboratory results before clinical decision.",
         
         // Laboratory information
         laboratoryName: "Central Public Health Laboratory",
@@ -790,18 +896,18 @@ export const viralLoadRouter = createTRPCRouter({
         qualityControl: "Passed",
         referenceRange: "< 50 copies/mL (Suppressed)",
         
-        // Patient information (mock - would come from patient table in real system)
+        // Patient information (would come from patient table in real system)
         patientName: `Patient #${sampleData.reception_art_number || sampleData.data_art_number || sampleData.patient_unique_id}`,
-        gender: Math.random() > 0.5 ? "Male" : "Female",
-        age: Math.floor(Math.random() * 40) + 20,
-        currentRegimen: "TDF/3TC/DTG",
-        treatmentDuration: `${Math.floor(Math.random() * 10) + 1} years`,
+        gender: "Unknown", // Would come from patient table
+        age: null, // Would come from patient table
+        currentRegimen: "TDF/3TC/DTG", // Would come from regimen table
+        treatmentDuration: "Unknown", // Would be calculated from treatment dates
         
         // Facility information
         facility: user.facility_name || "Health Facility",
-        district: "District",
+        district: "District", // Would come from facility table
         hub: user.hub_name || "Hub",
-        requestingClinician: "Dr. Clinical Officer",
+        requestingClinician: "Dr. Clinical Officer", // Would come from clinician table
         
         // Previous results
         previousResults,
@@ -814,7 +920,7 @@ export const viralLoadRouter = createTRPCRouter({
         currentRegimenInitiationDate: sampleData.current_regimen_initiation_date ? new Date(sampleData.current_regimen_initiation_date).toISOString().split('T')[0] : null,
         
         formNumber: sampleData.form_number,
-        status: "completed"
+        status: sampleData.last_value ? "completed" : "pending"
       };
     }),
 

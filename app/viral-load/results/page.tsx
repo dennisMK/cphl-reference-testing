@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { useTheme } from "@/lib/theme-context";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -48,31 +48,35 @@ export default function VLResultsPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [debouncedSearchTerm, setDebouncedSearchTerm] = useState("");
 
-  // Debounce search term
+  // Optimized debounce search term
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchTerm(searchTerm);
-      setCurrentPage(1);
-    }, 300);
+      if (currentPage !== 1) {
+        setCurrentPage(1); // Only reset page if not already on page 1
+      }
+    }, 500); // Increased debounce time to 500ms for better UX
 
     return () => clearTimeout(timer);
-  }, [searchTerm]);
+  }, [searchTerm]); // Removed debouncedSearchTerm dependency to prevent loops
 
-  // Calculate pagination
-  const offset = (currentPage - 1) * pageSize;
+  // Calculate pagination - memoized to prevent recalculation
+  const offset = useMemo(() => (currentPage - 1) * pageSize, [currentPage, pageSize]);
 
   // Fetch results using tRPC
   const { 
     data: resultsData, 
     isLoading: isLoadingResults, 
     error: resultsError,
-    refetch: refetchResults 
+    refetch: refetchResults,
+    isFetching: isFetchingResults
   } = api.viralLoad.getResults.useQuery({
     limit: pageSize,
     offset: offset,
     searchTerm: debouncedSearchTerm || undefined,
   }, {
     enabled: !resultId,
+    refetchOnWindowFocus: false, // Prevent unnecessary refetches
   });
 
   // Fetch specific result when resultId is provided
@@ -84,6 +88,7 @@ export default function VLResultsPage() {
     { resultId: resultId! },
     { 
       enabled: !!resultId,
+      refetchOnWindowFocus: false,
     }
   );
 
@@ -101,11 +106,13 @@ export default function VLResultsPage() {
     }
   }, [resultId]);
 
-  const results = resultsData?.results || [];
-  const totalResults = resultsData?.total || 0;
-  const totalPages = Math.ceil(totalResults / pageSize);
+  // Memoized results to prevent unnecessary recalculation
+  const results = useMemo(() => resultsData?.results || [], [resultsData?.results]);
+  const totalResults = useMemo(() => resultsData?.total || 0, [resultsData?.total]);
+  const totalPages = useMemo(() => Math.ceil(totalResults / pageSize), [totalResults, pageSize]);
 
-  const getResultBadge = (interpretation: string, value: number | null) => {
+  // Memoized badge component to prevent re-renders
+  const getResultBadge = useCallback((interpretation: string, value: number | null) => {
     if (interpretation === "Suppressed") {
       return (
         <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
@@ -127,14 +134,29 @@ export default function VLResultsPage() {
         Unknown
       </Badge>
     );
-  };
+  }, []);
 
-  const formatViralLoadValue = (value: number | null, detectionStatus: string) => {
+  // Memoized format function
+  const formatViralLoadValue = useCallback((value: number | null, detectionStatus: string) => {
     if (detectionStatus === "not_detected") {
       return "Not Detected";
     }
     return value ? `${value.toLocaleString()}` : "N/A";
-  };
+  }, []);
+
+  // Optimized search input handler
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchTerm(e.target.value);
+  }, []);
+
+  // Optimized page size change handler
+  const handlePageSizeChange = useCallback((value: string) => {
+    setPageSize(Number(value));
+    setCurrentPage(1);
+  }, []);
+
+  // Show loading state only for initial load, not for search/pagination
+  const showMainLoader = isLoadingResults && !isFetchingResults;
 
   // Error state
   if (resultsError || specificError) {
@@ -162,7 +184,7 @@ export default function VLResultsPage() {
   }
 
   // Loading state
-  if ((resultId && isLoadingSpecific) || isLoadingResults) {
+  if ((resultId && isLoadingSpecific) || showMainLoader) {
     return (
       <div className="min-h-screen bg-gray-50 flex items-center justify-center">
         <div className="text-center">
@@ -307,8 +329,8 @@ export default function VLResultsPage() {
 
   // Main results list view
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
-      <div className="max-w-7xl mx-auto">
+    <div className="min-h-screen">
+      <div className="md:container mx-auto">
         {/* Header */}
         <div className="mb-6">
           <div className="flex items-center gap-4 mb-4">
@@ -347,11 +369,14 @@ export default function VLResultsPage() {
               {/* Search */}
               <div className="flex-1 relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                {isFetchingResults && searchTerm && (
+                  <Loader2 className="absolute right-3 top-1/2 transform -translate-y-1/2 h-4 w-4 animate-spin text-blue-500" />
+                )}
                 <Input
                   placeholder="Search by patient ID, sample ID, or ART number..."
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
+                  onChange={handleSearchChange}
+                  className={`pl-10 ${isFetchingResults && searchTerm ? 'pr-10' : ''}`}
                 />
               </div>
               
@@ -360,10 +385,7 @@ export default function VLResultsPage() {
                 <Label className="text-sm text-gray-600">Show:</Label>
                 <Select 
                   value={pageSize.toString()} 
-                  onValueChange={(value) => {
-                    setPageSize(Number(value))
-                    setCurrentPage(1)
-                  }}
+                  onValueChange={handlePageSizeChange}
                 >
                   <SelectTrigger className="w-20">
                     <SelectValue />
@@ -388,7 +410,12 @@ export default function VLResultsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow className="border-b">
-                      <TableHead className="font-semibold">Patient</TableHead>
+                      <TableHead className="font-semibold">
+                        Patient
+                        {isFetchingResults && (
+                          <Loader2 className="h-3 w-3 animate-spin inline ml-2 text-blue-500" />
+                        )}
+                      </TableHead>
                       <TableHead className="font-semibold">Sample</TableHead>
                       <TableHead className="font-semibold">Result</TableHead>
                       <TableHead className="font-semibold">Status</TableHead>
