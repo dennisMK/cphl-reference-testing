@@ -60,11 +60,19 @@ export type EIDRequest = {
   infant_gender: "MALE" | "FEMALE" | "NOT_RECORDED";
   infant_age: string | null;
   infant_age_units: string | null;
+  infant_dob: Date | null;
+  infant_is_breast_feeding: string | null;
+  infant_contact_phone: string | null;
   mother_htsnr: string | null;
   mother_artnr: string | null;
+  date_dbs_taken: Date | null;
+  testing_completed: string | null;
+  accepted_result: string | null;
+  created_at: Date;
+  batch_id: number;
   pcr: "FIRST" | "SECOND" | "NON_ROUTINE" | "UNKNOWN" | "THIRD";
   test_type: string | null;
-  created_at: Date;
+  date_rcvd_by_cphl: Date | null;
   facility_name: string | null;
   facility_district: string | null;
 };
@@ -218,7 +226,14 @@ export const columns: ColumnDef<EIDRequest>[] = [
   {
     id: "status",
     header: "Status",
-    cell: () => getStatusBadge("Pending Collection"),
+    cell: ({ row }) => {
+      const request = row.original;
+      if (request.date_dbs_taken) {
+        return getStatusBadge("Collected");
+      } else {
+        return getStatusBadge("Pending Collection");
+      }
+    },
   },
   {
     accessorKey: "infant_age",
@@ -267,12 +282,14 @@ export const columns: ColumnDef<EIDRequest>[] = [
                 Edit Request
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem asChild>
-              <Link href={`/eid/${request.id}/collect`} className="text-green-600 flex items-center">
-                <CheckCircle className="mr-2 h-4 w-4" />
-                Collect Sample
-              </Link>
-            </DropdownMenuItem>
+            {!request.date_dbs_taken && (
+              <DropdownMenuItem asChild>
+                <Link href={`/eid/${request.id}/collect`} className="text-green-600 flex items-center">
+                  <CheckCircle className="mr-2 h-4 w-4" />
+                  Collect Sample
+                </Link>
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       );
@@ -290,7 +307,7 @@ export function EIDDataTable() {
     pageIndex: 0,
     pageSize: 10,
   });
-  const [activeTab, setActiveTab] = React.useState<"pending" | "collected" | "all">("pending");
+  const [activeTab, setActiveTab] = React.useState<"pending" | "collected">("pending");
 
   // Fetch samples based on active tab
   const { data: pendingData, isLoading: pendingLoading, error: pendingError, refetch: refetchPending } = api.eid.getPendingCollections.useQuery({
@@ -298,17 +315,17 @@ export function EIDDataTable() {
     offset: pagination.pageIndex * pagination.pageSize,
   }, { enabled: activeTab === "pending" });
 
-  const { data: allData, isLoading: allLoading, error: allError, refetch: refetchAll } = api.eid.getRequests.useQuery({
+  const { data: collectedData, isLoading: collectedLoading, error: collectedError, refetch: refetchCollected } = api.eid.getRequests.useQuery({
     limit: pagination.pageSize,
     offset: pagination.pageIndex * pagination.pageSize,
-    status: activeTab === "collected" ? "collected" : undefined,
-  }, { enabled: activeTab === "collected" || activeTab === "all" });
+    status: "collected",
+  }, { enabled: activeTab === "collected" });
 
   const collectSampleMutation = api.eid.collectSample.useMutation({
     onSuccess: () => {
       toast.success("Sample collected successfully!");
       refetchPending();
-      refetchAll();
+      refetchCollected();
     },
     onError: (error) => {
       toast.error(error.message || "Failed to collect sample");
@@ -316,14 +333,14 @@ export function EIDDataTable() {
   });
 
   // Determine which data to use based on active tab
-  const isLoading = activeTab === "pending" ? pendingLoading : allLoading;
-  const error = activeTab === "pending" ? pendingError : allError;
-  const data = activeTab === "pending" ? pendingData : allData;
+  const isLoading = activeTab === "pending" ? pendingLoading : collectedLoading;
+  const error = activeTab === "pending" ? pendingError : collectedError;
+  const data = activeTab === "pending" ? pendingData : collectedData;
   const requests = data?.samples || [];
   const totalCount = data?.total || 0;
 
   const table = useReactTable({
-    data: requests,
+    data: requests as EIDRequest[],
     columns,
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
@@ -367,7 +384,7 @@ export function EIDDataTable() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <p className="text-red-600 mb-2">Error loading EID requests</p>
-          <Button onClick={() => activeTab === "pending" ? refetchPending() : refetchAll()} variant="outline">
+          <Button onClick={() => activeTab === "pending" ? refetchPending() : refetchCollected()} variant="outline">
             Try Again
           </Button>
         </div>
@@ -399,16 +416,6 @@ export function EIDDataTable() {
             }`}
           >
             Collected Samples
-          </button>
-          <button
-            onClick={() => setActiveTab("all")}
-            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-              activeTab === "all"
-                ? "bg-white text-blue-600 shadow-sm"
-                : "text-gray-600 hover:text-blue-600"
-            }`}
-          >
-            All Samples
           </button>
         </div>
       </div>
@@ -498,9 +505,7 @@ export function EIDDataTable() {
                 <TableCell colSpan={columns.length} className="h-24 text-center">
                   {activeTab === "pending" 
                     ? "No EID requests pending collection." 
-                    : activeTab === "collected" 
-                    ? "No collected samples found."
-                    : "No EID requests found."
+                    : "No collected samples found."
                   }
                 </TableCell>
               </TableRow>
@@ -571,7 +576,7 @@ export default function CollectSamplePage() {
         </div>
 
         {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
           <Card>
             <CardContent className="p-4">
               <div className="flex items-center space-x-2">
@@ -593,19 +598,6 @@ export default function CollectSamplePage() {
                   <p className="text-sm text-gray-600">Collected</p>
                   <p className="text-2xl font-bold text-blue-600">
                     {statsLoading ? "..." : dashboardStats?.collectedSamples || 0}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-2">
-                <Package className="h-8 w-8 text-green-500" />
-                <div>
-                  <p className="text-sm text-gray-600">Completed</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    {statsLoading ? "..." : dashboardStats?.completedSamples || 0}
                   </p>
                 </div>
               </div>

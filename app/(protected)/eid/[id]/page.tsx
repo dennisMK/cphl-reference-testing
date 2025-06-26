@@ -324,10 +324,10 @@ export default function EIDDetailsPage() {
                   <label className="text-sm font-medium text-gray-500">Facility Name</label>
                   <p className="text-gray-900">{request.facility_name || "Not specified"}</p>
                 </div>
-                <div>
+                {/* <div>
                   <label className="text-sm font-medium text-gray-500">District</label>
                   <p className="text-gray-900">{request.facility_district || "Not specified"}</p>
-                </div>
+                </div> */}
               </div>
             </CardContent>
           </Card>

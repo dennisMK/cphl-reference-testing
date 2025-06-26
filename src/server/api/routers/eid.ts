@@ -54,7 +54,6 @@ export const eidRouter = createTRPCRouter({
         totalSamples: 0,
         pendingSamples: 0,
         collectedSamples: 0,
-        completedSamples: 0,
       };
     }
 
@@ -77,13 +76,11 @@ export const eidRouter = createTRPCRouter({
     const totalSamples = allSamples.length;
     const pendingSamples = allSamples.filter((s) => !s.date_dbs_taken).length;
     const collectedSamples = allSamples.filter((s) => s.date_dbs_taken && !s.date_rcvd_by_cphl).length;
-    const completedSamples = allSamples.filter((s) => s.testing_completed === "YES" && s.accepted_result).length;
 
     return {
       totalSamples,
       pendingSamples,
       collectedSamples,
-      completedSamples,
     };
   }),
 

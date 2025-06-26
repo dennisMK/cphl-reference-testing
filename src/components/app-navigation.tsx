@@ -112,9 +112,8 @@ export function AppNavigation() {
       theme: "blue",
       subItems: [
         { name: "New Request", href: "/eid/new-request", icon: IconPlus },
-        { name: "Collect Sample", href: "/eid/collect-sample", icon: IconSearch },
-        { name: "Results", href: "/eid/results", icon: IconFileText },
-        { name: "View All", href: "/eid", icon: IconChartBar },
+        // { name: "Collect Sample", href: "/eid/collect-sample", icon: IconSearch },
+        // { name: "Results", href: "/eid/results", icon: IconFileText },
       ],
     },
   ];

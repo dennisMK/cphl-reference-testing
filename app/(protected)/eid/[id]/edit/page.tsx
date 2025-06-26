@@ -1,341 +1,448 @@
 "use client"
 
-import React, { useState, useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Textarea } from '@/components/ui/textarea'
-import { Badge } from '@/components/ui/badge'
-import { Separator } from '@/components/ui/separator'
-import { IconBabyCarriage, IconArrowLeft, IconTestPipe, IconCheck } from '@tabler/icons-react'
-import Link from 'next/link'
+import React from "react";
+import { useRouter } from "next/navigation";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import Link from "next/link";
+import { ArrowLeft, Baby, Loader2, Save } from "lucide-react";
 
-// Mock data for the EID request (in real app this would come from params.id)
-const mockEidRequest = {
-  id: "EID-001234",
-  facilityName: "Mulago Hospital",
-  facilityCode: "MUL001",
-  district: "Kampala", 
-  region: "central",
-  infantId: "INF-001234",
-  infantName: "Baby Nakato",
-  dateOfBirth: "2023-11-20",
-  gender: "female",
-  weight: "4.2",
-  feeding: "breastfeeding",
-  motherName: "Sarah Nakato",
-  motherAge: "28",
-  motherArtStatus: "on-art",
-  motherVlStatus: "suppressed",
-  testType: "initial",
-  sampleType: "dbs",
-  priority: "routine",
-  requestDate: "2024-01-15",
-  clinicalNotes: "First test for this infant. Mother has been on ART for 2 years.",
-  status: "Pending Collection",
-  age: "8 weeks"
-}
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
-interface User {
-  id: number;
-  username: string;
-  name: string;
-  email: string | null;
-  facility_id: number | null;
-  facility_name: string | null;
-  hub_id: number | null;
-  hub_name: string | null;
-}
+import { api } from "@/trpc/react";
 
-interface EditEidRequestPageProps {
+const updateEIDRequestSchema = z.object({
+  infant_name: z.string().min(1, "Infant name is required"),
+  infant_gender: z.enum(["MALE", "FEMALE", "NOT_RECORDED"]).optional(),
+  infant_age: z.string().optional(),
+  infant_age_units: z.enum(["DAYS", "WEEKS", "MONTHS", "YEARS"]).optional(),
+  infant_dob: z.string().optional(),
+  infant_is_breast_feeding: z.enum(["YES", "NO", "UNKNOWN"]).optional(),
+  infant_contact_phone: z.string().optional(),
+  mother_htsnr: z.string().optional(),
+  mother_artnr: z.string().optional(),
+  mother_nin: z.string().optional(),
+  test_type: z.string().optional(),
+  pcr: z.enum(["FIRST", "SECOND", "THIRD", "NON_ROUTINE", "UNKNOWN"]).optional(),
+  PCR_test_requested: z.enum(["YES", "NO"]).optional(),
+  SCD_test_requested: z.enum(["YES", "NO"]).optional(),
+});
+
+type UpdateEIDRequestData = z.infer<typeof updateEIDRequestSchema>;
+
+interface EditEIDRequestPageProps {
   params: {
-    id: string
-  }
+    id: string;
+  };
 }
 
-export default function EditEidRequestPage({ params }: EditEidRequestPageProps) {
-  const [user, setUser] = useState<User | null>(null);
-  const [isCollecting, setIsCollecting] = useState(false)
-  const [collectionData, setCollectionData] = useState({
-    sampleCollected: false,
-    collectionDate: "",
-    collectedBy: "",
-    sampleQuality: "",
-    volumeCollected: "",
-    collectionNotes: ""
-  })
+export default function EditEIDRequestPage({ params }: EditEIDRequestPageProps) {
+  const router = useRouter();
+  const requestId = parseInt(params.id);
 
-  // Fetch user data on component mount
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const response = await fetch('/api/auth/me');
-        if (response.ok) {
-          const data = await response.json();
-          setUser(data.user);
-        }
-      } catch (error) {
-        console.error('Failed to fetch user:', error);
-      }
-    };
+  // Fetch EID request data
+  const { data: request, isLoading: requestLoading, error: requestError } = api.eid.getRequest.useQuery(
+    { id: requestId },
+    { enabled: !isNaN(requestId) }
+  );
 
-    fetchUser();
-  }, []);
+  // Update mutation
+  const updateMutation = api.eid.updateRequest.useMutation({
+    onSuccess: () => {
+      toast.success("EID request updated successfully!");
+      router.push(`/eid/${requestId}`);
+    },
+    onError: (error) => {
+      toast.error(error.message || "Failed to update EID request");
+    },
+  });
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log('Form submitted')
-  }
+  const form = useForm<UpdateEIDRequestData>({
+    resolver: zodResolver(updateEIDRequestSchema),
+    defaultValues: {
+      infant_name: "",
+      infant_gender: "NOT_RECORDED",
+      infant_age: "",
+      infant_age_units: "WEEKS",
+      infant_dob: "",
+      infant_is_breast_feeding: "UNKNOWN",
+      infant_contact_phone: "",
+      mother_htsnr: "",
+      mother_artnr: "",
+      mother_nin: "",
+      test_type: "",
+      pcr: "FIRST",
+      PCR_test_requested: "YES",
+      SCD_test_requested: "NO",
+    },
+  });
 
-  const handleSampleCollection = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log('Sample collection submitted', collectionData)
-    // Update status to "Sample Collected" or similar
-  }
-
-  const StatusBadge = ({ status }: { status: string }) => {
-    const getStatusStyle = (status: string) => {
-      switch (status) {
-        case "Pending Collection":
-          return "bg-orange-100 text-orange-800"
-        case "Sample Collected":
-          return "bg-green-100 text-green-800"
-        case "In Transit":
-          return "bg-blue-100 text-blue-800"
-        case "Completed":
-          return "bg-green-100 text-green-800"
-        default:
-          return "bg-gray-100 text-gray-800"
-      }
+  // Update form when data is loaded
+  React.useEffect(() => {
+    if (request) {
+      form.reset({
+        infant_name: request.infant_name || "",
+        infant_gender: request.infant_gender || "NOT_RECORDED",
+        infant_age: request.infant_age || "",
+        infant_age_units: (request.infant_age_units as any) || "WEEKS",
+        infant_dob: request.infant_dob ? new Date(request.infant_dob).toISOString().split('T')[0] : "",
+        infant_is_breast_feeding: (request.infant_is_breast_feeding as any) || "UNKNOWN",
+        infant_contact_phone: request.infant_contact_phone || "",
+        mother_htsnr: request.mother_htsnr || "",
+        mother_artnr: request.mother_artnr || "",
+        mother_nin: request.mother_nin || "",
+        test_type: request.test_type || "",
+        pcr: request.pcr || "FIRST",
+        PCR_test_requested: (request.PCR_test_requested as any) || "YES",
+        SCD_test_requested: (request.SCD_test_requested as any) || "NO",
+      });
     }
+  }, [request, form]);
 
+  const onSubmit = (data: UpdateEIDRequestData) => {
+    updateMutation.mutate({
+      id: requestId,
+      ...data,
+      infant_dob: data.infant_dob ? data.infant_dob : undefined,
+    });
+  };
+
+  const getStatusBadge = () => {
+    if (!request) return null;
+    
+    if (request.date_dbs_taken) {
+      return <Badge className="bg-blue-100 text-blue-800">Collected</Badge>;
+    } else {
+      return <Badge className="bg-orange-100 text-orange-800">Pending Collection</Badge>;
+    }
+  };
+
+  if (requestError) {
     return (
-      <Badge className={`${getStatusStyle(status)} text-sm`}>
-        {status}
-      </Badge>
-    )
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <p className="text-red-600 mb-2">Error loading EID request</p>
+            <Button onClick={() => router.push("/eid")} variant="outline">
+              Back to EID
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (requestLoading) {
+    return (
+      <div className="container mx-auto p-6">
+        <div className="flex items-center justify-center h-64">
+          <div className="text-center">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
+            <p className="text-gray-600">Loading EID request...</p>
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50">
+    <div className="container mx-auto p-6">
       {/* Header */}
-      <div className="bg-blue-500 text-white p-6 shadow-lg">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-4">
-            <Link 
-              href="/eid" 
-              className="flex items-center space-x-2 text-blue-100 hover:text-white transition-colors"
-            >
-              <IconArrowLeft size={20} />
-              <span>Back to EID</span>
+            <Link href={`/eid/${requestId}`}>
+              <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Request</span>
+              </Button>
             </Link>
-            <div className="h-6 w-px bg-blue-300 hidden sm:block"></div>
-            <div className="flex items-center space-x-3">
-              <div className="p-2 bg-white/20 rounded-lg">
-                <IconBabyCarriage size={24} />
-              </div>
-              <div>
-                <h1 className="text-xl lg:text-2xl font-bold">Edit EID Request</h1>
-                <p className="text-blue-100 text-sm">Update request details for {mockEidRequest.id}</p>
-              </div>
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
+                <Baby className="h-8 w-8 text-blue-600" />
+                <span>Edit EID Request</span>
+              </h1>
+              <p className="text-gray-600 mt-1">
+                Update details for EID-{String(requestId).padStart(6, "0")}
+              </p>
             </div>
           </div>
-          
-          <div className="flex items-center space-x-2">
-            <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-              {mockEidRequest.status}
-            </Badge>
-          </div>
+          {getStatusBadge()}
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto p-6">
-        <div className="space-y-8">
-          {/* Request Details Form */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm">
-            <h2 className="text-xl font-semibold text-gray-900 mb-6">Request Details</h2>
-            
-            <form onSubmit={handleSubmit} className="space-y-8">
-              {/* Facility Information - Display Only */}
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium text-gray-900">Facility Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 bg-gray-50 p-4 rounded-lg">
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Facility Name</Label>
-                    <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
-                      {user?.facility_name || "Not specified"}
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">District</Label>
-                    <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
-                      {user?.hub_name ? user.hub_name.split(' ')[0] : "Not specified"}
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-sm font-medium text-gray-700">Hub</Label>
-                    <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
-                      {user?.hub_name || "Not specified"}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Infant Information */}
-              <div className="space-y-6">
-                <h3 className="text-lg font-medium text-gray-900">Infant Information</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div>
-                    <Label htmlFor="infantId">Infant ID</Label>
-                    <Input id="infantId" defaultValue={mockEidRequest.infantId} className="mt-2" />
-                  </div>
-                  <div>
-                    <Label htmlFor="infantName">Infant Name</Label>
-                    <Input id="infantName" defaultValue={mockEidRequest.infantName} className="mt-2" />
-                  </div>
-                  <div>
-                    <Label htmlFor="dateOfBirth">Date of Birth</Label>
-                    <Input id="dateOfBirth" type="date" defaultValue={mockEidRequest.dateOfBirth} className="mt-2" />
-                  </div>
-                  <div>
-                    <Label htmlFor="gender">Gender</Label>
-                    <Select defaultValue={mockEidRequest.gender}>
-                      <SelectTrigger className="mt-2">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="weight">Weight (kg)</Label>
-                    <Input id="weight" defaultValue={mockEidRequest.weight} className="mt-2" />
-                  </div>
-                  <div>
-                    <Label htmlFor="feeding">Feeding Method</Label>
-                    <Select defaultValue={mockEidRequest.feeding}>
-                      <SelectTrigger className="mt-2">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="breastfeeding">Breastfeeding</SelectItem>
-                        <SelectItem value="formula">Formula</SelectItem>
-                        <SelectItem value="mixed">Mixed</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-              </div>
-
-              {/* Clinical Notes */}
-              <div className="space-y-4">
-                <Label htmlFor="clinicalNotes">Clinical Notes</Label>
-                <Textarea 
-                  id="clinicalNotes" 
-                  defaultValue={mockEidRequest.clinicalNotes}
-                  className="min-h-[100px]"
-                />
-              </div>
-
-              {/* Update Button */}
-              <div className="flex justify-end pt-6 border-t">
-                <Button type="submit" className="bg-blue-600 hover:bg-blue-700">
-                  Update Request
-                </Button>
-              </div>
-            </form>
-          </div>
-
-          {/* Sample Collection Section */}
-          <div className="bg-white rounded-2xl p-8 shadow-sm">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-green-500">
-                <IconTestPipe className="h-5 w-5 text-white" />
-              </div>
-              <h2 className="text-xl font-semibold text-gray-900">Sample Collection</h2>
-            </div>
-
-            <form onSubmit={handleSampleCollection} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  <Label htmlFor="collectionDate">Collection Date</Label>
-                  <Input 
-                    id="collectionDate" 
-                    type="date" 
-                    value={collectionData.collectionDate}
-                    onChange={(e) => setCollectionData({...collectionData, collectionDate: e.target.value})}
-                    className="mt-2" 
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="collectedBy">Collected By</Label>
-                  <Input 
-                    id="collectedBy" 
-                    placeholder="Enter collector name"
-                    value={collectionData.collectedBy}
-                    onChange={(e) => setCollectionData({...collectionData, collectedBy: e.target.value})}
-                    className="mt-2" 
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="sampleQuality">Sample Quality</Label>
-                  <Select 
-                    value={collectionData.sampleQuality} 
-                    onValueChange={(value) => setCollectionData({...collectionData, sampleQuality: value})}
-                  >
-                    <SelectTrigger className="mt-2">
-                      <SelectValue placeholder="Select quality" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="good">Good</SelectItem>
-                      <SelectItem value="fair">Fair</SelectItem>
-                      <SelectItem value="poor">Poor</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <Label htmlFor="volumeCollected">Volume Collected (μL)</Label>
-                  <Input 
-                    id="volumeCollected" 
-                    placeholder="Enter volume"
-                    value={collectionData.volumeCollected}
-                    onChange={(e) => setCollectionData({...collectionData, volumeCollected: e.target.value})}
-                    className="mt-2" 
-                  />
-                </div>
-              </div>
-
+      {/* Form */}
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        {/* Infant Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Baby className="h-5 w-5 text-blue-600" />
+              <span>Infant Information</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <Label htmlFor="collectionNotes">Collection Notes</Label>
-                <Textarea 
-                  id="collectionNotes" 
-                  placeholder="Enter any collection notes..."
-                  value={collectionData.collectionNotes}
-                  onChange={(e) => setCollectionData({...collectionData, collectionNotes: e.target.value})}
-                  className="mt-2 min-h-[80px]"
+                <Label htmlFor="infant_name">Infant Name *</Label>
+                <Input 
+                  id="infant_name" 
+                  {...form.register("infant_name")}
+                  className="mt-2"
                 />
+                {form.formState.errors.infant_name && (
+                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.infant_name.message}</p>
+                )}
               </div>
-
-              <div className="flex items-center space-x-4 pt-4 border-t">
-                <Button 
-                  type="submit" 
-                  className="bg-green-600 hover:bg-green-700"
-                  disabled={!collectionData.collectionDate || !collectionData.collectedBy}
+              
+              <div>
+                <Label htmlFor="infant_gender">Gender</Label>
+                <Select 
+                  value={form.watch("infant_gender")} 
+                  onValueChange={(value) => form.setValue("infant_gender", value as any)}
                 >
-                  <IconCheck className="h-4 w-4 mr-2" />
-                  Mark as Collected
-                </Button>
-                <span className="text-sm text-gray-500">
-                  This will update the request status to "Sample Collected"
-                </span>
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="MALE">Male</SelectItem>
+                    <SelectItem value="FEMALE">Female</SelectItem>
+                    <SelectItem value="NOT_RECORDED">Not Recorded</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
-            </form>
-          </div>
+
+              <div>
+                <Label htmlFor="infant_dob">Date of Birth</Label>
+                <Input 
+                  id="infant_dob" 
+                  type="date"
+                  {...form.register("infant_dob")}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="infant_contact_phone">Contact Phone</Label>
+                <Input 
+                  id="infant_contact_phone" 
+                  {...form.register("infant_contact_phone")}
+                  className="mt-2"
+                  placeholder="Phone number"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="infant_age">Age</Label>
+                <Input 
+                  id="infant_age" 
+                  {...form.register("infant_age")}
+                  className="mt-2"
+                  placeholder="e.g., 6"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="infant_age_units">Age Units</Label>
+                <Select 
+                  value={form.watch("infant_age_units")} 
+                  onValueChange={(value) => form.setValue("infant_age_units", value as any)}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="DAYS">Days</SelectItem>
+                    <SelectItem value="WEEKS">Weeks</SelectItem>
+                    <SelectItem value="MONTHS">Months</SelectItem>
+                    <SelectItem value="YEARS">Years</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="md:col-span-2">
+                <Label htmlFor="infant_is_breast_feeding">Breastfeeding Status</Label>
+                <Select 
+                  value={form.watch("infant_is_breast_feeding")} 
+                  onValueChange={(value) => form.setValue("infant_is_breast_feeding", value as any)}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="YES">Yes</SelectItem>
+                    <SelectItem value="NO">No</SelectItem>
+                    <SelectItem value="UNKNOWN">Unknown</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Mother Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Mother Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="mother_htsnr">Mother's HTS Number</Label>
+                <Input 
+                  id="mother_htsnr" 
+                  {...form.register("mother_htsnr")}
+                  className="mt-2"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="mother_artnr">Mother's ART Number</Label>
+                <Input 
+                  id="mother_artnr" 
+                  {...form.register("mother_artnr")}
+                  className="mt-2"
+                />
+              </div>
+
+              <div className="md:col-span-2">
+                <Label htmlFor="mother_nin">Mother's NIN</Label>
+                <Input 
+                  id="mother_nin" 
+                  {...form.register("mother_nin")}
+                  className="mt-2"
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Test Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Test Information</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label htmlFor="pcr">PCR Type</Label>
+                <Select 
+                  value={form.watch("pcr")} 
+                  onValueChange={(value) => form.setValue("pcr", value as any)}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="FIRST">First PCR</SelectItem>
+                    <SelectItem value="SECOND">Second PCR</SelectItem>
+                    <SelectItem value="THIRD">Third PCR</SelectItem>
+                    <SelectItem value="NON_ROUTINE">Non-Routine</SelectItem>
+                    <SelectItem value="UNKNOWN">Unknown</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="test_type">Test Type</Label>
+                <Input 
+                  id="test_type" 
+                  {...form.register("test_type")}
+                  className="mt-2"
+                  placeholder="e.g., Standard EID"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="PCR_test_requested">PCR Test Requested</Label>
+                <Select 
+                  value={form.watch("PCR_test_requested")} 
+                  onValueChange={(value) => form.setValue("PCR_test_requested", value as any)}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="YES">Yes</SelectItem>
+                    <SelectItem value="NO">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div>
+                <Label htmlFor="SCD_test_requested">SCD Test Requested</Label>
+                <Select 
+                  value={form.watch("SCD_test_requested")} 
+                  onValueChange={(value) => form.setValue("SCD_test_requested", value as any)}
+                >
+                  <SelectTrigger className="mt-2">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="YES">Yes</SelectItem>
+                    <SelectItem value="NO">No</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Facility Information (Display Only) */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Facility Information</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg">
+              <div>
+                <Label className="text-sm font-medium text-gray-700">Facility Name</Label>
+                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
+                  {request?.facility_name || "Not specified"}
+                </div>
+              </div>
+              <div>
+                <Label className="text-sm font-medium text-gray-700">District</Label>
+                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
+                  {request?.facility_district || "Not specified"}
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Form Actions */}
+        <div className="flex justify-end space-x-4 pt-6 border-t">
+          <Button type="button" variant="outline" onClick={() => router.push(`/eid/${requestId}`)}>
+            Cancel
+          </Button>
+          <Button 
+            type="submit" 
+            className="bg-blue-600 hover:bg-blue-700"
+            disabled={updateMutation.isPending}
+          >
+            {updateMutation.isPending ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Updating...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                Update Request
+              </>
+            )}
+          </Button>
         </div>
-      </div>
+      </form>
     </div>
-  )
+  );
 } 
