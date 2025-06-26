@@ -43,7 +43,7 @@ export const viralLoadRouter = createTRPCRouter({
           in_worksheet: vl_samples.in_worksheet,
         })
         .from(vl_samples)
-        .where(eq(vl_samples.facility_id, user.facility_id))
+        .where(eq(vl_samples.facility_id, user.facility_id!))
         .orderBy(desc(vl_samples.created_at))
         .limit(input.limit)
         .offset(input.offset);
@@ -52,7 +52,7 @@ export const viralLoadRouter = createTRPCRouter({
       const totalResult = await vlDb
         .select({ count: count() })
         .from(vl_samples)
-        .where(eq(vl_samples.facility_id, user.facility_id));
+        .where(eq(vl_samples.facility_id, user.facility_id!));
 
       return {
         samples,
@@ -174,8 +174,8 @@ export const viralLoadRouter = createTRPCRouter({
         .from(vl_samples)
         .where(
           and(
-            eq(vl_samples.id, input.sampleId),
-            eq(vl_samples.facility_id, user.facility_id)
+            eq(vl_samples.vl_sample_id, input.sampleId),
+            eq(vl_samples.facility_id, user.facility_id!)
           )
         )
         .limit(1);
@@ -233,7 +233,7 @@ export const viralLoadRouter = createTRPCRouter({
         .where(
           and(
             eq(vl_samples.vl_sample_id, input.sampleId),
-            eq(vl_samples.facility_id, user.facility_id)
+            eq(vl_samples.facility_id, user.facility_id!)
           )
         );
 
@@ -268,7 +268,7 @@ export const viralLoadRouter = createTRPCRouter({
         in_worksheet: vl_samples.in_worksheet,
       })
       .from(vl_samples)
-      .where(eq(vl_samples.facility_id, user.facility_id));
+      .where(eq(vl_samples.facility_id, user.facility_id!));
 
     const totalSamples = allSamples.length;
     const pendingSamples = allSamples.filter((s) => !s.date_collected).length;
@@ -282,4 +282,262 @@ export const viralLoadRouter = createTRPCRouter({
       completedSamples,
     };
   }),
+
+  // Get collected samples ready for packaging
+  getCollectedSamples: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(50),
+        offset: z.number().min(0).default(0),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const user = ctx.user;
+      
+      if (!user.facility_id) {
+        return {
+          samples: [],
+          total: 0,
+        };
+      }
+
+      // Get VL LIMS database connection
+      const vlDb = await getVlLimsDb();
+
+      // Get all samples for the facility (we'll filter in JavaScript for simplicity)
+      const allSamples = await vlDb
+        .select({
+          id: vl_samples.id,
+          vl_sample_id: vl_samples.vl_sample_id,
+          patient_unique_id: vl_samples.patient_unique_id,
+          form_number: vl_samples.form_number,
+          sample_type: vl_samples.sample_type,
+          date_collected: vl_samples.date_collected,
+          date_received: vl_samples.date_received,
+          facility_id: vl_samples.facility_id,
+          verified: vl_samples.verified,
+          created_at: vl_samples.created_at,
+          reception_art_number: vl_samples.reception_art_number,
+          data_art_number: vl_samples.data_art_number,
+          facility_reference: vl_samples.facility_reference,
+        })
+        .from(vl_samples)
+        .where(eq(vl_samples.facility_id, user.facility_id!))
+        .orderBy(desc(vl_samples.created_at));
+
+      // Filter samples that have been collected but not yet received (ready for packaging)
+      const collectedSamples = allSamples.filter(sample => 
+        sample.date_collected && // Has collection date
+        !sample.date_received && // Not yet received
+        !sample.facility_reference // Not yet packaged
+      );
+
+      // Apply pagination
+      const totalCount = collectedSamples.length;
+      const paginatedSamples = collectedSamples.slice(input.offset, input.offset + input.limit);
+
+      return {
+        samples: paginatedSamples,
+        total: totalCount,
+      };
+    }),
+
+  // Package selected samples
+  packageSamples: protectedProcedure
+    .input(
+      z.object({
+        packageIdentifier: z.string().min(1, "Package identifier is required"),
+        sampleIds: z.array(z.string()).min(1, "At least one sample must be selected"),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = ctx.user;
+      
+      if (!user.facility_id) {
+        throw new Error("Please set up your facility information first.");
+      }
+      
+      const vlDb = await getVlLimsDb();
+
+      // For each sample, update it to indicate it's been packaged
+      // In a real system, you might have a separate packages table
+      const updatePromises = input.sampleIds.map(sampleId =>
+        vlDb
+          .update(vl_samples)
+          .set({
+            // Use facility_reference field to store package identifier
+            facility_reference: input.packageIdentifier,
+            updated_at: new Date(),
+            updated_by_id: user.id,
+          })
+          .where(
+            and(
+              eq(vl_samples.vl_sample_id, sampleId),
+              eq(vl_samples.facility_id, user.facility_id!)
+            )
+          )
+      );
+
+      await Promise.all(updatePromises);
+
+      return {
+        success: true,
+        message: `Successfully packaged ${input.sampleIds.length} samples with identifier: ${input.packageIdentifier}`,
+        packagedCount: input.sampleIds.length,
+      };
+    }),
+
+  // Get packaged samples (samples that have been packaged)
+  getPackagedSamples: protectedProcedure
+    .input(
+      z.object({
+        limit: z.number().min(1).max(100).default(50),
+        offset: z.number().min(0).default(0),
+        packageIdentifier: z.string().optional(), // Filter by specific package
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const user = ctx.user;
+      
+      if (!user.facility_id) {
+        return {
+          samples: [],
+          total: 0,
+          packages: [],
+        };
+      }
+
+      // Get VL LIMS database connection
+      const vlDb = await getVlLimsDb();
+
+      // Build where conditions
+      const whereConditions = [eq(vl_samples.facility_id, user.facility_id!)];
+      
+      // Only get samples that have been packaged (have facility_reference)
+      // Note: We'll filter this in JavaScript since it's easier with the current setup
+      
+      if (input.packageIdentifier) {
+        // If filtering by specific package, we'll handle this in JavaScript too
+      }
+
+      // Get all samples for the facility
+      const allSamples = await vlDb
+        .select({
+          id: vl_samples.id,
+          vl_sample_id: vl_samples.vl_sample_id,
+          patient_unique_id: vl_samples.patient_unique_id,
+          form_number: vl_samples.form_number,
+          sample_type: vl_samples.sample_type,
+          date_collected: vl_samples.date_collected,
+          date_received: vl_samples.date_received,
+          facility_id: vl_samples.facility_id,
+          verified: vl_samples.verified,
+          created_at: vl_samples.created_at,
+          updated_at: vl_samples.updated_at,
+          reception_art_number: vl_samples.reception_art_number,
+          data_art_number: vl_samples.data_art_number,
+          facility_reference: vl_samples.facility_reference,
+          updated_by_id: vl_samples.updated_by_id,
+        })
+        .from(vl_samples)
+        .where(and(...whereConditions))
+        .orderBy(desc(vl_samples.updated_at));
+
+      // Filter packaged samples (samples with facility_reference)
+      let packagedSamples = allSamples.filter(sample => 
+        sample.facility_reference && sample.facility_reference.trim() !== ""
+      );
+
+      // Filter by specific package if requested
+      if (input.packageIdentifier) {
+        packagedSamples = packagedSamples.filter(sample =>
+          sample.facility_reference === input.packageIdentifier
+        );
+      }
+
+      // Get unique package identifiers for the dropdown
+      const packages = [...new Set(
+        allSamples
+          .filter(sample => sample.facility_reference && sample.facility_reference.trim() !== "")
+          .map(sample => sample.facility_reference!)
+      )].sort();
+
+      // Apply pagination
+      const totalCount = packagedSamples.length;
+      const paginatedSamples = packagedSamples.slice(input.offset, input.offset + input.limit);
+
+      return {
+        samples: paginatedSamples,
+        total: totalCount,
+        packages, // List of all package identifiers for filtering
+      };
+    }),
+
+  // Get package summary (grouped by package identifier)
+  getPackageSummary: protectedProcedure
+    .query(async ({ ctx }) => {
+      const user = ctx.user;
+      
+      if (!user.facility_id) {
+        return {
+          packages: [],
+        };
+      }
+
+      // Get VL LIMS database connection
+      const vlDb = await getVlLimsDb();
+
+      // Get all packaged samples
+      const allSamples = await vlDb
+        .select({
+          facility_reference: vl_samples.facility_reference,
+          date_collected: vl_samples.date_collected,
+          updated_at: vl_samples.updated_at,
+          sample_type: vl_samples.sample_type,
+        })
+        .from(vl_samples)
+        .where(eq(vl_samples.facility_id, user.facility_id!));
+
+      // Filter and group by package
+      const packagedSamples = allSamples.filter(sample => 
+        sample.facility_reference && sample.facility_reference.trim() !== ""
+      );
+
+      // Group by package identifier
+      const packageGroups = packagedSamples.reduce((acc, sample) => {
+        const packageId = sample.facility_reference!;
+        if (!acc[packageId]) {
+          acc[packageId] = {
+            packageIdentifier: packageId,
+            sampleCount: 0,
+            lastUpdated: sample.updated_at,
+            sampleTypes: new Set<string>(),
+          };
+        }
+        acc[packageId].sampleCount++;
+        if (sample.sample_type) {
+          acc[packageId].sampleTypes.add(sample.sample_type);
+        }
+        // Keep the most recent update date
+        if (sample.updated_at && sample.updated_at > acc[packageId].lastUpdated) {
+          acc[packageId].lastUpdated = sample.updated_at;
+        }
+        return acc;
+      }, {} as Record<string, any>);
+
+      // Convert to array and format
+      const packages = Object.values(packageGroups).map((pkg: any) => ({
+        packageIdentifier: pkg.packageIdentifier,
+        sampleCount: pkg.sampleCount,
+        lastUpdated: pkg.lastUpdated,
+        sampleTypes: Array.from(pkg.sampleTypes),
+      }));
+
+      // Sort by most recent first
+      packages.sort((a, b) => new Date(b.lastUpdated).getTime() - new Date(a.lastUpdated).getTime());
+
+      return {
+        packages,
+      };
+    }),
 }); 
