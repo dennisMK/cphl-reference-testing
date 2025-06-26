@@ -19,8 +19,8 @@ export const vl_patients = mysqlTable("vl_patients", {
   other_id: varchar("other_id", { length: 64 }),
   gender: varchar("gender", { length: 1 }),
   dob: date("dob"),
-  created_at: datetime("created_at", { fsp: 6 }).notNull(),
-  updated_at: datetime("updated_at", { fsp: 6 }).notNull(),
+  created_at: datetime("created_at", { mode: "date", fsp: 6 }).notNull(),
+  updated_at: datetime("updated_at", { mode: "date", fsp: 6 }).notNull(),
   created_by_id: int("created_by_id").notNull(),
   facility_id: int("facility_id").notNull(),
   treatment_initiation_date: date("treatment_initiation_date"),
@@ -49,7 +49,7 @@ export const vl_samples = mysqlTable("vl_samples", {
   consented_sample_keeping: varchar("consented_sample_keeping", { length: 1 }),
   active_tb_status: varchar("active_tb_status", { length: 1 }),
   date_collected: date("date_collected"),
-  date_received: datetime("date_received"),
+  date_received: datetime("date_received", { mode: "date" }),
   treatment_initiation_date: date("treatment_initiation_date"),
   sample_type: varchar("sample_type", { length: 1 }),
   treatment_indication_other: varchar("treatment_indication_other", { length: 64 }),
@@ -59,9 +59,9 @@ export const vl_samples = mysqlTable("vl_samples", {
   verified: tinyint("verified").notNull().default(1),
   in_worksheet: tinyint("in_worksheet"),
   data_entered_by_id: int("data_entered_by_id"),
-  data_entered_at: datetime("data_entered_at", { fsp: 6 }),
-  created_at: datetime("created_at", { fsp: 6 }).notNull(),
-  updated_at: datetime("updated_at", { fsp: 6 }).notNull(),
+  data_entered_at: datetime("data_entered_at", { mode: "date", fsp: 6 }),
+  created_at: datetime("created_at", { mode: "date", fsp: 6 }).notNull(),
+  updated_at: datetime("updated_at", { mode: "date", fsp: 6 }).notNull(),
   arv_adherence_id: int("arv_adherence_id"),
   created_by_id: int("created_by_id"),
   current_regimen_id: int("current_regimen_id"),
@@ -75,7 +75,7 @@ export const vl_samples = mysqlTable("vl_samples", {
   treatment_line_id: int("treatment_line_id"),
   updated_by_id: int("updated_by_id"),
   verifier_id: int("verifier_id"),
-  verified_at: datetime("verified_at"),
+  verified_at: datetime("verified_at", { mode: "date" }),
   viral_load_testing_id: int("viral_load_testing_id"),
   envelope_id: int("envelope_id"),
   other_regimen: varchar("other_regimen", { length: 128 }),
@@ -100,13 +100,13 @@ export const vl_samples = mysqlTable("vl_samples", {
   stage: tinyint("stage"),
   required_verification: tinyint("required_verification").notNull(),
   current_regimen_initiation_date: date("current_regimen_initiation_date"),
-  hie_data_created_at: datetime("hie_data_created_at"),
+  hie_data_created_at: datetime("hie_data_created_at", { mode: "date" }),
   study_id: int("study_id"),
   received_by_id: int("received_by_id"),
   study_participant_id: int("study_participant_id"),
   source_system: int("source_system"),
   duration_on_current_txt: tinyint("duration_on_current_txt"),
-  date_centrifuged: datetime("date_centrifuged"),
+  date_centrifuged: datetime("date_centrifuged", { mode: "date" }),
   patient_phone_number: varchar("patient_phone_number", { length: 20 }),
   requested_on: date("requested_on"),
   only_sample_received: tinyint("only_sample_received"),
@@ -114,7 +114,8 @@ export const vl_samples = mysqlTable("vl_samples", {
 });
 
 // TypeScript types for the VL LIMS tables
-export type VLPatient = typeof vl_patients.$inferSelect;
-export type VLPatientInsert = typeof vl_patients.$inferInsert;
-export type VLSample = typeof vl_samples.$inferSelect;
-export type VLSampleInsert = typeof vl_samples.$inferInsert; 
+export type VlPatient = typeof vl_patients.$inferSelect;
+export type NewVlPatient = typeof vl_patients.$inferInsert;
+
+export type VlSample = typeof vl_samples.$inferSelect;
+export type NewVlSample = typeof vl_samples.$inferInsert; 
