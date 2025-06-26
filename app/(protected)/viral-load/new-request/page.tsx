@@ -143,7 +143,7 @@ export default function NewVirwqalLoadRequest(): React.JSX.Element {
   };
 
   return (
-    <div className="">
+    <div className="md:container md:px-0 px-4 pt-4 md:mx-auto">
       {/* Header with title and actions */}
       <div className="mb-6 pb-4 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

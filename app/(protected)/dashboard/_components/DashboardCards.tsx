@@ -6,6 +6,7 @@ import { Activity, Baby } from "lucide-react";
 import Link from "next/link";
 import React from "react";
 import { api } from "@/trpc/react";
+import { IconBabyCarriage } from "@tabler/icons-react";
 
 export default function DashboardCards() {
   // Fetch real data from APIs
@@ -29,7 +30,7 @@ export default function DashboardCards() {
       title: "HIV-Positive Mothers", 
       description: "Manage EID testing for infants born to HIV Positive Mothers",
       href: "/eid",
-      icon: Baby,
+      icon: IconBabyCarriage,
       action: "View",
       count: eidStats?.totalSamples || 0,
       requests: eidStats?.pendingSamples || 0,
