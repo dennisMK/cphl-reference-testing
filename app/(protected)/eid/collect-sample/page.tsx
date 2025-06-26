@@ -4,10 +4,10 @@ import React from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
-  ColumnDef,
-  ColumnFiltersState,
-  SortingState,
-  VisibilityState,
+  type ColumnDef,
+  type ColumnFiltersState,
+  type SortingState,
+  type VisibilityState,
   flexRender,
   getCoreRowModel,
   getFilteredRowModel,
@@ -267,9 +267,11 @@ export const columns: ColumnDef<EIDRequest>[] = [
                 Edit Request
               </Link>
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-green-600">
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Mark as Collected
+            <DropdownMenuItem asChild>
+              <Link href={`/eid/${request.id}/collect`} className="text-green-600 flex items-center">
+                <CheckCircle className="mr-2 h-4 w-4" />
+                Collect Sample
+              </Link>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -288,25 +290,37 @@ export function EIDDataTable() {
     pageIndex: 0,
     pageSize: 10,
   });
+  const [activeTab, setActiveTab] = React.useState<"pending" | "collected" | "all">("pending");
 
-  // Fetch pending collections using tRPC
-  const { data: pendingData, isLoading, error, refetch } = api.eid.getPendingCollections.useQuery({
+  // Fetch samples based on active tab
+  const { data: pendingData, isLoading: pendingLoading, error: pendingError, refetch: refetchPending } = api.eid.getPendingCollections.useQuery({
     limit: pagination.pageSize,
     offset: pagination.pageIndex * pagination.pageSize,
-  });
+  }, { enabled: activeTab === "pending" });
+
+  const { data: allData, isLoading: allLoading, error: allError, refetch: refetchAll } = api.eid.getRequests.useQuery({
+    limit: pagination.pageSize,
+    offset: pagination.pageIndex * pagination.pageSize,
+    status: activeTab === "collected" ? "collected" : undefined,
+  }, { enabled: activeTab === "collected" || activeTab === "all" });
 
   const collectSampleMutation = api.eid.collectSample.useMutation({
     onSuccess: () => {
       toast.success("Sample collected successfully!");
-      refetch();
+      refetchPending();
+      refetchAll();
     },
     onError: (error) => {
       toast.error(error.message || "Failed to collect sample");
     },
   });
 
-  const requests = pendingData?.samples || [];
-  const totalCount = pendingData?.total || 0;
+  // Determine which data to use based on active tab
+  const isLoading = activeTab === "pending" ? pendingLoading : allLoading;
+  const error = activeTab === "pending" ? pendingError : allError;
+  const data = activeTab === "pending" ? pendingData : allData;
+  const requests = data?.samples || [];
+  const totalCount = data?.total || 0;
 
   const table = useReactTable({
     data: requests,
@@ -353,7 +367,7 @@ export function EIDDataTable() {
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
           <p className="text-red-600 mb-2">Error loading EID requests</p>
-          <Button onClick={() => refetch()} variant="outline">
+          <Button onClick={() => activeTab === "pending" ? refetchPending() : refetchAll()} variant="outline">
             Try Again
           </Button>
         </div>
@@ -363,6 +377,42 @@ export function EIDDataTable() {
 
   return (
     <div className="w-full">
+      {/* Tab Navigation */}
+      <div className="mb-4">
+        <div className="flex space-x-1 bg-gray-100 rounded-lg p-1">
+          <button
+            onClick={() => setActiveTab("pending")}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === "pending"
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-gray-600 hover:text-blue-600"
+            }`}
+          >
+            Pending Collection ({pendingData?.total || 0})
+          </button>
+          <button
+            onClick={() => setActiveTab("collected")}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === "collected"
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-gray-600 hover:text-blue-600"
+            }`}
+          >
+            Collected Samples
+          </button>
+          <button
+            onClick={() => setActiveTab("all")}
+            className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+              activeTab === "all"
+                ? "bg-white text-blue-600 shadow-sm"
+                : "text-gray-600 hover:text-blue-600"
+            }`}
+          >
+            All Samples
+          </button>
+        </div>
+      </div>
+
       <div className="flex items-center py-4">
         <Input
           placeholder="Filter requests..."
@@ -373,7 +423,7 @@ export function EIDDataTable() {
           className="max-w-sm"
         />
         <div className="ml-auto flex items-center space-x-2">
-          {table.getFilteredSelectedRowModel().rows.length > 0 && (
+          {activeTab === "pending" && table.getFilteredSelectedRowModel().rows.length > 0 && (
             <Button
               onClick={handleCollectSelected}
               className="bg-green-600 hover:bg-green-700"
@@ -446,7 +496,12 @@ export function EIDDataTable() {
             ) : (
               <TableRow>
                 <TableCell colSpan={columns.length} className="h-24 text-center">
-                  No EID requests pending collection.
+                  {activeTab === "pending" 
+                    ? "No EID requests pending collection." 
+                    : activeTab === "collected" 
+                    ? "No collected samples found."
+                    : "No EID requests found."
+                  }
                 </TableCell>
               </TableRow>
             )}
@@ -482,6 +537,9 @@ export function EIDDataTable() {
 }
 
 export default function CollectSamplePage() {
+  // Fetch dashboard statistics
+  const { data: dashboardStats, isLoading: statsLoading } = api.eid.getDashboardStats.useQuery();
+
   return (
     <div className="container mx-auto p-6">
       {/* Header */}
@@ -520,7 +578,9 @@ export default function CollectSamplePage() {
                 <Clock className="h-8 w-8 text-orange-500" />
                 <div>
                   <p className="text-sm text-gray-600">Pending Collection</p>
-                  <p className="text-2xl font-bold text-orange-600">-</p>
+                  <p className="text-2xl font-bold text-orange-600">
+                    {statsLoading ? "..." : dashboardStats?.pendingSamples || 0}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -530,8 +590,10 @@ export default function CollectSamplePage() {
               <div className="flex items-center space-x-2">
                 <CheckCircle className="h-8 w-8 text-blue-500" />
                 <div>
-                  <p className="text-sm text-gray-600">Ready for Collection</p>
-                  <p className="text-2xl font-bold text-blue-600">-</p>
+                  <p className="text-sm text-gray-600">Collected</p>
+                  <p className="text-2xl font-bold text-blue-600">
+                    {statsLoading ? "..." : dashboardStats?.collectedSamples || 0}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -541,8 +603,10 @@ export default function CollectSamplePage() {
               <div className="flex items-center space-x-2">
                 <Package className="h-8 w-8 text-green-500" />
                 <div>
-                  <p className="text-sm text-gray-600">Collected Today</p>
-                  <p className="text-2xl font-bold text-green-600">-</p>
+                  <p className="text-sm text-gray-600">Completed</p>
+                  <p className="text-2xl font-bold text-green-600">
+                    {statsLoading ? "..." : dashboardStats?.completedSamples || 0}
+                  </p>
                 </div>
               </div>
             </CardContent>
@@ -553,7 +617,9 @@ export default function CollectSamplePage() {
                 <Baby className="h-8 w-8 text-purple-500" />
                 <div>
                   <p className="text-sm text-gray-600">Total Samples</p>
-                  <p className="text-2xl font-bold text-purple-600">-</p>
+                  <p className="text-2xl font-bold text-purple-600">
+                    {statsLoading ? "..." : dashboardStats?.totalSamples || 0}
+                  </p>
                 </div>
               </div>
             </CardContent>

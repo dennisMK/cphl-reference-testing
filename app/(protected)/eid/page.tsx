@@ -132,7 +132,7 @@ export default function EIDPage() {
       </div>
 
       {/* Additional Quick Links */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
         <Link href="/eid/collect-sample">
           <Card className="hover:shadow-md transition-shadow cursor-pointer">
             <CardContent className="p-4">
@@ -149,21 +149,7 @@ export default function EIDPage() {
           </Card>
         </Link>
 
-        <Link href="/eid/results">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <CheckCircle className="h-6 w-6 text-green-600" />
-                <div>
-                  <p className="font-medium">View Results</p>
-                  <p className="text-sm text-gray-600">
-                    {statsLoading ? "Loading..." : `${stats?.completedSamples || 0} results available`}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+        
 
         <Link href="/eid">
           <Card className="hover:shadow-md transition-shadow cursor-pointer">

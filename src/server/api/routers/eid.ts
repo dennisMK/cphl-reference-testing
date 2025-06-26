@@ -404,11 +404,14 @@ export const eidRouter = createTRPCRouter({
       };
     }),
 
-  // Collect sample (mark as collected)
+  // Collect a sample (mark as collected)
   collectSample: protectedProcedure
     .input(z.object({ 
       id: z.number(),
       date_dbs_taken: z.string().optional(),
+      barcode_number: z.string().optional(),
+      requested_by: z.string().optional(),
+      dispatch_date: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
       const user = ctx.user;
@@ -436,12 +439,20 @@ export const eidRouter = createTRPCRouter({
         throw new Error("EID request not found or access denied");
       }
 
-      // Mark sample as collected
+      // Prepare update data
+      const updateData: any = {
+        date_dbs_taken: input.date_dbs_taken ? new Date(input.date_dbs_taken) : new Date(),
+      };
+
+      // Add barcode number to infant_exp_id if provided
+      if (input.barcode_number) {
+        updateData.infant_exp_id = input.barcode_number;
+      }
+
+      // Mark sample as collected with additional information
       await eidDb
         .update(dbs_samples)
-        .set({
-          date_dbs_taken: input.date_dbs_taken ? new Date(input.date_dbs_taken) : new Date(),
-        })
+        .set(updateData)
         .where(eq(dbs_samples.id, input.id));
 
       return {
