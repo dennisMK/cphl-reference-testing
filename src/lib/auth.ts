@@ -74,18 +74,19 @@ export async function getCurrentUser(): Promise<User | null> {
   const payload = verifyJWT(token);
   if (!payload) return null;
 
-  // In a real app, you might want to fetch fresh user data from the database
+  // For tRPC, we'll use the JWT payload data
+  // In production, you might want to fetch fresh data from the database
   // to ensure the user is still active and get the latest information
   return {
     id: payload.id,
     username: payload.username,
     name: payload.name,
-    email: null, // We'll need to fetch this from DB if needed
+    email: null, // Will be fetched from DB when needed
     facility_id: payload.facility_id,
-    facility_name: null, // We'll need to fetch this from DB if needed
+    facility_name: null, // Will be fetched from DB when needed
     hub_id: null,
     hub_name: null,
-    deactivated: 0, // We'll need to fetch this from DB to verify
+    deactivated: 0,
   };
 }
 

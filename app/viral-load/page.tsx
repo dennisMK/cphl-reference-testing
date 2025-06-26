@@ -32,7 +32,7 @@ export default function page() {
     { 
       title: "VL Results", 
       icon: FileText, 
-      href: "/viral-load/view", 
+      href: "/viral-load/results", 
       action: "view",
       description: "View and manage HIV viral load test results from the laboratory"
     }
