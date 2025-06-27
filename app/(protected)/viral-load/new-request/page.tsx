@@ -119,9 +119,12 @@ export default function NewViralLoadRequest(): React.JSX.Element {
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
+    mode: "onChange", // Validate on change for real-time feedback
     defaultValues: {
+      art_number: "",
       other_id: "",
-      anc_number: "",
+      gender: undefined,
+      dob: "",
       age: "",
       age_units: "Years",
       patient_phone_number: "",
@@ -132,6 +135,8 @@ export default function NewViralLoadRequest(): React.JSX.Element {
       treatment_care_approach: "",
       current_who_stage: "",
       treatment_indication_id: "",
+      treatment_initiation_date: "",
+      current_regimen_initiation_date: "",
       requested_on: new Date().toISOString().split('T')[0],
     },
   });
@@ -148,36 +153,43 @@ export default function NewViralLoadRequest(): React.JSX.Element {
   useEffect(() => {
     if (dobDay && dobMonth && dobYear) {
       const dateString = `${dobYear}-${dobMonth}-${dobDay}`;
+      console.log("Setting DOB:", dateString);
       form.setValue("dob", dateString);
+      form.trigger("dob"); // Trigger validation
+    } else {
+      form.setValue("dob", "");
     }
   }, [dobDay, dobMonth, dobYear, form]);
 
   useEffect(() => {
     if (treatmentDay && treatmentMonth && treatmentYear) {
       const dateString = `${treatmentYear}-${treatmentMonth}-${treatmentDay}`;
+      console.log("Setting treatment initiation date:", dateString);
       form.setValue("treatment_initiation_date", dateString);
+      form.trigger("treatment_initiation_date"); // Trigger validation
+    } else {
+      form.setValue("treatment_initiation_date", "");
     }
   }, [treatmentDay, treatmentMonth, treatmentYear, form]);
 
   useEffect(() => {
     if (regimenDay && regimenMonth && regimenYear) {
       const dateString = `${regimenYear}-${regimenMonth}-${regimenDay}`;
+      console.log("Setting regimen initiation date:", dateString);
       form.setValue("current_regimen_initiation_date", dateString);
+      form.trigger("current_regimen_initiation_date"); // Trigger validation
+    } else {
+      form.setValue("current_regimen_initiation_date", "");
     }
   }, [regimenDay, regimenMonth, regimenYear, form]);
 
   const onSubmit = async (data: FormData): Promise<void> => {
+    console.log("Form submission started", data);
     setIsSubmitting(true);
     
     try {
-      // Ensure required fields exist
-      if (!data.dob || !data.treatment_initiation_date || !data.current_regimen_initiation_date) {
-        toast.error("Missing required fields", {
-          description: "Please fill in all required fields",
-        });
-        setIsSubmitting(false);
-        return;
-      }
+      // Zod validation is automatically handled by react-hook-form
+      // If we reach here, all validations have passed
 
       await createRequest.mutateAsync({
         art_number: data.art_number,
@@ -327,7 +339,10 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                   <Label htmlFor="gender" className="text-sm font-medium text-gray-700">
                     Gender:
                   </Label>
-                  <Select onValueChange={(value) => form.setValue("gender", value as "M" | "F")}>
+                  <Select onValueChange={(value) => {
+                    form.setValue("gender", value as "M" | "F");
+                    form.trigger("gender"); // Trigger validation
+                  }}>
                     <SelectTrigger className="mt-2 h-10 w-full">
                       <SelectValue placeholder="" />
                     </SelectTrigger>
@@ -486,6 +501,9 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                       </SelectContent>
                     </Select>
                   </div>
+                  {form.formState.errors.treatment_initiation_date && (
+                    <p className="text-sm text-red-500 mt-1">{form.formState.errors.treatment_initiation_date.message}</p>
+                  )}
                 </div>
 
                 <div>
@@ -554,6 +572,9 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                       </SelectContent>
                     </Select>
                   </div>
+                  {form.formState.errors.current_regimen_initiation_date && (
+                    <p className="text-sm text-red-500 mt-1">{form.formState.errors.current_regimen_initiation_date.message}</p>
+                  )}
                 </div>
               </div>
 
@@ -729,8 +750,14 @@ export default function NewViralLoadRequest(): React.JSX.Element {
           <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
             <Button
               type="submit"
-              disabled={isSubmitting}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white"
+              disabled={isSubmitting || !form.formState.isValid}
+              className="flex-1 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => {
+                console.log("Submit button clicked");
+                console.log("Form errors:", form.formState.errors);
+                console.log("Form values:", form.getValues());
+                console.log("Form valid:", form.formState.isValid);
+              }}
             >
               {isSubmitting ? (
                 <>

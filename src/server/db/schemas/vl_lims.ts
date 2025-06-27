@@ -111,14 +111,6 @@ export const vl_samples = mysqlTable("vl_samples", {
   requested_on: date("requested_on"),
   only_sample_received: tinyint("only_sample_received"),
   agent_id: varchar("agent_id", { length: 255 }),
-  
-  // Additional fields that might contain result data
-  viral_load_result: varchar("viral_load_result", { length: 64 }),
-  detection_status: varchar("detection_status", { length: 32 }),
-  interpretation: varchar("interpretation", { length: 64 }),
-  test_method: varchar("test_method", { length: 128 }),
-  instrument: varchar("instrument", { length: 128 }),
-  batch_number: varchar("batch_number", { length: 64 }),
 });
 
 // TypeScript types for the VL LIMS tables

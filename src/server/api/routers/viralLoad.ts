@@ -202,7 +202,30 @@ export const viralLoadRouter = createTRPCRouter({
       const vlDb = await getVlLimsDb();
 
       const sample = await vlDb
-        .select()
+        .select({
+          id: vl_samples.id,
+          patient_unique_id: vl_samples.patient_unique_id,
+          vl_sample_id: vl_samples.vl_sample_id,
+          form_number: vl_samples.form_number,
+          pregnant: vl_samples.pregnant,
+          anc_number: vl_samples.anc_number,
+          breast_feeding: vl_samples.breast_feeding,
+          active_tb_status: vl_samples.active_tb_status,
+          date_collected: vl_samples.date_collected,
+          date_received: vl_samples.date_received,
+          treatment_initiation_date: vl_samples.treatment_initiation_date,
+          sample_type: vl_samples.sample_type,
+          verified: vl_samples.verified,
+          in_worksheet: vl_samples.in_worksheet,
+          created_at: vl_samples.created_at,
+          updated_at: vl_samples.updated_at,
+          created_by_id: vl_samples.created_by_id,
+          facility_id: vl_samples.facility_id,
+          patient_id: vl_samples.patient_id,
+          current_regimen_initiation_date: vl_samples.current_regimen_initiation_date,
+          patient_phone_number: vl_samples.patient_phone_number,
+          requested_on: vl_samples.requested_on,
+        })
         .from(vl_samples)
         .where(
           and(
