@@ -140,7 +140,7 @@ export default function SampleDetailPage({ params }: { params: { id: string } })
         <Button 
           variant="outline" 
           size="sm"
-          onClick={() => router.push(`/viral-load/${sample.id}/edit`)}
+          onClick={() => router.push(`/viral-load/${sample.vl_sample_id}/edit`)}
         >
           <Edit className="h-4 w-4 mr-2" />
           Edit Sample

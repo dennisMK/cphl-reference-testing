@@ -222,28 +222,28 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(sample.vl_sample_id || "")}
+              onClick={() => navigator.clipboard.writeText(sample.vl_sample_id)}
             >
               <FileText className="mr-2 h-4 w-4" />
               Copy Sample ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <a href={`/viral-load/${sample.id}`}>
+              <a href={`/viral-load/${sample.vl_sample_id}`}>
                 <Eye className="mr-2 h-4 w-4" />
                 View Details
               </a>
             </DropdownMenuItem>
             {!sample.date_collected && (
               <DropdownMenuItem asChild>
-                <a href={`/viral-load/${sample.id}/collect`}>
+                <a href={`/viral-load/${sample.vl_sample_id}/collect`}>
                   <Package className="mr-2 h-4 w-4" />
                   Collect Sample
                 </a>
               </DropdownMenuItem>
             )}
             <DropdownMenuItem asChild>
-              <a href={`/viral-load/${sample.id}/edit`}>
+              <a href={`/viral-load/${sample.vl_sample_id}/edit`}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit Sample
               </a>

@@ -175,6 +175,16 @@ export const viralLoadRouter = createTRPCRouter({
         stage: 1,
         required_verification: 0,
         current_regimen_initiation_date: new Date(input.current_regimen_initiation_date),
+        // Add new fields
+        patient_phone_number: input.patient_phone_number || null,
+        requested_on: input.requested_on ? new Date(input.requested_on) : null,
+        clinician_id: input.clinician_id ? Number(input.clinician_id) : null,
+        current_regimen_id: input.current_regimen_id ? Number(input.current_regimen_id) : null,
+        tb_treatment_phase_id: input.tb_treatment_phase_id ? Number(input.tb_treatment_phase_id) : null,
+        arv_adherence_id: input.arv_adherence_id ? Number(input.arv_adherence_id) : null,
+        treatment_indication_id: input.treatment_indication_id ? Number(input.treatment_indication_id) : null,
+        treatment_care_approach: input.treatment_care_approach ? Number(input.treatment_care_approach) : null,
+        current_who_stage: input.current_who_stage ? Number(input.current_who_stage) : null,
       };
 
       const sampleResult = await vlDb
@@ -195,9 +205,9 @@ export const viralLoadRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const user = ctx.user;
       
-      if (!user.facility_id) {
-        throw new Error("Please set up your facility information first. Go to Settings → Edit Facility to add your facility details.");
-      }
+      // if (!user.facility_id) {
+      //   throw new Error("Please set up your facility information first. Go to Settings → Edit Facility to add your facility details.");
+      // }
       
       const vlDb = await getVlLimsDb();
 
@@ -225,6 +235,14 @@ export const viralLoadRouter = createTRPCRouter({
           current_regimen_initiation_date: vl_samples.current_regimen_initiation_date,
           patient_phone_number: vl_samples.patient_phone_number,
           requested_on: vl_samples.requested_on,
+          // Add missing fields that exist in database schema
+          clinician_id: vl_samples.clinician_id,
+          current_regimen_id: vl_samples.current_regimen_id,
+          tb_treatment_phase_id: vl_samples.tb_treatment_phase_id,
+          arv_adherence_id: vl_samples.arv_adherence_id,
+          treatment_indication_id: vl_samples.treatment_indication_id,
+          treatment_care_approach: vl_samples.treatment_care_approach,
+          current_who_stage: vl_samples.current_who_stage,
         })
         .from(vl_samples)
         .where(
@@ -239,7 +257,134 @@ export const viralLoadRouter = createTRPCRouter({
         throw new Error("Sample not found or access denied");
       }
 
-      return sample[0];
+      // Get patient data from vl_patients table
+      const patient = await vlDb
+        .select({
+          unique_id: vl_patients.unique_id,
+          art_number: vl_patients.art_number,
+          other_id: vl_patients.other_id,
+          gender: vl_patients.gender,
+          dob: vl_patients.dob,
+        })
+        .from(vl_patients)
+        .where(eq(vl_patients.unique_id, sample[0].patient_unique_id!))
+        .limit(1);
+
+      return {
+        ...sample[0],
+        // Include patient data if found
+        patient_data: patient[0] || null,
+      };
+    }),
+
+  // Update a viral load sample
+  updateSample: protectedProcedure
+    .input(
+      z.object({
+        sampleId: z.string().min(1, "Sample ID is required"),
+        art_number: z.string().min(1, "ART number is required"),
+        other_id: z.string().optional(),
+        gender: z.enum(["M", "F"]),
+        dob: z.string().min(1, "Date of birth is required"),
+        age: z.string().optional(),
+        age_units: z.enum(["Years", "Months", "Days"]).optional(),
+        patient_phone_number: z.string().optional(),
+        
+        // Requesting Clinician
+        clinician_id: z.string().optional(),
+        requested_on: z.string().optional(),
+        
+        // Treatment Information
+        treatment_initiation_date: z.string().min(1, "Treatment initiation date is required"),
+        current_regimen_id: z.string().optional(),
+        current_regimen_initiation_date: z.string().min(1, "Current regimen initiation date is required"),
+        
+        // Health Information
+        pregnant: z.enum(["Y", "N", "U"]).optional(),
+        anc_number: z.string().optional(),
+        breast_feeding: z.enum(["Y", "N", "U"]).optional(),
+        active_tb_status: z.enum(["Y", "N", "U"]).optional(),
+        tb_treatment_phase_id: z.string().optional(),
+        arv_adherence_id: z.string().optional(),
+        treatment_care_approach: z.string().optional(),
+        current_who_stage: z.string().optional(),
+        treatment_indication_id: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = ctx.user;
+
+      if (!user.facility_id) {
+        throw new Error("Please set up your facility information first. Go to Settings → Edit Facility to add your facility details before creating requests.");
+      }
+
+      const vlDb = await getVlLimsDb();
+
+      // Update the sample record
+      const sampleUpdateData = {
+        pregnant: input.pregnant || null,
+        anc_number: input.anc_number || null,
+        breast_feeding: input.breast_feeding || null,
+        active_tb_status: input.active_tb_status || null,
+        treatment_initiation_date: new Date(input.treatment_initiation_date),
+        current_regimen_initiation_date: new Date(input.current_regimen_initiation_date),
+        updated_at: new Date(),
+        // Add new fields
+        patient_phone_number: input.patient_phone_number || null,
+        requested_on: input.requested_on ? new Date(input.requested_on) : null,
+        clinician_id: input.clinician_id ? Number(input.clinician_id) : null,
+        current_regimen_id: input.current_regimen_id ? Number(input.current_regimen_id) : null,
+        tb_treatment_phase_id: input.tb_treatment_phase_id ? Number(input.tb_treatment_phase_id) : null,
+        arv_adherence_id: input.arv_adherence_id ? Number(input.arv_adherence_id) : null,
+        treatment_indication_id: input.treatment_indication_id ? Number(input.treatment_indication_id) : null,
+        treatment_care_approach: input.treatment_care_approach ? Number(input.treatment_care_approach) : null,
+        current_who_stage: input.current_who_stage ? Number(input.current_who_stage) : null,
+      };
+
+      await vlDb
+        .update(vl_samples)
+        .set(sampleUpdateData)
+        .where(
+          and(
+            eq(vl_samples.vl_sample_id, input.sampleId),
+            eq(vl_samples.facility_id, user.facility_id!)
+          )
+        );
+
+      // Update patient record if it exists
+      const patientUpdateData = {
+        art_number: input.art_number,
+        other_id: input.other_id || null,
+        gender: input.gender,
+        dob: new Date(input.dob),
+        treatment_initiation_date: new Date(input.treatment_initiation_date),
+        current_regimen_initiation_date: new Date(input.current_regimen_initiation_date),
+        updated_at: new Date(),
+      };
+
+      // Get the sample to find patient_unique_id
+      const sample = await vlDb
+        .select({ patient_unique_id: vl_samples.patient_unique_id })
+        .from(vl_samples)
+        .where(
+          and(
+            eq(vl_samples.vl_sample_id, input.sampleId),
+            eq(vl_samples.facility_id, user.facility_id!)
+          )
+        )
+        .limit(1);
+
+      if (sample[0]?.patient_unique_id) {
+        await vlDb
+          .update(vl_patients)
+          .set(patientUpdateData)
+          .where(eq(vl_patients.unique_id, sample[0].patient_unique_id));
+      }
+
+      return {
+        success: true,
+        message: "Viral load request updated successfully",
+      };
     }),
 
   // Update sample status
