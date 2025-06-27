@@ -138,7 +138,7 @@ export function AppNavigation() {
         <div className="flex items-center space-x-6">
           {/* Brand */}
           <Link href="/dashboard" className="flex items-center space-x-3 hover:opacity-80 transition-opacity">
-            <img src="/uganda-flag.png" alt="Uganda Flag" className="h-8 w-12 object-cover rounded-sm" />
+            <img src="/uganda-flag.png" alt="Uganda Flag" className="h-auto w-12 object-cover rounded-sm" />
             <div className="hidden sm:block">
               <span className={cn("text-lg font-semibold", colors.text)}>Uganda Lab</span>
               <div className={cn("text-xs", currentSection === "dashboard" ? "text-gray-500" : "text-white/80")}>
@@ -155,6 +155,10 @@ export function AppNavigation() {
               const IconComponent = section.icon;
               const active = isActive(section.href);
               const isCurrent = currentSection === section.href.split("/")[1];
+              
+              // Hide EID when in viral-load section, and hide viral-load when in EID section
+              if (currentSection === "viral-load" && section.href === "/eid") return null;
+              if (currentSection === "eid" && section.href === "/viral-load") return null;
 
               if (section.subItems) {
                 return (
@@ -310,6 +314,8 @@ export function AppNavigation() {
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
+          <img src="/uganda-flag.png" alt="Uganda Flag" className="h-auto w-12 object-cover rounded-sm" />
+
         </div>
       </div>
 
@@ -322,6 +328,10 @@ export function AppNavigation() {
           {navigationSections.map((section) => {
             const IconComponent = section.icon;
             const active = isActive(section.href);
+            
+            // Hide EID when in viral-load section, and hide viral-load when in EID section
+            if (currentSection === "viral-load" && section.href === "/eid") return null;
+            if (currentSection === "eid" && section.href === "/viral-load") return null;
             
             return (
               <Link key={section.href} href={section.href} className="flex-1">

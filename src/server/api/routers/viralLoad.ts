@@ -79,19 +79,33 @@ export const viralLoadRouter = createTRPCRouter({
   createRequest: protectedProcedure
     .input(
       z.object({
-        patient_unique_id: z.string().min(1, "Patient ID is required"),
         art_number: z.string().min(1, "ART number is required"),
         other_id: z.string().optional(),
         gender: z.enum(["M", "F"]),
         dob: z.string().min(1, "Date of birth is required"),
+        age: z.string().optional(),
+        age_units: z.enum(["Years", "Months", "Days"]).optional(),
+        patient_phone_number: z.string().optional(),
+        
+        // Requesting Clinician
+        clinician_id: z.string().optional(),
+        requested_on: z.string().optional(),
+        
+        // Treatment Information
         treatment_initiation_date: z.string().min(1, "Treatment initiation date is required"),
+        current_regimen_id: z.string().optional(),
         current_regimen_initiation_date: z.string().min(1, "Current regimen initiation date is required"),
+        
+        // Health Information
         pregnant: z.enum(["Y", "N", "U"]).optional(),
         anc_number: z.string().optional(),
         breast_feeding: z.enum(["Y", "N", "U"]).optional(),
         active_tb_status: z.enum(["Y", "N", "U"]).optional(),
-        sample_type: z.enum(["P", "D", "W"]), // Plasma, DBS, Whole blood
-        indication: z.string().min(1, "Indication is required"),
+        tb_treatment_phase_id: z.string().optional(),
+        arv_adherence_id: z.string().optional(),
+        treatment_care_approach: z.string().optional(),
+        current_who_stage: z.string().optional(),
+        treatment_indication_id: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -104,9 +118,12 @@ export const viralLoadRouter = createTRPCRouter({
       // Get VL LIMS database connection
       const vlDb = await getVlLimsDb();
 
+      // Generate a unique patient ID based on ART number and facility
+      const patientUniqueId = `${input.art_number}-${user.facility_id}-${Date.now()}`;
+      
       // First, create or get the patient record
       const patientData = {
-        unique_id: input.patient_unique_id,
+        unique_id: patientUniqueId,
         art_number: input.art_number,
         other_id: input.other_id || null,
         gender: input.gender,
@@ -135,7 +152,7 @@ export const viralLoadRouter = createTRPCRouter({
 
       // Create the sample record
       const sampleData = {
-        patient_unique_id: input.patient_unique_id,
+        patient_unique_id: patientUniqueId,
         vl_sample_id: sampleId,
         form_number: `FORM-${Date.now()}`,
         pregnant: input.pregnant || null,
@@ -144,7 +161,7 @@ export const viralLoadRouter = createTRPCRouter({
         active_tb_status: input.active_tb_status || null,
         date_collected: new Date(),
         treatment_initiation_date: new Date(input.treatment_initiation_date),
-        sample_type: input.sample_type,
+        sample_type: "P", // Default to Plasma for now
         verified: 1,
         in_worksheet: 0,
         created_at: new Date(),
@@ -972,5 +989,151 @@ export const viralLoadRouter = createTRPCRouter({
           ? `Sample ${input.sampleId} marked as collected` 
           : `Sample ${input.sampleId} collection status cleared`,
       };
+    }),
+
+  // Get analytics data for charts
+  getAnalytics: protectedProcedure
+    .input(
+      z.object({
+        days: z.number().min(1).max(999).default(15), // Increased max for "all time"
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const user = ctx.user;
+      
+      if (!user.facility_id) {
+        return [];
+      }
+
+      const vlDb = await getVlLimsDb();
+
+      // Get all samples for the facility
+      const allSamples = await vlDb
+        .select({
+          id: vl_samples.id,
+          date_collected: vl_samples.date_collected,
+          date_received: vl_samples.date_received,
+          verified: vl_samples.verified,
+          created_at: vl_samples.created_at,
+          facility_reference: vl_samples.facility_reference,
+          last_value: vl_samples.last_value,
+        })
+        .from(vl_samples)
+        .where(eq(vl_samples.facility_id, user.facility_id!));
+
+      // Handle "All Time" - find the earliest sample date
+      let startDate: Date;
+      const endDate = new Date();
+      
+      if (input.days >= 999) {
+        // "All Time" - find earliest sample
+        const earliestSample = allSamples.reduce((earliest, sample) => {
+          const sampleDate = new Date(sample.created_at);
+          return !earliest || sampleDate < earliest ? sampleDate : earliest;
+        }, null as Date | null);
+        
+        if (earliestSample) {
+          startDate = new Date(earliestSample);
+        } else {
+          // No samples, default to 30 days ago
+          startDate = new Date();
+          startDate.setDate(endDate.getDate() - 30);
+        }
+      } else {
+        // Regular time range
+        startDate = new Date();
+        startDate.setDate(endDate.getDate() - input.days + 1);
+      }
+
+      const analyticsData = [];
+
+      // For longer periods (> 90 days), group by weeks or months for performance
+      const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      const shouldGroupByWeeks = totalDays > 90;
+      const shouldGroupByMonths = totalDays > 365;
+
+      if (shouldGroupByMonths) {
+        // Group by months for very long periods
+        const currentDate = new Date(startDate);
+        currentDate.setDate(1); // Start of month
+        
+        while (currentDate <= endDate) {
+          const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+          const dateStr = currentDate.toISOString().split('T')[0];
+          
+          const samplesUpToThisDate = allSamples.filter(sample => {
+            const sampleDate = new Date(sample.created_at);
+            return sampleDate <= monthEnd;
+          });
+
+          const pending = samplesUpToThisDate.filter(s => !s.date_collected).length;
+          const packaged = samplesUpToThisDate.filter(s => s.facility_reference && s.date_received).length;
+          const results = samplesUpToThisDate.filter(s => s.verified === 1 && s.last_value).length;
+
+          analyticsData.push({
+            date: dateStr,
+            pending,
+            packaged,
+            results,
+          });
+
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+      } else if (shouldGroupByWeeks) {
+        // Group by weeks for medium periods
+        const currentDate = new Date(startDate);
+        // Start from the beginning of the week (Monday)
+        const dayOfWeek = currentDate.getDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        currentDate.setDate(currentDate.getDate() + mondayOffset);
+        
+        while (currentDate <= endDate) {
+          const weekEnd = new Date(currentDate);
+          weekEnd.setDate(weekEnd.getDate() + 6); // End of week (Sunday)
+          const dateStr = currentDate.toISOString().split('T')[0];
+          
+          const samplesUpToThisDate = allSamples.filter(sample => {
+            const sampleDate = new Date(sample.created_at);
+            return sampleDate <= weekEnd;
+          });
+
+          const pending = samplesUpToThisDate.filter(s => !s.date_collected).length;
+          const packaged = samplesUpToThisDate.filter(s => s.facility_reference && s.date_received).length;
+          const results = samplesUpToThisDate.filter(s => s.verified === 1 && s.last_value).length;
+
+          analyticsData.push({
+            date: dateStr,
+            pending,
+            packaged,
+            results,
+          });
+
+          currentDate.setDate(currentDate.getDate() + 7);
+        }
+      } else {
+        // Daily data for short periods (≤ 90 days)
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+          const currentDate = new Date(d);
+          const dateStr = currentDate.toISOString().split('T')[0];
+          
+          const samplesUpToThisDate = allSamples.filter(sample => {
+            const sampleDate = new Date(sample.created_at);
+            return sampleDate <= currentDate;
+          });
+
+          const pending = samplesUpToThisDate.filter(s => !s.date_collected).length;
+          const packaged = samplesUpToThisDate.filter(s => s.facility_reference && s.date_received).length;
+          const results = samplesUpToThisDate.filter(s => s.verified === 1 && s.last_value).length;
+
+          analyticsData.push({
+            date: dateStr,
+            pending,
+            packaged,
+            results,
+          });
+        }
+      }
+
+      return analyticsData;
     }),
 }); 

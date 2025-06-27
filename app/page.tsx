@@ -13,7 +13,7 @@ export default function Home() {
       if (isAuthenticated) {
         // User is authenticated, redirect to dashboard
         window.location.href = "/dashboard";
-      } else {
+    } else {
         // User is not authenticated, redirect to login
         window.location.href = "/auth/login";
       }

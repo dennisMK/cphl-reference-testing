@@ -24,21 +24,33 @@ import { api } from "@/trpc/react";
 
 const formSchema = z.object({
   // Patient Information
-  patient_unique_id: z.string().min(1, "Patient ID is required"),
   art_number: z.string().min(1, "ART number is required"),
   other_id: z.string().optional(),
   gender: z.enum(["M", "F"], { required_error: "Gender is required" }),
-  dob: z.date({ required_error: "Date of birth is required" }),
-  treatment_initiation_date: z.date({ required_error: "Treatment initiation date is required" }),
-  current_regimen_initiation_date: z.date({ required_error: "Current regimen initiation date is required" }),
+  dob: z.string().min(1, "Date of birth is required"),
+  age: z.string().optional(),
+  age_units: z.enum(["Years", "Months", "Days"]).optional(),
+  patient_phone_number: z.string().optional(),
   
-  // Sample Information
+  // Requesting Clinician
+  clinician_id: z.string().optional(),
+  requested_on: z.string().optional(),
+  
+  // Treatment Information
+  treatment_initiation_date: z.string().min(1, "Treatment initiation date is required"),
+  current_regimen_id: z.string().optional(),
+  current_regimen_initiation_date: z.string().min(1, "Current regimen initiation date is required"),
+  
+  // Health Information
   pregnant: z.enum(["Y", "N", "U"]).optional(),
   anc_number: z.string().optional(),
   breast_feeding: z.enum(["Y", "N", "U"]).optional(),
   active_tb_status: z.enum(["Y", "N", "U"]).optional(),
-  sample_type: z.enum(["P", "D", "W"], { required_error: "Sample type is required" }), // Plasma, DBS, Whole blood
-  indication: z.string().min(1, "Indication is required"),
+  tb_treatment_phase_id: z.string().optional(),
+  arv_adherence_id: z.string().optional(),
+  treatment_care_approach: z.string().optional(),
+  current_who_stage: z.string().optional(),
+  treatment_indication_id: z.string().optional(),
 }).refine((data) => {
   // If gender is female, pregnancy status is required
   if (data.gender === "F") {
@@ -52,10 +64,23 @@ const formSchema = z.object({
 
 type FormData = z.infer<typeof formSchema>;
 
-export default function NewVirwqalLoadRequest(): React.JSX.Element {
+export default function NewViralLoadRequest(): React.JSX.Element {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { user, isLoading } = useAuth();
+
+  // Date component states
+  const [dobDay, setDobDay] = useState<string>("");
+  const [dobMonth, setDobMonth] = useState<string>("");
+  const [dobYear, setDobYear] = useState<string>("");
+  
+  const [treatmentDay, setTreatmentDay] = useState<string>("");
+  const [treatmentMonth, setTreatmentMonth] = useState<string>("");
+  const [treatmentYear, setTreatmentYear] = useState<string>("");
+  
+  const [regimenDay, setRegimenDay] = useState<string>("");
+  const [regimenMonth, setRegimenMonth] = useState<string>("");
+  const [regimenYear, setRegimenYear] = useState<string>("");
 
   const createRequest = api.viralLoad.createRequest.useMutation({
     onSuccess: (data) => {
@@ -97,6 +122,17 @@ export default function NewVirwqalLoadRequest(): React.JSX.Element {
     defaultValues: {
       other_id: "",
       anc_number: "",
+      age: "",
+      age_units: "Years",
+      patient_phone_number: "",
+      clinician_id: "",
+      current_regimen_id: "",
+      tb_treatment_phase_id: "",
+      arv_adherence_id: "",
+      treatment_care_approach: "",
+      current_who_stage: "",
+      treatment_indication_id: "",
+      requested_on: new Date().toISOString().split('T')[0],
     },
   });
 
@@ -108,33 +144,63 @@ export default function NewVirwqalLoadRequest(): React.JSX.Element {
     }
   }, [watchedGender, form]);
 
+  // Combine date parts into complete dates
+  useEffect(() => {
+    if (dobDay && dobMonth && dobYear) {
+      const dateString = `${dobYear}-${dobMonth}-${dobDay}`;
+      form.setValue("dob", dateString);
+    }
+  }, [dobDay, dobMonth, dobYear, form]);
+
+  useEffect(() => {
+    if (treatmentDay && treatmentMonth && treatmentYear) {
+      const dateString = `${treatmentYear}-${treatmentMonth}-${treatmentDay}`;
+      form.setValue("treatment_initiation_date", dateString);
+    }
+  }, [treatmentDay, treatmentMonth, treatmentYear, form]);
+
+  useEffect(() => {
+    if (regimenDay && regimenMonth && regimenYear) {
+      const dateString = `${regimenYear}-${regimenMonth}-${regimenDay}`;
+      form.setValue("current_regimen_initiation_date", dateString);
+    }
+  }, [regimenDay, regimenMonth, regimenYear, form]);
+
   const onSubmit = async (data: FormData): Promise<void> => {
     setIsSubmitting(true);
     
     try {
-      // Ensure dates exist before converting
+      // Ensure required fields exist
       if (!data.dob || !data.treatment_initiation_date || !data.current_regimen_initiation_date) {
-        toast.error("Missing required dates", {
-          description: "Please fill in all required date fields",
+        toast.error("Missing required fields", {
+          description: "Please fill in all required fields",
         });
         setIsSubmitting(false);
         return;
       }
 
       await createRequest.mutateAsync({
-        patient_unique_id: data.patient_unique_id,
         art_number: data.art_number,
-        other_id: data.other_id || undefined,
+        other_id: data.other_id || "",
         gender: data.gender,
-        dob: data.dob!.toISOString().split('T')[0], // Convert to YYYY-MM-DD format
-        treatment_initiation_date: data.treatment_initiation_date!.toISOString().split('T')[0],
-        current_regimen_initiation_date: data.current_regimen_initiation_date!.toISOString().split('T')[0],
+        dob: data.dob,
+        treatment_initiation_date: data.treatment_initiation_date,
+        current_regimen_initiation_date: data.current_regimen_initiation_date,
         pregnant: data.pregnant,
-        anc_number: data.anc_number || undefined,
+        anc_number: data.anc_number || "",
         breast_feeding: data.breast_feeding,
         active_tb_status: data.active_tb_status,
-        sample_type: data.sample_type,
-        indication: data.indication,
+        age: data.age || "",
+        age_units: data.age_units,
+        patient_phone_number: data.patient_phone_number || "",
+        clinician_id: data.clinician_id || "",
+        requested_on: data.requested_on || "",
+        current_regimen_id: data.current_regimen_id || "",
+        tb_treatment_phase_id: data.tb_treatment_phase_id || "",
+        arv_adherence_id: data.arv_adherence_id || "",
+        treatment_care_approach: data.treatment_care_approach || "",
+        current_who_stage: data.current_who_stage || "",
+        treatment_indication_id: data.treatment_indication_id || "",
       });
     } catch (error) {
       console.error("Failed to create request:", error);
@@ -161,31 +227,61 @@ export default function NewVirwqalLoadRequest(): React.JSX.Element {
       <div className="">
         <form id="viral-load-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 
-          {/* Facility Information - Display Only */}
+          {/* Facility Information - Single Line Display */}
+          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+            <div className="text-sm text-blue-800">
+              <span className="font-medium">Facility:</span> {user?.facility_name || "Not specified"} | 
+              <span className="font-medium"> District:</span> {user?.hub_name ? user.hub_name.split(' ')[0] : "Not specified"} | 
+              <span className="font-medium"> Hub:</span> {user?.hub_name || "Not specified"}
+            </div>
+          </div>
+
+          {/* Requesting Clinician Section */}
           <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
             <div className="pb-3 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">
-                Facility Information
+                Requesting Clinician
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 bg-gray-50 p-4 rounded-lg">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm font-medium text-gray-700">Facility Name</Label>
-                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
-                  {user?.facility_name || "Not specified"}
-                </div>
+                <Label htmlFor="clinician_id" className="text-sm font-medium text-gray-700">
+                  Clinician Name
+                </Label>
+                <Input
+                  id="clinician_id"
+                  {...form.register("clinician_id")}
+                  placeholder="Enter clinician name"
+                  className="mt-2 h-10"
+                />
               </div>
+
               <div>
-                <Label className="text-sm font-medium text-gray-700">District</Label>
-                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
-                  {user?.hub_name ? user.hub_name.split(' ')[0] : "Not specified"}
-                </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Testing Hub</Label>
-                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
-                  {user?.hub_name || "Not specified"}
-                </div>
+                <Label htmlFor="requested_on" className="text-sm font-medium text-gray-700">
+                  Request Date
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                                          <Button
+                        variant={"outline"}
+                        className={cn(
+                          "mt-2 w-full h-10 justify-start text-left font-normal",
+                          !form.watch("requested_on") && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {form.watch("requested_on") ? format(new Date(form.watch("requested_on")!), "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={form.watch("requested_on") ? new Date(form.watch("requested_on")!) : undefined}
+                        onSelect={(date) => form.setValue("requested_on", date ? date.toISOString().split('T')[0] : "")}
+                        initialFocus
+                      />
+                  </PopoverContent>
+                </Popover>
               </div>
             </div>
           </div>
@@ -197,96 +293,141 @@ export default function NewVirwqalLoadRequest(): React.JSX.Element {
                 Patient Information
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="patient_unique_id" className="text-sm font-medium text-gray-700">
-                  Patient Unique ID *
-                </Label>
-                <Input
-                  id="patient_unique_id"
-                  {...form.register("patient_unique_id")}
-                  placeholder="PAT-001-2024"
-                  className="mt-2 h-10"
-                />
-                {form.formState.errors.patient_unique_id && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.patient_unique_id.message}</p>
-                )}
+            <div className="space-y-4">
+              {/* First Row: Patient Clinic ID/ART #, Other ID, Gender */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="art_number" className="text-sm font-medium text-gray-700">
+                    Patient Clinic ID/ART #: *
+                  </Label>
+                  <Input
+                    id="art_number"
+                    {...form.register("art_number")}
+                    placeholder="Please enter lab number"
+                    className="mt-2 h-10"
+                  />
+                  {form.formState.errors.art_number && (
+                    <p className="text-sm text-red-500 mt-1">{form.formState.errors.art_number.message}</p>
+                  )}
+                </div>
+
+                <div>
+                  <Label htmlFor="other_id" className="text-sm font-medium text-gray-700">
+                    Other ID:
+                  </Label>
+                  <Input
+                    id="other_id"
+                    {...form.register("other_id")}
+                    placeholder=""
+                    className="mt-2 h-10"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="gender" className="text-sm font-medium text-gray-700">
+                    Gender:
+                  </Label>
+                  <Select onValueChange={(value) => form.setValue("gender", value as "M" | "F")}>
+                    <SelectTrigger className="mt-2 h-10 w-full">
+                      <SelectValue placeholder="" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="M">Male</SelectItem>
+                      <SelectItem value="F">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  {form.formState.errors.gender && (
+                    <p className="text-sm text-red-500 mt-1">{form.formState.errors.gender.message}</p>
+                  )}
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="art_number" className="text-sm font-medium text-gray-700">
-                  ART Number *
-                </Label>
-                <Input
-                  id="art_number"
-                  {...form.register("art_number")}
-                  placeholder="ART-2024-001"
-                  className="mt-2 h-10"
-                />
-                {form.formState.errors.art_number && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.art_number.message}</p>
-                )}
-              </div>
+              {/* Second Row: Date of Birth, Age, Phone Number */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="dob" className="text-sm font-medium text-gray-700">
+                    Date of Birth:
+                  </Label>
+                  <div className="flex gap-1 mt-2 items-center">
+                    <Select onValueChange={setDobDay} value={dobDay}>
+                      <SelectTrigger className="h-10 w-20">
+                        <SelectValue placeholder="" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({length: 31}, (_, i) => (
+                          <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
+                            {String(i+1).padStart(2, '0')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-gray-500">/</span>
+                    <Select onValueChange={setDobMonth} value={dobMonth}>
+                      <SelectTrigger className="h-10 w-20">
+                        <SelectValue placeholder="" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({length: 12}, (_, i) => (
+                          <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
+                            {String(i+1).padStart(2, '0')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-gray-500">/</span>
+                    <Select onValueChange={setDobYear} value={dobYear}>
+                      <SelectTrigger className="h-10 w-24">
+                        <SelectValue placeholder="" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({length: 100}, (_, i) => (
+                          <SelectItem key={2024-i} value={String(2024-i)}>
+                            {2024-i}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {form.formState.errors.dob && (
+                    <p className="text-sm text-red-500 mt-1">{form.formState.errors.dob.message}</p>
+                  )}
+                </div>
 
-              <div>
-                <Label htmlFor="other_id" className="text-sm font-medium text-gray-700">
-                  Other ID (Optional)
-                </Label>
-                <Input
-                  id="other_id"
-                  {...form.register("other_id")}
-                  placeholder="Alternative patient ID"
-                  className="mt-2 h-10"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="gender" className="text-sm font-medium text-gray-700">
-                  Gender *
-                </Label>
-                <Select onValueChange={(value) => form.setValue("gender", value as "M" | "F")}>
-                  <SelectTrigger className="mt-2 h-10">
-                    <SelectValue placeholder="Select gender" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="M">Male</SelectItem>
-                    <SelectItem value="F">Female</SelectItem>
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.gender && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.gender.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="dob" className="text-sm font-medium text-gray-700">
-                  Date of Birth *
-                </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "mt-2 w-full h-10 justify-start text-left font-normal",
-                        !form.watch("dob") && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {form.watch("dob") ? format(form.watch("dob"), "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={form.watch("dob")}
-                      onSelect={(date) => form.setValue("dob", date!)}
-                      initialFocus
+                <div>
+                  <Label htmlFor="age" className="text-sm font-medium text-gray-700">
+                    Age:
+                  </Label>
+                  <div className="flex gap-2 mt-2 items-center">
+                    <Input
+                      id="age"
+                      {...form.register("age")}
+                      placeholder=""
+                      className="h-10 flex-1"
+                      type="number"
+                      min="0"
                     />
-                  </PopoverContent>
-                </Popover>
-                {form.formState.errors.dob && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.dob.message}</p>
-                )}
+                    <Select defaultValue="Years">
+                      <SelectTrigger className="h-10 w-20">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Years">Years</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="patient_phone_number" className="text-sm font-medium text-gray-700">
+                    Phone Number:
+                  </Label>
+                  <Input
+                    id="patient_phone_number"
+                    {...form.register("patient_phone_number")}
+                    placeholder=""
+                    className="mt-2 h-10"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -298,181 +439,291 @@ export default function NewVirwqalLoadRequest(): React.JSX.Element {
                 Treatment Information
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="treatment_initiation_date" className="text-sm font-medium text-gray-700">
-                  Treatment Initiation Date *
-                </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "mt-2 w-full h-10 justify-start text-left font-normal",
-                        !form.watch("treatment_initiation_date") && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {form.watch("treatment_initiation_date") ? format(form.watch("treatment_initiation_date"), "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={form.watch("treatment_initiation_date")}
-                      onSelect={(date) => form.setValue("treatment_initiation_date", date!)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                {form.formState.errors.treatment_initiation_date && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.treatment_initiation_date.message}</p>
-                )}
+            <div className="space-y-4">
+              {/* First Row: Treatment Initiation Date, Current regimen, Current regimen initiation date */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="treatment_initiation_date" className="text-sm font-medium text-gray-700">
+                    Treatment Initiation Date:
+                  </Label>
+                  <div className="flex gap-1 mt-2 items-center">
+                    <Select onValueChange={setTreatmentDay} value={treatmentDay}>
+                      <SelectTrigger className="h-10 w-20">
+                        <SelectValue placeholder="" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({length: 31}, (_, i) => (
+                          <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
+                            {String(i+1).padStart(2, '0')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-gray-500">/</span>
+                    <Select onValueChange={setTreatmentMonth} value={treatmentMonth}>
+                      <SelectTrigger className="h-10 w-20">
+                        <SelectValue placeholder="" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({length: 12}, (_, i) => (
+                          <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
+                            {String(i+1).padStart(2, '0')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-gray-500">/</span>
+                    <Select onValueChange={setTreatmentYear} value={treatmentYear}>
+                      <SelectTrigger className="h-10 w-24">
+                        <SelectValue placeholder="" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({length: 100}, (_, i) => (
+                          <SelectItem key={2024-i} value={String(2024-i)}>
+                            {2024-i}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label htmlFor="current_regimen_id" className="text-sm font-medium text-gray-700">
+                    Current regimen:
+                  </Label>
+                  <Select onValueChange={(value) => form.setValue("current_regimen_id", value)}>
+                    <SelectTrigger className="mt-2 h-10 w-full">
+                      <SelectValue placeholder="Select one" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="110">3A=TDF+3TC+EFV</SelectItem>
+                      <SelectItem value="111">3B=TDF+3TC+NVP</SelectItem>
+                      <SelectItem value="112">3C=AZT-3TC-NVP</SelectItem>
+                      <SelectItem value="113">3D=AZT-3TC-EFV</SelectItem>
+                      <SelectItem value="114">3E=ABC-3TC-NVP</SelectItem>
+                      <SelectItem value="115">3F=ABC-3TC-EFV</SelectItem>
+                      <SelectItem value="116">3M=ABC-3TC-DTG</SelectItem>
+                      <SelectItem value="117">3N=TDF-3TC-DTG</SelectItem>
+                      <SelectItem value="118">3K=OTHERS</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="current_regimen_initiation_date" className="text-sm font-medium text-gray-700">
+                    Current regimen initiation date:
+                  </Label>
+                  <div className="flex gap-1 mt-2 items-center">
+                    <Select onValueChange={setRegimenDay} value={regimenDay}>
+                      <SelectTrigger className="h-10 w-20">
+                        <SelectValue placeholder="" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({length: 31}, (_, i) => (
+                          <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
+                            {String(i+1).padStart(2, '0')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-gray-500">/</span>
+                    <Select onValueChange={setRegimenMonth} value={regimenMonth}>
+                      <SelectTrigger className="h-10 w-20">
+                        <SelectValue placeholder="" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({length: 12}, (_, i) => (
+                          <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
+                            {String(i+1).padStart(2, '0')}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <span className="text-gray-500">/</span>
+                    <Select onValueChange={setRegimenYear} value={regimenYear}>
+                      <SelectTrigger className="h-10 w-24">
+                        <SelectValue placeholder="" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {Array.from({length: 100}, (_, i) => (
+                          <SelectItem key={2024-i} value={String(2024-i)}>
+                            {2024-i}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
               </div>
 
-              <div>
-                <Label htmlFor="current_regimen_initiation_date" className="text-sm font-medium text-gray-700">
-                  Current Regimen Initiation Date *
-                </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "mt-2 w-full h-10 justify-start text-left font-normal",
-                        !form.watch("current_regimen_initiation_date") && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {form.watch("current_regimen_initiation_date") ? format(form.watch("current_regimen_initiation_date"), "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={form.watch("current_regimen_initiation_date")}
-                      onSelect={(date) => form.setValue("current_regimen_initiation_date", date!)}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-                {form.formState.errors.current_regimen_initiation_date && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.current_regimen_initiation_date.message}</p>
-                )}
+              {/* Second Row: Pregnant, ANC Number, Mother Breast-Feeding */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="pregnant" className={`text-sm font-medium ${watchedGender !== "F" ? "text-gray-400" : "text-gray-700"}`}>
+                    Pregnant:
+                  </Label>
+                  <Select 
+                    onValueChange={(value) => form.setValue("pregnant", value as "Y" | "N" | "U")}
+                    disabled={watchedGender !== "F"}
+                  >
+                    <SelectTrigger className={`mt-2 h-10 w-full ${watchedGender !== "F" ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}>
+                      <SelectValue placeholder="Select one" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Y">Yes</SelectItem>
+                      <SelectItem value="N">No</SelectItem>
+                      <SelectItem value="U">Unknown</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="anc_number" className={`text-sm font-medium ${watchedGender !== "F" ? "text-gray-400" : "text-gray-700"}`}>
+                    ANC Number:
+                  </Label>
+                  <Input
+                    id="anc_number"
+                    {...form.register("anc_number")}
+                    placeholder=""
+                    className={`mt-2 h-10 ${watchedGender !== "F" ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}
+                    disabled={watchedGender !== "F"}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="breast_feeding" className={`text-sm font-medium ${watchedGender !== "F" ? "text-gray-400" : "text-gray-700"}`}>
+                    Mother Breast-Feeding:
+                  </Label>
+                  <Select 
+                    onValueChange={(value) => form.setValue("breast_feeding", value as "Y" | "N" | "U")}
+                    disabled={watchedGender !== "F"}
+                  >
+                    <SelectTrigger className={`mt-2 h-10 w-full ${watchedGender !== "F" ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}>
+                      <SelectValue placeholder="Select one" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Y">Yes</SelectItem>
+                      <SelectItem value="N">No</SelectItem>
+                      <SelectItem value="U">Unknown</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Third Row: Active TB Status, TB Treatment Phase, ARV Adherence */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="active_tb_status" className="text-sm font-medium text-gray-700">
+                    Active TB Status:
+                  </Label>
+                  <Select onValueChange={(value) => form.setValue("active_tb_status", value as "Y" | "N" | "U")}>
+                    <SelectTrigger className="mt-2 h-10 w-full">
+                      <SelectValue placeholder="Select one" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Y">Yes</SelectItem>
+                      <SelectItem value="N">No</SelectItem>
+                      <SelectItem value="U">Unknown</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="tb_treatment_phase_id" className="text-sm font-medium text-gray-700">
+                    TB Treatment Phase:
+                  </Label>
+                  <Select onValueChange={(value) => form.setValue("tb_treatment_phase_id", value)}>
+                    <SelectTrigger className="mt-2 h-10 w-full">
+                      <SelectValue placeholder="Select one" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="82">Initiation Phase</SelectItem>
+                      <SelectItem value="83">Continuation Phase</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="arv_adherence_id" className="text-sm font-medium text-gray-700">
+                    ARV Adherence:
+                  </Label>
+                  <Select onValueChange={(value) => form.setValue("arv_adherence_id", value)}>
+                    <SelectTrigger className="mt-2 h-10 w-full">
+                      <SelectValue placeholder="Select one" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">Good &gt; 95%</SelectItem>
+                      <SelectItem value="2">Fair 85 - 94%</SelectItem>
+                      <SelectItem value="3">Poor &lt; 85%</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              {/* Fourth Row: Treatment Care Approach, Current WHO Stage, Indication for Viral Load Testing */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="treatment_care_approach" className="text-sm font-medium text-gray-700">
+                    Treatment Care Approach (DSDM):
+                  </Label>
+                  <Select onValueChange={(value) => form.setValue("treatment_care_approach", value)}>
+                    <SelectTrigger className="mt-2 h-10 w-full">
+                      <SelectValue placeholder="Select one" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">FBIM</SelectItem>
+                      <SelectItem value="2">FBG</SelectItem>
+                      <SelectItem value="3">FTDR</SelectItem>
+                      <SelectItem value="4">CDDP</SelectItem>
+                      <SelectItem value="5">CCLAD</SelectItem>
+                      <SelectItem value="6">CRPDDP</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="current_who_stage" className="text-sm font-medium text-gray-700">
+                    Current WHO Stage:
+                  </Label>
+                  <Select onValueChange={(value) => form.setValue("current_who_stage", value)}>
+                    <SelectTrigger className="mt-2 h-10 w-full">
+                      <SelectValue placeholder="Select one" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">I</SelectItem>
+                      <SelectItem value="2">II</SelectItem>
+                      <SelectItem value="3">III</SelectItem>
+                      <SelectItem value="4">IV</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="treatment_indication_id" className="text-sm font-medium text-gray-700">
+                    Indication for Viral Load Testing:
+                  </Label>
+                  <Select onValueChange={(value) => form.setValue("treatment_indication_id", value)}>
+                    <SelectTrigger className="mt-2 h-10 w-full">
+                      <SelectValue placeholder="Select one" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="93">Routine Monitoring</SelectItem>
+                      <SelectItem value="94">Repeat Viral Load</SelectItem>
+                      <SelectItem value="95">Suspected Treatment Failure</SelectItem>
+                      <SelectItem value="97">6 months after ART initiation</SelectItem>
+                      <SelectItem value="98">12 months after ART initiation</SelectItem>
+                      <SelectItem value="99">Repeat (after IAC)</SelectItem>
+                      <SelectItem value="100">1st ANC For PMTCT</SelectItem>
+                      <SelectItem value="220">Special Consideration</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </div>
           </div>
 
-          {/* Sample Information */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-            <div className="pb-3 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Sample Information
-              </h2>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <Label htmlFor="sample_type" className="text-sm font-medium text-gray-700">
-                  Sample Type *
-                </Label>
-                <Select onValueChange={(value) => form.setValue("sample_type", value as "P" | "D" | "W")}>
-                  <SelectTrigger className="mt-2 h-10">
-                    <SelectValue placeholder="Select sample type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="P">Plasma</SelectItem>
-                    <SelectItem value="D">Dried Blood Spot (DBS)</SelectItem>
-                    <SelectItem value="W">Whole Blood</SelectItem>
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.sample_type && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.sample_type.message}</p>
-                )}
-              </div>
 
-              {watchedGender === "F" && (
-                <>
-                  <div>
-                    <Label htmlFor="pregnant" className="text-sm font-medium text-gray-700">
-                      Pregnant *
-                    </Label>
-                    <Select onValueChange={(value) => form.setValue("pregnant", value as "Y" | "N" | "U")}>
-                      <SelectTrigger className="mt-2 h-10">
-                        <SelectValue placeholder="Select pregnancy status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Y">Yes</SelectItem>
-                        <SelectItem value="N">No</SelectItem>
-                        <SelectItem value="U">Unknown</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {form.formState.errors.pregnant && (
-                      <p className="text-sm text-red-500 mt-1">{form.formState.errors.pregnant.message}</p>
-                    )}
-                  </div>
-
-                  <div>
-                    <Label htmlFor="anc_number" className="text-sm font-medium text-gray-700">
-                      ANC Number (Optional)
-                    </Label>
-                    <Input
-                      id="anc_number"
-                      {...form.register("anc_number")}
-                      placeholder="ANC-2024-001"
-                      className="mt-2 h-10"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="breast_feeding" className="text-sm font-medium text-gray-700">
-                      Breast Feeding
-                    </Label>
-                    <Select onValueChange={(value) => form.setValue("breast_feeding", value as "Y" | "N" | "U")}>
-                      <SelectTrigger className="mt-2 h-10">
-                        <SelectValue placeholder="Select breast feeding status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="Y">Yes</SelectItem>
-                        <SelectItem value="N">No</SelectItem>
-                        <SelectItem value="U">Unknown</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </>
-              )}
-
-              <div>
-                <Label htmlFor="active_tb_status" className="text-sm font-medium text-gray-700">
-                  Active TB Status
-                </Label>
-                <Select onValueChange={(value) => form.setValue("active_tb_status", value as "Y" | "N" | "U")}>
-                  <SelectTrigger className="mt-2 h-10">
-                    <SelectValue placeholder="Select TB status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="Y">Yes</SelectItem>
-                    <SelectItem value="N">No</SelectItem>
-                    <SelectItem value="U">Unknown</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="indication" className="text-sm font-medium text-gray-700">
-                  Indication *
-                </Label>
-                <Textarea
-                  id="indication"
-                  {...form.register("indication")}
-                  placeholder="Reason for viral load testing..."
-                  className="mt-2 min-h-[100px]"
-                />
-                {form.formState.errors.indication && (
-                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.indication.message}</p>
-                )}
-              </div>
-            </div>
-          </div>
 
           {/* Form Actions */}
           <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
