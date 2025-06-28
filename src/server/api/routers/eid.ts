@@ -115,8 +115,23 @@ export const eidRouter = createTRPCRouter({
       // Get EID database connection
       const eidDb = await getEidDb();
 
-      // Build base query
-      let query = eidDb
+      // Build where conditions
+      const whereConditions = [eq(batches.facility_id, user.facility_id!)];
+      
+      if (input.search) {
+        const searchCondition = or(
+          like(dbs_samples.infant_name, `%${input.search}%`),
+          like(dbs_samples.infant_exp_id, `%${input.search}%`),
+          like(dbs_samples.mother_htsnr, `%${input.search}%`),
+          like(dbs_samples.mother_artnr, `%${input.search}%`)
+        );
+        if (searchCondition) {
+          whereConditions.push(searchCondition);
+        }
+      }
+
+      // Build query with combined conditions
+      const query = eidDb
         .select({
           id: dbs_samples.id,
           infant_name: dbs_samples.infant_name,
@@ -143,19 +158,7 @@ export const eidRouter = createTRPCRouter({
         })
         .from(dbs_samples)
         .leftJoin(batches, eq(dbs_samples.batch_id, batches.id))
-        .where(eq(batches.facility_id, user.facility_id!));
-
-      // Apply search filter if provided
-      if (input.search) {
-        query = query.where(
-          or(
-            like(dbs_samples.infant_name, `%${input.search}%`),
-            like(dbs_samples.infant_exp_id, `%${input.search}%`),
-            like(dbs_samples.mother_htsnr, `%${input.search}%`),
-            like(dbs_samples.mother_artnr, `%${input.search}%`)
-          )
-        );
-      }
+        .where(whereConditions.length > 1 ? and(...whereConditions) : whereConditions[0]);
 
       // Get all matching samples
       const allSamples = await query.orderBy(desc(dbs_samples.created_at));
@@ -289,7 +292,8 @@ export const eidRouter = createTRPCRouter({
             tests_requested: input.SCD_test_requested === "YES" ? "BOTH_PCR_AND_SCD" : "PCR",
             requesting_unit: "EID Unit",
             // Set required date fields
-            date_entered_in_DB: new Date(),
+            date_entered_in_DB: new Date().toISOString().split('T')[0],
+            is_single_form: 0,
           });
           batchId = (newBatch as any).insertId;
         } else {
@@ -313,11 +317,12 @@ export const eidRouter = createTRPCRouter({
         const result = await eidDb.insert(dbs_samples).values({
           batch_id: batchId,
           pos_in_batch: nextPosition,
+          is_single_form: 0,
           infant_name: input.infant_name,
           infant_gender: input.infant_gender || "NOT_RECORDED",
           infant_age: input.infant_age || null,
           infant_age_units: input.infant_age_units || null,
-          infant_dob: input.infant_dob ? new Date(input.infant_dob) : null,
+          infant_dob: input.infant_dob ? input.infant_dob : null,
           infant_is_breast_feeding: input.infant_is_breast_feeding || "UNKNOWN",
           infant_contact_phone: input.infant_contact_phone || null,
           infant_feeding: input.infant_feeding || null,
@@ -329,7 +334,7 @@ export const eidRouter = createTRPCRouter({
           PCR_test_requested: input.PCR_test_requested || "YES",
           SCD_test_requested: input.SCD_test_requested || "NO",
           // Set the required date field to today instead of the default
-          date_data_entered: new Date(),
+          date_data_entered: new Date().toISOString().split('T')[0],
         });
 
         return {
