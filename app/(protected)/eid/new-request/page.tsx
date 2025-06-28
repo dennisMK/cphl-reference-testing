@@ -81,8 +81,8 @@ export default function NewEIDRequest(): React.JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50/30 py-4 sm:py-8 lg:py-12">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-10">
+    <main className="md:container md:px-0 px-4 pt-4 pb-20 md:mx-auto">
+      <div >
         {/* Header */}
         <div className="mb-6 sm:mb-8 lg:mb-12">
           <div className="flex items-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
@@ -480,6 +480,6 @@ export default function NewEIDRequest(): React.JSX.Element {
           </Card>
         </div>
       </div>
-    </div>
+    </main>
   );
 } 
