@@ -235,49 +235,108 @@ Generated on: ${new Date().toLocaleString()}
   return (
     <main className="md:container md:px-0 px-4 pt-4 pb-20 md:mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => router.back()}
-          >
-            <ArrowLeft className="h-4 w-4 mr-2" />
-            Back
-          </Button>
+      <div className="mb-6">
+        {/* Mobile Header Layout */}
+        <div className="flex flex-col gap-4 sm:hidden">
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <div className="flex items-center gap-2">
+              {getStatusBadge(status)}
+              <Badge variant="outline">Routine</Badge>
+            </div>
+          </div>
           <div>
-            <h1 className="text-3xl font-bold">{sample.vl_sample_id}</h1>
-            <p className="text-muted-foreground">Viral Load Sample Details</p>
+            <h1 className="text-xl font-bold break-all">{sample.vl_sample_id}</h1>
+            <p className="text-sm text-muted-foreground">Viral Load Sample Details</p>
           </div>
         </div>
-        
-        <div className="flex items-center gap-2">
-          {getStatusBadge(status)}
-          <Badge variant="outline">Routine</Badge>
+
+        {/* Desktop Header Layout */}
+        <div className="hidden sm:flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => router.back()}
+            >
+              <ArrowLeft className="h-4 w-4 mr-2" />
+              Back
+            </Button>
+            <div>
+              <h1 className="text-3xl font-bold">{sample.vl_sample_id}</h1>
+              <p className="text-muted-foreground">Viral Load Sample Details</p>
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {getStatusBadge(status)}
+            <Badge variant="outline">Routine</Badge>
+          </div>
         </div>
       </div>
 
       {/* Action Buttons */}
-      <div className="flex gap-2 mb-6">
-        <Button 
-          variant="outline" 
-          size="sm"
-          onClick={() => router.push(`/viral-load/${sample.vl_sample_id}/edit`)}
-        >
-          <Edit className="h-4 w-4 mr-2" />
-          Edit Sample
-        </Button>
-        <Button variant="outline" size="sm" onClick={handleDownloadReport}>
-          <Download className="h-4 w-4 mr-2" />
-          Download Report
-        </Button>
-        <Button variant="outline" size="sm" onClick={handlePrintLabel}>
-          <Printer className="h-4 w-4 mr-2" />
-          Print Label
-        </Button>
+      <div className="mb-6">
+        {/* Mobile Action Buttons - Stacked */}
+        <div className="flex flex-col gap-2 sm:hidden">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => router.push(`/viral-load/${sample.vl_sample_id}/edit`)}
+            className="w-full justify-start"
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Sample
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handleDownloadReport}
+            className="w-full justify-start"
+          >
+            <Download className="h-4 w-4 mr-2" />
+            Download Report
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={handlePrintLabel}
+            className="w-full justify-start"
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            Print Label
+          </Button>
+        </div>
+
+        {/* Desktop Action Buttons - Horizontal */}
+        <div className="hidden sm:flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => router.push(`/viral-load/${sample.vl_sample_id}/edit`)}
+          >
+            <Edit className="h-4 w-4 mr-2" />
+            Edit Sample
+          </Button>
+          <Button variant="outline" size="sm" onClick={handleDownloadReport}>
+            <Download className="h-4 w-4 mr-2" />
+            Download Report
+          </Button>
+          <Button variant="outline" size="sm" onClick={handlePrintLabel}>
+            <Printer className="h-4 w-4 mr-2" />
+            Print Label
+          </Button>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Patient Information */}
         <Card>
           <CardHeader>
@@ -287,29 +346,29 @@ Generated on: ${new Date().toLocaleString()}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Patient ID</p>
-                <p className="font-medium">{sample.patient_unique_id}</p>
+                <p className="font-medium break-all">{sample.patient_unique_id}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">ART Number</p>
-                <p className="font-medium">{sample.patient_data?.art_number || "Not specified"}</p>
+                <p className="font-medium break-all">{sample.patient_data?.art_number || "Not specified"}</p>
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Sample ID</p>
-                <p className="font-medium">{sample.vl_sample_id}</p>
+                <p className="font-medium break-all">{sample.vl_sample_id}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Form Number</p>
-                <p className="font-medium">{sample.form_number}</p>
+                <p className="font-medium break-all">{sample.form_number}</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Sample Type</p>
                 <Badge variant="outline">
@@ -337,18 +396,18 @@ Generated on: ${new Date().toLocaleString()}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Sample ID</p>
-                <p className="font-mono text-sm font-medium">{sample.vl_sample_id}</p>
+                <p className="font-mono text-sm font-medium break-all">{sample.vl_sample_id}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Form Number</p>
-                <p className="font-mono text-sm">{sample.form_number}</p>
+                <p className="font-mono text-sm break-all">{sample.form_number}</p>
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Sample Type</p>
                 <Badge variant="outline">
@@ -380,6 +439,48 @@ Generated on: ${new Date().toLocaleString()}
             )}
           </CardContent>
         </Card>
+
+        
+
+        {/* Additional Information */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5" />
+              Additional Information
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {sample.treatment_initiation_date && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Treatment Initiation Date</p>
+                <p className="font-medium">{new Date(sample.treatment_initiation_date).toLocaleDateString()}</p>
+              </div>
+            )}
+
+            {sample.current_regimen_initiation_date && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Current Regimen Initiation Date</p>
+                <p className="font-medium">{new Date(sample.current_regimen_initiation_date).toLocaleDateString()}</p>
+              </div>
+            )}
+
+            {sample.breast_feeding && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Breast Feeding</p>
+                <p className="font-medium">{sample.breast_feeding === "Y" ? "Yes" : "No"}</p>
+              </div>
+            )}
+
+            {sample.active_tb_status && (
+              <div>
+                <p className="text-sm font-medium text-muted-foreground">Active TB Status</p>
+                <p className="font-medium">{sample.active_tb_status === "Y" ? "Yes" : "No"}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
 
         {/* Timeline & Dates */}
         <Card>
@@ -433,45 +534,6 @@ Generated on: ${new Date().toLocaleString()}
             </div>
           </CardContent>
         </Card>
-
-        {/* Additional Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <FileText className="h-5 w-5" />
-              Additional Information
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {sample.treatment_initiation_date && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Treatment Initiation Date</p>
-                <p className="font-medium">{new Date(sample.treatment_initiation_date).toLocaleDateString()}</p>
-              </div>
-            )}
-
-            {sample.current_regimen_initiation_date && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Current Regimen Initiation Date</p>
-                <p className="font-medium">{new Date(sample.current_regimen_initiation_date).toLocaleDateString()}</p>
-              </div>
-            )}
-
-            {sample.breast_feeding && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Breast Feeding</p>
-                <p className="font-medium">{sample.breast_feeding === "Y" ? "Yes" : "No"}</p>
-              </div>
-            )}
-
-            {sample.active_tb_status && (
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Active TB Status</p>
-                <p className="font-medium">{sample.active_tb_status === "Y" ? "Yes" : "No"}</p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
       </div>
 
       {/* Quick Actions */}
@@ -481,10 +543,10 @@ Generated on: ${new Date().toLocaleString()}
             <CardTitle>Quick Actions</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="flex gap-4">
+            <div className="flex flex-col sm:flex-row gap-4">
               <Button 
                 onClick={() => router.push(`/viral-load/${sample.vl_sample_id}/collect`)}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
               >
                 <Package className="h-4 w-4 mr-2" />
                 Collect Sample
@@ -492,6 +554,7 @@ Generated on: ${new Date().toLocaleString()}
               <Button 
                 variant="outline"
                 onClick={() => router.push(`/viral-load/${sample.vl_sample_id}/edit`)}
+                className="w-full sm:w-auto"
               >
                 <Edit className="h-4 w-4 mr-2" />
                 Update Details
