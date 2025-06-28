@@ -175,16 +175,16 @@ export const viralLoadRouter = createTRPCRouter({
         stage: 1,
         required_verification: 0,
         current_regimen_initiation_date: new Date(input.current_regimen_initiation_date),
-        // Add new fields - properly handle empty strings to avoid NaN
+        // Add new fields - properly handle empty strings and invalid numbers to avoid NaN
         patient_phone_number: input.patient_phone_number || null,
         requested_on: input.requested_on ? new Date(input.requested_on) : null,
-        clinician_id: (input.clinician_id && input.clinician_id.trim() !== "") ? Number(input.clinician_id) : null,
-        current_regimen_id: (input.current_regimen_id && input.current_regimen_id.trim() !== "") ? Number(input.current_regimen_id) : null,
-        tb_treatment_phase_id: (input.tb_treatment_phase_id && input.tb_treatment_phase_id.trim() !== "") ? Number(input.tb_treatment_phase_id) : null,
-        arv_adherence_id: (input.arv_adherence_id && input.arv_adherence_id.trim() !== "") ? Number(input.arv_adherence_id) : null,
-        treatment_indication_id: (input.treatment_indication_id && input.treatment_indication_id.trim() !== "") ? Number(input.treatment_indication_id) : null,
-        treatment_care_approach: (input.treatment_care_approach && input.treatment_care_approach.trim() !== "") ? Number(input.treatment_care_approach) : null,
-        current_who_stage: (input.current_who_stage && input.current_who_stage.trim() !== "") ? Number(input.current_who_stage) : null,
+        clinician_id: (input.clinician_id && input.clinician_id.trim() !== "" && !isNaN(Number(input.clinician_id))) ? Number(input.clinician_id) : null,
+        current_regimen_id: (input.current_regimen_id && input.current_regimen_id.trim() !== "" && !isNaN(Number(input.current_regimen_id))) ? Number(input.current_regimen_id) : null,
+        tb_treatment_phase_id: (input.tb_treatment_phase_id && input.tb_treatment_phase_id.trim() !== "" && !isNaN(Number(input.tb_treatment_phase_id))) ? Number(input.tb_treatment_phase_id) : null,
+        arv_adherence_id: (input.arv_adherence_id && input.arv_adherence_id.trim() !== "" && !isNaN(Number(input.arv_adherence_id))) ? Number(input.arv_adherence_id) : null,
+        treatment_indication_id: (input.treatment_indication_id && input.treatment_indication_id.trim() !== "" && !isNaN(Number(input.treatment_indication_id))) ? Number(input.treatment_indication_id) : null,
+        treatment_care_approach: (input.treatment_care_approach && input.treatment_care_approach.trim() !== "" && !isNaN(Number(input.treatment_care_approach))) ? Number(input.treatment_care_approach) : null,
+        current_who_stage: (input.current_who_stage && input.current_who_stage.trim() !== "" && !isNaN(Number(input.current_who_stage))) ? Number(input.current_who_stage) : null,
       };
 
       const sampleResult = await vlDb
