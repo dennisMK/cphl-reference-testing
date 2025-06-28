@@ -112,7 +112,7 @@ export default function EditSamplePage(): React.JSX.Element {
     defaultValues: {
       art_number: "",
       other_id: "",
-      gender: undefined,
+      gender: "M", // Set a default value instead of undefined
       dob: "",
       age: "",
       age_units: "Years",
@@ -141,6 +141,8 @@ export default function EditSamplePage(): React.JSX.Element {
   // Initialize form with sample data
   useEffect(() => {
     if (sample) {
+      console.log("Initializing form with sample data:", sample);
+      
       // Set available properties from sample and patient data
       if (sample.patient_data?.art_number) {
         form.setValue("art_number", sample.patient_data.art_number);
@@ -156,6 +158,7 @@ export default function EditSamplePage(): React.JSX.Element {
         form.setValue("gender", sample.patient_data.gender as "M" | "F");
       }
       
+      // Health Information fields
       if (sample.pregnant && ["Y", "N", "U"].includes(sample.pregnant)) {
         form.setValue("pregnant", sample.pregnant as "Y" | "N" | "U");
       }
@@ -169,6 +172,7 @@ export default function EditSamplePage(): React.JSX.Element {
         form.setValue("active_tb_status", sample.active_tb_status as "Y" | "N" | "U");
       }
       
+      // Contact and clinician information
       if (sample.patient_phone_number) {
         form.setValue("patient_phone_number", sample.patient_phone_number);
       }
@@ -177,27 +181,28 @@ export default function EditSamplePage(): React.JSX.Element {
         form.setValue("clinician_id", String(sample.clinician_id));
       }
       
-      if (sample.current_regimen_id) {
+      // Treatment information - convert numbers to strings for form fields
+      if (sample.current_regimen_id !== null && sample.current_regimen_id !== undefined) {
         form.setValue("current_regimen_id", String(sample.current_regimen_id));
       }
       
-      if (sample.tb_treatment_phase_id) {
+      if (sample.tb_treatment_phase_id !== null && sample.tb_treatment_phase_id !== undefined) {
         form.setValue("tb_treatment_phase_id", String(sample.tb_treatment_phase_id));
       }
       
-      if (sample.arv_adherence_id) {
+      if (sample.arv_adherence_id !== null && sample.arv_adherence_id !== undefined) {
         form.setValue("arv_adherence_id", String(sample.arv_adherence_id));
       }
       
-      if (sample.treatment_care_approach) {
+      if (sample.treatment_care_approach !== null && sample.treatment_care_approach !== undefined) {
         form.setValue("treatment_care_approach", String(sample.treatment_care_approach));
       }
       
-      if (sample.current_who_stage) {
+      if (sample.current_who_stage !== null && sample.current_who_stage !== undefined) {
         form.setValue("current_who_stage", String(sample.current_who_stage));
       }
       
-      if (sample.treatment_indication_id) {
+      if (sample.treatment_indication_id !== null && sample.treatment_indication_id !== undefined) {
         form.setValue("treatment_indication_id", String(sample.treatment_indication_id));
       }
       
@@ -237,7 +242,7 @@ export default function EditSamplePage(): React.JSX.Element {
         form.setValue("dob", dobDateString);
       }
 
-      console.log("Sample data loaded:", sample);
+      console.log("Form values after initialization:", form.getValues());
     }
   }, [sample, form]);
 
