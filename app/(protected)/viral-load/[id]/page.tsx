@@ -18,7 +18,7 @@ import {
   Printer,
   Loader2
 } from "lucide-react"
-import { useRouter } from "next/navigation"
+import { useParams, useRouter } from "next/navigation"
 import { api } from "@/trpc/react"
 
 const getStatusBadge = (status: string) => {
@@ -51,12 +51,13 @@ const getPriorityBadge = (priority: string) => {
   }
 }
 
-export default function SampleDetailPage({ params }: { params: { id: string } }) {
+export default function SampleDetailPage() {
   const router = useRouter()
+  const { id } = useParams()
   
   // Fetch sample data using tRPC
   const { data: sample, isLoading, error } = api.viralLoad.getSample.useQuery(
-    { sampleId: params.id },
+    { sampleId: id as string },
     {
       retry: false,
       refetchOnWindowFocus: false,
@@ -111,7 +112,7 @@ export default function SampleDetailPage({ params }: { params: { id: string } })
   const status = getSampleStatus()
 
   return (
-    <main className="container mx-auto px-4 py-6 max-w-6xl">
+    <main className="md:container md:px-0 px-4 pt-4 pb-20 md:mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
@@ -172,7 +173,7 @@ export default function SampleDetailPage({ params }: { params: { id: string } })
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">ART Number</p>
-                <p className="font-medium">{sample.art_number || "Not specified"}</p>
+                <p className="font-medium">{sample.patient_data?.art_number || "Not specified"}</p>
               </div>
             </div>
             
@@ -246,7 +247,7 @@ export default function SampleDetailPage({ params }: { params: { id: string } })
             {sample.pregnant && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Pregnant</p>
-                <p className="font-medium">{sample.pregnant}</p>
+                <p className="font-medium">{sample.pregnant === "Y" ? "Yes" : "No"}</p>
               </div>
             )}
 
@@ -338,14 +339,14 @@ export default function SampleDetailPage({ params }: { params: { id: string } })
             {sample.breast_feeding && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Breast Feeding</p>
-                <p className="font-medium">{sample.breast_feeding}</p>
+                <p className="font-medium">{sample.breast_feeding === "Y" ? "Yes" : "No"}</p>
               </div>
             )}
 
             {sample.active_tb_status && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Active TB Status</p>
-                <p className="font-medium">{sample.active_tb_status}</p>
+                <p className="font-medium">{sample.active_tb_status === "Y" ? "Yes" : "No"}</p>
               </div>
             )}
           </CardContent>
