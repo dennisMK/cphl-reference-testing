@@ -170,8 +170,11 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
       )
     },
     cell: ({ row }) => {
-      const date = row.getValue("dateCollected") as Date | null
-      return <div className="text-sm">{date ? date.toLocaleDateString() : "Not collected"}</div>
+      const dateValue = row.getValue("dateCollected")
+      if (!dateValue) return <div className="text-sm">Not collected</div>
+      
+      const date = dateValue instanceof Date ? dateValue : new Date(dateValue as string)
+      return <div className="text-sm">{date.toLocaleDateString()}</div>
     },
   },
   {
@@ -189,12 +192,11 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
       )
     },
     cell: ({ row }) => {
-      const date = row.getValue("dateReceived") as Date | null
-      return (
-        <div className="text-sm">
-          {date ? date.toLocaleDateString() : "Not received"}
-        </div>
-      )
+      const dateValue = row.getValue("dateReceived")
+      if (!dateValue) return <div className="text-sm">Not received</div>
+      
+      const date = dateValue instanceof Date ? dateValue : new Date(dateValue as string)
+      return <div className="text-sm">{date.toLocaleDateString()}</div>
     },
   },
   {

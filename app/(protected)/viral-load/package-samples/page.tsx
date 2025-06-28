@@ -98,7 +98,7 @@ export default function PackageSamplesPage() {
     if (selectedSamples.length === samples.length) {
       setSelectedSamples([])
     } else {
-      setSelectedSamples(samples.map(sample => sample.vl_sample_id || sample.id.toString()))
+      setSelectedSamples(samples.map(sample => sample.vlSampleId || sample.id.toString()))
     }
   }
 
@@ -129,7 +129,7 @@ export default function PackageSamplesPage() {
 
   // Helper function to get ART number (fallback to reception or data ART number)
   const getArtNumber = (sample: any) => {
-    return sample.reception_art_number || sample.data_art_number || sample.patient_unique_id || "N/A"
+    return sample.receptionArtNumber || sample.dataArtNumber || sample.patientUniqueId || "N/A"
   }
 
   // Helper function to get sample type display
@@ -144,8 +144,8 @@ export default function PackageSamplesPage() {
 
   // Helper function to get sample status
   const getSampleStatus = (sample: any) => {
-    // Primary validation: use date_received as the key indicator
-    if (sample.date_received) {
+    // Primary validation: use dateReceived as the key indicator
+    if (sample.dateReceived) {
       // If received and verified, it's completed
       if (sample.verified === 1) {
         return { label: "Completed", variant: "default" as const, color: "text-green-600 bg-green-50", icon: CheckCircle }
@@ -155,7 +155,7 @@ export default function PackageSamplesPage() {
     }
     
     // If not received but collected, it's ready for packaging
-    if (sample.date_collected) {
+    if (sample.dateCollected) {
       return { label: "Ready for Packaging", variant: "secondary" as const, color: "text-blue-600 bg-blue-50", icon: Package }
     }
     
@@ -343,26 +343,26 @@ export default function PackageSamplesPage() {
                         </TableRow>
                       ) : (
                         samples.map((sample) => {
-                          const sampleId = sample.vl_sample_id || sample.id.toString()
+                          const sampleId = sample.vlSampleId || sample.id.toString()
                           return (
                             <TableRow key={sample.id}>
                               <TableCell>
                                 <Checkbox
                                   checked={selectedSamples.includes(sampleId)}
                                   onCheckedChange={() => handleSelectSample(sampleId)}
-                                  aria-label={`Select sample ${sample.vl_sample_id}`}
+                                  aria-label={`Select sample ${sample.vlSampleId}`}
                                 />
                               </TableCell>
                               <TableCell className="font-medium">{getArtNumber(sample)}</TableCell>
-                              <TableCell className="font-mono text-sm">{sample.vl_sample_id || `ID-${sample.id}`}</TableCell>
+                              <TableCell className="font-mono text-sm">{sample.vlSampleId || `ID-${sample.id}`}</TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="text-xs">
-                                  {getSampleTypeDisplay(sample.sample_type || "")}
+                                  {getSampleTypeDisplay(sample.sampleType || "")}
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                {sample.date_collected ? (
-                                  new Date(sample.date_collected).toLocaleDateString('en-GB', {
+                                {sample.dateCollected ? (
+                                  new Date(sample.dateCollected).toLocaleDateString('en-GB', {
                                     day: '2-digit',
                                     month: 'short',
                                     year: 'numeric'
@@ -371,7 +371,7 @@ export default function PackageSamplesPage() {
                                   "Not collected"
                                 )}
                               </TableCell>
-                              <TableCell className="text-sm text-gray-600">{sample.form_number || "N/A"}</TableCell>
+                              <TableCell className="text-sm text-gray-600">{sample.formNumber || "N/A"}</TableCell>
                               <TableCell>
                                 {(() => {
                                   const status = getSampleStatus(sample);

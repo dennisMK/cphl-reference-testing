@@ -166,7 +166,7 @@ Generated on: ${new Date().toLocaleString()}
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Sample Label - ${sample.vl_sample_id}</title>
+    <title>Sample Label - ${sample.vlSampleId}</title>
     <style>
         body { 
             font-family: Arial, sans-serif; 
@@ -207,13 +207,13 @@ Generated on: ${new Date().toLocaleString()}
 </head>
 <body>
     <div class="label">
-        <div class="sample-id">${sample.vl_sample_id}</div>
-        <div class="barcode">||||| ${sample.vl_sample_id} |||||</div>
-        <div class="info"><strong>Patient:</strong> ${sample.patient_unique_id}</div>
-        <div class="info"><strong>ART #:</strong> ${sample.patient_data?.art_number || "N/A"}</div>
-        <div class="info"><strong>Type:</strong> ${sample.sample_type === "P" ? "Plasma" : sample.sample_type === "D" ? "DBS" : sample.sample_type === "W" ? "Whole Blood" : sample.sample_type}</div>
-        <div class="info"><strong>Form:</strong> ${sample.form_number}</div>
-        <div class="info"><strong>Date:</strong> ${sample.date_collected ? new Date(sample.date_collected).toLocaleDateString() : new Date().toLocaleDateString()}</div>
+        <div class="sample-id">${sample.vlSampleId}</div>
+        <div class="barcode">||||| ${sample.vlSampleId} |||||</div>
+        <div class="info"><strong>Patient:</strong> ${sample.patientUniqueId}</div>
+        <div class="info"><strong>ART #:</strong> ${sample.patient_data?.artNumber || "N/A"}</div>
+        <div class="info"><strong>Type:</strong> ${sample.sampleType === "P" ? "Plasma" : sample.sampleType === "D" ? "DBS" : sample.sampleType === "W" ? "Whole Blood" : sample.sampleType}</div>
+        <div class="info"><strong>Form:</strong> ${sample.formNumber}</div>
+        <div class="info"><strong>Date:</strong> ${sample.dateCollected ? new Date(sample.dateCollected).toLocaleDateString() : new Date().toLocaleDateString()}</div>
     </div>
     <div class="no-print" style="margin-top: 20px; text-align: center;">
         <button onclick="window.print()">Print Label</button>
@@ -253,7 +253,7 @@ Generated on: ${new Date().toLocaleString()}
             </div>
           </div>
           <div>
-            <h1 className="text-xl font-bold break-all">{sample.vl_sample_id}</h1>
+            <h1 className="text-xl font-bold break-all">{sample.vlSampleId}</h1>
             <p className="text-sm text-muted-foreground">Viral Load Sample Details</p>
           </div>
         </div>
@@ -270,7 +270,7 @@ Generated on: ${new Date().toLocaleString()}
               Back
             </Button>
             <div>
-              <h1 className="text-3xl font-bold">{sample.vl_sample_id}</h1>
+              <h1 className="text-3xl font-bold">{sample.vlSampleId}</h1>
               <p className="text-muted-foreground">Viral Load Sample Details</p>
             </div>
           </div>
@@ -289,7 +289,7 @@ Generated on: ${new Date().toLocaleString()}
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => router.push(`/viral-load/${sample.vl_sample_id}/edit`)}
+            onClick={() => router.push(`/viral-load/${sample.vlSampleId}/edit`)}
             className="w-full justify-start"
           >
             <Edit className="h-4 w-4 mr-2" />
@@ -320,7 +320,7 @@ Generated on: ${new Date().toLocaleString()}
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => router.push(`/viral-load/${sample.vl_sample_id}/edit`)}
+            onClick={() => router.push(`/viral-load/${sample.vlSampleId}/edit`)}
           >
             <Edit className="h-4 w-4 mr-2" />
             Edit Sample
@@ -372,9 +372,9 @@ Generated on: ${new Date().toLocaleString()}
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Sample Type</p>
                 <Badge variant="outline">
-                  {sample.sample_type === "P" ? "Plasma" : 
-                   sample.sample_type === "D" ? "DBS" : 
-                   sample.sample_type === "W" ? "Whole Blood" : sample.sample_type}
+                  {sample.sampleType === "P" ? "Plasma" : 
+                   sample.sampleType === "D" ? "DBS" : 
+                   sample.sampleType === "W" ? "Whole Blood" : sample.sampleType}
                 </Badge>
               </div>
               <div>
@@ -399,11 +399,11 @@ Generated on: ${new Date().toLocaleString()}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Sample ID</p>
-                <p className="font-mono text-sm font-medium break-all">{sample.vl_sample_id}</p>
+                <p className="font-mono text-sm font-medium break-all">{sample.vlSampleId}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Form Number</p>
-                <p className="font-mono text-sm break-all">{sample.form_number}</p>
+                <p className="font-mono text-sm break-all">{sample.formNumber}</p>
               </div>
             </div>
 
@@ -411,15 +411,15 @@ Generated on: ${new Date().toLocaleString()}
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Sample Type</p>
                 <Badge variant="outline">
-                  {sample.sample_type === "P" ? "Plasma" : 
-                   sample.sample_type === "D" ? "DBS" : 
-                   sample.sample_type === "W" ? "Whole Blood" : sample.sample_type}
+                  {sample.sampleType === "P" ? "Plasma" : 
+                   sample.sampleType === "D" ? "DBS" : 
+                   sample.sampleType === "W" ? "Whole Blood" : sample.sampleType}
                 </Badge>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">In Worksheet</p>
-                <Badge variant={sample.in_worksheet === 1 ? "secondary" : "outline"}>
-                  {sample.in_worksheet === 1 ? "Yes" : "No"}
+                <Badge variant={sample.inWorksheet === 1 ? "secondary" : "outline"}>
+                  {sample.inWorksheet === 1 ? "Yes" : "No"}
                 </Badge>
               </div>
             </div>
@@ -431,10 +431,10 @@ Generated on: ${new Date().toLocaleString()}
               </div>
             )}
 
-            {sample.anc_number && (
+            {sample.ancNumber && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">ANC Number</p>
-                <p className="font-medium">{sample.anc_number}</p>
+                <p className="font-medium">{sample.ancNumber}</p>
               </div>
             )}
           </CardContent>
@@ -451,31 +451,31 @@ Generated on: ${new Date().toLocaleString()}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {sample.treatment_initiation_date && (
+            {sample.treatmentInitiationDate && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Treatment Initiation Date</p>
-                <p className="font-medium">{new Date(sample.treatment_initiation_date).toLocaleDateString()}</p>
+                <p className="font-medium">{new Date(sample.treatmentInitiationDate).toLocaleDateString()}</p>
               </div>
             )}
 
-            {sample.current_regimen_initiation_date && (
+            {sample.currentRegimenInitiationDate && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Current Regimen Initiation Date</p>
-                <p className="font-medium">{new Date(sample.current_regimen_initiation_date).toLocaleDateString()}</p>
+                <p className="font-medium">{new Date(sample.currentRegimenInitiationDate).toLocaleDateString()}</p>
               </div>
             )}
 
-            {sample.breast_feeding && (
+            {sample.breastFeeding && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Breast Feeding</p>
-                <p className="font-medium">{sample.breast_feeding === "Y" ? "Yes" : "No"}</p>
+                <p className="font-medium">{sample.breastFeeding === "Y" ? "Yes" : "No"}</p>
               </div>
             )}
 
-            {sample.active_tb_status && (
+            {sample.activeTbStatus && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Active TB Status</p>
-                <p className="font-medium">{sample.active_tb_status === "Y" ? "Yes" : "No"}</p>
+                <p className="font-medium">{sample.activeTbStatus === "Y" ? "Yes" : "No"}</p>
               </div>
             )}
           </CardContent>
@@ -498,37 +498,37 @@ Generated on: ${new Date().toLocaleString()}
                   <span className="text-sm font-medium">Created</span>
                 </div>
                 <span className="text-sm">
-                  {sample.created_at ? new Date(sample.created_at).toLocaleDateString() : "Not specified"}
+                  {sample.createdAt ? new Date(sample.createdAt).toLocaleDateString() : "Not specified"}
                 </span>
               </div>
 
-              {sample.date_collected && (
+              {sample.dateCollected && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Collected</span>
                   </div>
-                  <span className="text-sm">{new Date(sample.date_collected).toLocaleDateString()}</span>
+                  <span className="text-sm">{new Date(sample.dateCollected).toLocaleDateString()}</span>
                 </div>
               )}
 
-              {sample.date_received && (
+              {sample.dateReceived && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Received</span>
                   </div>
-                  <span className="text-sm">{new Date(sample.date_received).toLocaleDateString()}</span>
+                  <span className="text-sm">{new Date(sample.dateReceived).toLocaleDateString()}</span>
                 </div>
               )}
 
-              {sample.updated_at && (
+              {sample.updatedAt && (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Calendar className="h-4 w-4 text-muted-foreground" />
                     <span className="text-sm font-medium">Last Updated</span>
                   </div>
-                  <span className="text-sm">{new Date(sample.updated_at).toLocaleDateString()}</span>
+                  <span className="text-sm">{new Date(sample.updatedAt).toLocaleDateString()}</span>
                 </div>
               )}
             </div>
@@ -545,7 +545,7 @@ Generated on: ${new Date().toLocaleString()}
           <CardContent>
             <div className="flex flex-col sm:flex-row gap-4">
               <Button 
-                onClick={() => router.push(`/viral-load/${sample.vl_sample_id}/collect`)}
+                onClick={() => router.push(`/viral-load/${sample.vlSampleId}/collect`)}
                 className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
               >
                 <Package className="h-4 w-4 mr-2" />
@@ -553,7 +553,7 @@ Generated on: ${new Date().toLocaleString()}
               </Button>
               <Button 
                 variant="outline"
-                onClick={() => router.push(`/viral-load/${sample.vl_sample_id}/edit`)}
+                onClick={() => router.push(`/viral-load/${sample.vlSampleId}/edit`)}
                 className="w-full sm:w-auto"
               >
                 <Edit className="h-4 w-4 mr-2" />

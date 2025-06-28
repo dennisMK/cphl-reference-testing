@@ -122,6 +122,7 @@ export const viralLoadRouter = createTRPCRouter({
       const patientUniqueId = `${input.art_number}`;
       
       // First, create or get the patient record
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' '); // Convert to MySQL datetime format
       const patientData = {
         uniqueId: patientUniqueId,
         artNumber: input.art_number,
@@ -130,8 +131,8 @@ export const viralLoadRouter = createTRPCRouter({
         dob: input.dob,
         treatmentInitiationDate: input.treatment_initiation_date,
         currentRegimenInitiationDate: input.current_regimen_initiation_date,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
         createdById: user.id,
         facilityId: user.facility_id,
         isVerified: 1,
@@ -164,8 +165,8 @@ export const viralLoadRouter = createTRPCRouter({
         sampleType: "P", // Default to Plasma for now
         verified: 1,
         inWorksheet: 0,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
         createdById: user.id,
         facilityId: user.facility_id,
         dataFacilityId: user.facility_id,
@@ -321,6 +322,7 @@ export const viralLoadRouter = createTRPCRouter({
       const vlDb = await getVlLimsDb();
 
       // Update the sample record
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' '); // Convert to MySQL datetime format
       const sampleUpdateData = {
         pregnant: input.pregnant || null,
         ancNumber: input.anc_number || null,
@@ -328,7 +330,7 @@ export const viralLoadRouter = createTRPCRouter({
         activeTbStatus: input.active_tb_status || null,
         treatmentInitiationDate: input.treatment_initiation_date,
         currentRegimenInitiationDate: input.current_regimen_initiation_date,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
         // Add new fields - properly handle empty strings and invalid numbers to avoid NaN
         patientPhoneNumber: input.patient_phone_number || null,
         requestedOn: input.requested_on || null,
@@ -359,7 +361,7 @@ export const viralLoadRouter = createTRPCRouter({
         dob: input.dob,
         treatmentInitiationDate: input.treatment_initiation_date,
         currentRegimenInitiationDate: input.current_regimen_initiation_date,
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
         // Add age and phone number to patient record as well
         age: input.age || null,
         age_units: input.age_units || null,
@@ -564,7 +566,7 @@ export const viralLoadRouter = createTRPCRouter({
       const vlDb = await getVlLimsDb();
 
       // For each sample, update it to indicate it's been packaged and received
-      const currentDate = new Date();
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       const updatePromises = input.sampleIds.map(sampleId =>
         vlDb
           .update(vlSamples)
@@ -572,8 +574,8 @@ export const viralLoadRouter = createTRPCRouter({
             // Use facilityReference field to store package identifier
             facilityReference: input.packageIdentifier,
             // Set dateReceived when packaging (indicates sample has been received at lab)
-            dateReceived: currentDate.toISOString(),
-            updatedAt: currentDate.toISOString(),
+            dateReceived: now,
+            updatedAt: now,
             updatedById: user.id,
           })
           .where(
