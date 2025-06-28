@@ -58,19 +58,24 @@ export type ViralLoadSample = {
   createdAt: Date
   verified: number | null
   inWorksheet: number | null
+  stage: number | null
 }
 
 const getStatusBadge = (sample: ViralLoadSample) => {
-  if (!sample.dateReceived) {
-    return <Badge variant="secondary" className="text-orange-600 bg-orange-50">Pending Collection</Badge>
-  } else if (sample.dateCollected && !sample.dateReceived) {
-    return <Badge variant="secondary" className="text-blue-600 bg-blue-50">Collected</Badge>
-  } else if (sample.dateReceived && !sample.verified) {
-    return <Badge variant="secondary" className="text-purple-600 bg-purple-50">Processing</Badge>
-  } else if (sample.verified === 1) {
-    return <Badge variant="secondary" className="text-green-600 bg-green-50">Completed</Badge>
-  } else {
-    return <Badge variant="outline">Unknown</Badge>
+  // Use stage codes for status determination
+  switch (sample.stage) {
+    case 20:
+      return <Badge variant="secondary" className="text-orange-600 bg-orange-50">Pending Collection</Badge>
+    case 25:
+      return <Badge variant="secondary" className="text-blue-600 bg-blue-50">Pending Packaging</Badge>
+    case 30:
+      return <Badge variant="secondary" className="text-purple-600 bg-purple-50">In Transit</Badge>
+    default:
+      // Fallback to verified status check for completed samples
+      if (sample.verified === 1) {
+        return <Badge variant="secondary" className="text-green-600 bg-green-50">Completed</Badge>
+      }
+      return <Badge variant="outline">Unknown Status</Badge>
   }
 }
 

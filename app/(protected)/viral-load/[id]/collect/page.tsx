@@ -25,13 +25,15 @@ import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import Link from "next/link"
 import { api } from "@/trpc/react"
+import { useParams } from "next/navigation"
 
-export default function CollectSamplePage({ params }: { params: { id: string } }) {
+export default function CollectSamplePage() {
+  const params = useParams()
   const router = useRouter()
   
   // Fetch sample data using tRPC
   const { data: sample, isLoading, error } = api.viralLoad.getSample.useQuery(
-    { sampleId: params.id },
+    { sampleId: params.id as string },
     {
       retry: false,
       refetchOnWindowFocus: false,
@@ -109,7 +111,7 @@ export default function CollectSamplePage({ params }: { params: { id: string } }
     
     // Update sample status to collected
     updateSampleMutation.mutate({
-      sampleId: params.id,
+      sampleId: params.id as string,
       status: "collected",
       notes: `Sample collected on ${collectionDateTime ? format(collectionDateTime, "PPP") : "today"}. Sample type: ${sampleType}. Specimen: ${specimenName}. Storage consent: ${storageConsent}.`
     })
@@ -121,7 +123,7 @@ export default function CollectSamplePage({ params }: { params: { id: string } }
   }
 
   return (
-    <div className="">
+    <div className="md:container mx-auto md:px-0 px-4 py-6">
       {/* Header with title and actions */}
       <div className="mb-6 pb-4 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">

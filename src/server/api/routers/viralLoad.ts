@@ -5,6 +5,36 @@ import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
 import { vlPatients, vlSamples, vlClinicians, backendFacilities } from "@/server/db/schemas/vl_lims";
 import { getVlLimsDb } from "@/server/db";
 
+// Helper function to get status label from stage code
+function getStatusFromStage(stage: number | null): { label: string; variant: string; color: string } {
+  switch (stage) {
+    case 20:
+      return { 
+        label: "Pending Sample Collection", 
+        variant: "secondary",
+        color: "text-orange-600 bg-orange-50" 
+      };
+    case 25:
+      return { 
+        label: "Pending Packaging", 
+        variant: "secondary",
+        color: "text-blue-600 bg-blue-50" 
+      };
+    case 30:
+      return { 
+        label: "In Transit", 
+        variant: "default",
+        color: "text-purple-600 bg-purple-50" 
+      };
+    default:
+      return { 
+        label: "Unknown Status", 
+        variant: "destructive",
+        color: "text-gray-600 bg-gray-50" 
+      };
+  }
+}
+
 export const viralLoadRouter = createTRPCRouter({
   // Get viral load requests for the current user's facility
   getRequests: protectedProcedure
@@ -41,22 +71,23 @@ export const viralLoadRouter = createTRPCRouter({
           createdAt: vlSamples.createdAt,
           verified: vlSamples.verified,
           inWorksheet: vlSamples.inWorksheet,
+          stage: vlSamples.stage,
         })
         .from(vlSamples)
         .where(eq(vlSamples.facilityId, user.facility_id!))
         .orderBy(desc(vlSamples.createdAt));
 
-      // Apply status filtering if specified
+      // Apply status filtering if specified - now using stage codes
       let filteredSamples = allSamples;
       if (input.status) {
         filteredSamples = allSamples.filter(sample => {
           switch (input.status) {
             case "pending":
-              return !sample.dateCollected; // Not yet collected
+              return sample.stage === 20; // Pending sample collection
             case "collected":
-              return sample.dateCollected && !sample.dateReceived; // Collected but not received/packaged
-            // case "processing":
-            //   return sample.dateReceived && !sample.verified; // Received but not verified
+              return sample.stage === 25; // Pending packaging
+            case "processing":
+              return sample.stage === 30; // In transit
             case "completed":
               return sample.verified === 1; // Verified/completed
             default:
@@ -160,7 +191,6 @@ export const viralLoadRouter = createTRPCRouter({
         ancNumber: input.anc_number || null,
         breastFeeding: input.breast_feeding || null,
         activeTbStatus: input.active_tb_status || null,
-        dateCollected: new Date().toISOString().split('T')[0],
         treatmentInitiationDate: input.treatment_initiation_date,
         sampleType: "P", // Default to Plasma for now
         verified: 1,
@@ -173,7 +203,7 @@ export const viralLoadRouter = createTRPCRouter({
         patientId: Number(patientId),
         isStudySample: 0,
         isDataEntered: 0,
-        stage: 1,
+        stage: 20, // Status Code 20: Pending sample collection
         requiredVerification: 0,
         currentRegimenInitiationDate: input.current_regimen_initiation_date,
         // Add new fields - properly handle empty strings and invalid numbers to avoid NaN
@@ -577,6 +607,7 @@ export const viralLoadRouter = createTRPCRouter({
             dateReceived: now,
             updatedAt: now,
             updatedById: user.id,
+            stage: 30, // Status Code 30: In transit
           })
           .where(
             and(
@@ -1134,17 +1165,21 @@ export const viralLoadRouter = createTRPCRouter({
       const vlDb = await getVlLimsDb();
 
       // Update the sample collection status
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       const updateData: any = {
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
         updatedById: user.id,
       };
 
       if (input.collected) {
         // Set collection date (either provided or current date)
-        updateData.dateCollected = input.collectionDate?.toISOString() || new Date().toISOString();
+        const collectionDate = input.collectionDate?.toISOString().slice(0, 10) || new Date().toISOString().slice(0, 10);
+        updateData.dateCollected = collectionDate;
+        updateData.stage = 25; // Status Code 25: Pending packaging
       } else {
-        // Clear collection date if uncollecting
+        // Clear collection date if uncollecting and revert to pending collection
         updateData.dateCollected = null;
+        updateData.stage = 20; // Status Code 20: Pending sample collection
       }
 
       await vlDb
@@ -1191,6 +1226,7 @@ export const viralLoadRouter = createTRPCRouter({
           createdAt: vlSamples.createdAt,
           facilityReference: vlSamples.facilityReference,
           lastValue: vlSamples.lastValue,
+          stage: vlSamples.stage,
         })
         .from(vlSamples);
         // Temporarily commented out facility filter: .where(eq(vlSamples.facilityId, user.facility_id!));
@@ -1240,8 +1276,8 @@ export const viralLoadRouter = createTRPCRouter({
             return sampleDate <= monthEnd;
           });
 
-          const pending = samplesUpToThisDate.filter(s => !s.dateCollected).length;
-          const packaged = samplesUpToThisDate.filter(s => s.facilityReference && s.dateReceived).length;
+          const pending = samplesUpToThisDate.filter(s => s.stage === 20).length; // Pending sample collection
+          const packaged = samplesUpToThisDate.filter(s => s.stage === 30).length; // In transit
           const results = samplesUpToThisDate.filter(s => s.verified === 1 && s.lastValue).length;
 
           analyticsData.push({
@@ -1271,8 +1307,8 @@ export const viralLoadRouter = createTRPCRouter({
             return sampleDate <= weekEnd;
           });
 
-          const pending = samplesUpToThisDate.filter(s => !s.dateCollected).length;
-          const packaged = samplesUpToThisDate.filter(s => s.facilityReference && s.dateReceived).length;
+          const pending = samplesUpToThisDate.filter(s => s.stage === 20).length; // Pending sample collection
+          const packaged = samplesUpToThisDate.filter(s => s.stage === 30).length; // In transit
           const results = samplesUpToThisDate.filter(s => s.verified === 1 && s.lastValue).length;
 
           analyticsData.push({
@@ -1295,8 +1331,8 @@ export const viralLoadRouter = createTRPCRouter({
             return sampleDate <= currentDate;
           });
 
-          const pending = samplesUpToThisDate.filter(s => !s.dateCollected).length;
-          const packaged = samplesUpToThisDate.filter(s => s.facilityReference && s.dateReceived).length;
+          const pending = samplesUpToThisDate.filter(s => s.stage === 20).length; // Pending sample collection
+          const packaged = samplesUpToThisDate.filter(s => s.stage === 30).length; // In transit
           const results = samplesUpToThisDate.filter(s => s.verified === 1 && s.lastValue).length;
 
           analyticsData.push({

@@ -142,25 +142,22 @@ export default function PackageSamplesPage() {
     }
   }
 
-  // Helper function to get sample status
+  // Helper function to get sample status using stage codes
   const getSampleStatus = (sample: any) => {
-    // Primary validation: use dateReceived as the key indicator
-    if (sample.dateReceived) {
-      // If received and verified, it's completed
-      if (sample.verified === 1) {
-        return { label: "Completed", variant: "default" as const, color: "text-green-600 bg-green-50", icon: CheckCircle }
-      }
-      // If received but not verified, it's processing
-      return { label: "Processing", variant: "secondary" as const, color: "text-blue-600 bg-blue-50", icon: Package }
+    switch (sample.stage) {
+      case 20:
+        return { label: "Pending Collection", variant: "outline" as const, color: "text-orange-600 bg-orange-50", icon: Clock }
+      case 25:
+        return { label: "Ready for Packaging", variant: "secondary" as const, color: "text-blue-600 bg-blue-50", icon: Package }
+      case 30:
+        return { label: "In Transit", variant: "secondary" as const, color: "text-purple-600 bg-purple-50", icon: Package }
+      default:
+        // Fallback to verified status check for completed samples
+        if (sample.verified === 1) {
+          return { label: "Completed", variant: "default" as const, color: "text-green-600 bg-green-50", icon: CheckCircle }
+        }
+        return { label: "Unknown Status", variant: "destructive" as const, color: "text-gray-600 bg-gray-50", icon: Clock }
     }
-    
-    // If not received but collected, it's ready for packaging
-    if (sample.dateCollected) {
-      return { label: "Ready for Packaging", variant: "secondary" as const, color: "text-blue-600 bg-blue-50", icon: Package }
-    }
-    
-    // If not collected, it's pending
-    return { label: "Pending Collection", variant: "outline" as const, color: "text-orange-600 bg-orange-50", icon: Clock }
   }
 
   if (error && packagedError) {
