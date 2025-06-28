@@ -104,8 +104,8 @@ export default function SampleDetailPage() {
   // Determine status based on sample data
   const getSampleStatus = () => {
     if (sample.verified === 1) return "completed"
-    if (sample.date_received) return "processing"
-    if (sample.date_collected) return "collected"
+    if (sample.dateReceived) return "processing"
+    if (sample.dateCollected) return "collected"
     return "pending"
   }
 
@@ -118,31 +118,31 @@ export default function SampleDetailPage() {
 VIRAL LOAD SAMPLE REPORT
 ========================
 
-Sample ID: ${sample.vl_sample_id}
-Form Number: ${sample.form_number}
-Patient ID: ${sample.patient_unique_id}
-ART Number: ${sample.patient_data?.art_number || "Not specified"}
-Sample Type: ${sample.sample_type === "P" ? "Plasma" : sample.sample_type === "D" ? "DBS" : sample.sample_type === "W" ? "Whole Blood" : sample.sample_type}
+Sample ID: ${sample.vlSampleId}
+Form Number: ${sample.formNumber}
+Patient ID: ${sample.patientUniqueId}
+ART Number: ${sample.patient_data?.artNumber || "Not specified"}
+Sample Type: ${sample.sampleType === "P" ? "Plasma" : sample.sampleType === "D" ? "DBS" : sample.sampleType === "W" ? "Whole Blood" : sample.sampleType}
 Status: ${status.charAt(0).toUpperCase() + status.slice(1)}
 
 Dates:
 ------
-Created: ${sample.created_at ? new Date(sample.created_at).toLocaleDateString() : "Not specified"}
-${sample.date_collected ? `Collected: ${new Date(sample.date_collected).toLocaleDateString()}` : ""}
-${sample.date_received ? `Received: ${new Date(sample.date_received).toLocaleDateString()}` : ""}
-${sample.updated_at ? `Last Updated: ${new Date(sample.updated_at).toLocaleDateString()}` : ""}
+Created: ${sample.createdAt ? new Date(sample.createdAt).toLocaleDateString() : "Not specified"}
+${sample.dateCollected ? `Collected: ${new Date(sample.dateCollected).toLocaleDateString()}` : ""}
+${sample.dateReceived ? `Received: ${new Date(sample.dateReceived).toLocaleDateString()}` : ""}
+${sample.updatedAt ? `Last Updated: ${new Date(sample.updatedAt).toLocaleDateString()}` : ""}
 
 Patient Information:
 -------------------
 ${sample.pregnant ? `Pregnant: ${sample.pregnant === "Y" ? "Yes" : "No"}` : ""}
-${sample.anc_number ? `ANC Number: ${sample.anc_number}` : ""}
-${sample.breast_feeding ? `Breast Feeding: ${sample.breast_feeding === "Y" ? "Yes" : "No"}` : ""}
-${sample.active_tb_status ? `Active TB: ${sample.active_tb_status === "Y" ? "Yes" : "No"}` : ""}
+${sample.ancNumber ? `ANC Number: ${sample.ancNumber}` : ""}
+${sample.breastFeeding ? `Breast Feeding: ${sample.breastFeeding === "Y" ? "Yes" : "No"}` : ""}
+${sample.activeTbStatus ? `Active TB: ${sample.activeTbStatus === "Y" ? "Yes" : "No"}` : ""}
 
 Treatment Information:
 ---------------------
-${sample.treatment_initiation_date ? `Treatment Initiation: ${new Date(sample.treatment_initiation_date).toLocaleDateString()}` : ""}
-${sample.current_regimen_initiation_date ? `Current Regimen Initiation: ${new Date(sample.current_regimen_initiation_date).toLocaleDateString()}` : ""}
+${sample.treatmentInitiationDate ? `Treatment Initiation: ${new Date(sample.treatmentInitiationDate).toLocaleDateString()}` : ""}
+${sample.currentRegimenInitiationDate ? `Current Regimen Initiation: ${new Date(sample.currentRegimenInitiationDate).toLocaleDateString()}` : ""}
 
 Generated on: ${new Date().toLocaleString()}
     `.trim()
@@ -152,7 +152,7 @@ Generated on: ${new Date().toLocaleString()}
     const url = window.URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `viral-load-report-${sample.vl_sample_id}.txt`
+    a.download = `viral-load-report-${sample.vlSampleId}.txt`
     document.body.appendChild(a)
     a.click()
     window.URL.revokeObjectURL(url)
@@ -349,22 +349,22 @@ Generated on: ${new Date().toLocaleString()}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Patient ID</p>
-                <p className="font-medium break-all">{sample.patient_unique_id}</p>
+                <p className="font-medium break-all">{sample.patientUniqueId}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">ART Number</p>
-                <p className="font-medium break-all">{sample.patient_data?.art_number || "Not specified"}</p>
+                <p className="font-medium break-all">{sample.patient_data?.artNumber || "Not specified"}</p>
               </div>
             </div>
             
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Sample ID</p>
-                <p className="font-medium break-all">{sample.vl_sample_id}</p>
+                <p className="font-medium break-all">{sample.vlSampleId}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Form Number</p>
-                <p className="font-medium break-all">{sample.form_number}</p>
+                <p className="font-medium break-all">{sample.formNumber}</p>
               </div>
             </div>
 

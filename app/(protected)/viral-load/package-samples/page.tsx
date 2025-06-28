@@ -544,19 +544,19 @@ export default function PackageSamplesPage() {
                           <TableRow key={sample.id}>
                             <TableCell>
                               <Badge variant="outline" className="font-mono text-xs">
-                                {sample.facility_reference}
+                                {sample.facilityReference}
                               </Badge>
                             </TableCell>
                             <TableCell className="font-medium">{getArtNumber(sample)}</TableCell>
-                            <TableCell className="font-mono text-sm">{sample.vl_sample_id || `ID-${sample.id}`}</TableCell>
+                            <TableCell className="font-mono text-sm">{sample.vlSampleId || `ID-${sample.id}`}</TableCell>
                             <TableCell>
                               <Badge variant="outline" className="text-xs">
-                                {getSampleTypeDisplay(sample.sample_type || "")}
+                                {getSampleTypeDisplay(sample.sampleType || "")}
                               </Badge>
                             </TableCell>
                             <TableCell>
-                              {sample.date_collected ? (
-                                new Date(sample.date_collected).toLocaleDateString('en-GB', {
+                              {sample.dateCollected ? (
+                                new Date(sample.dateCollected).toLocaleDateString('en-GB', {
                                   day: '2-digit',
                                   month: 'short',
                                   year: 'numeric'
@@ -566,8 +566,8 @@ export default function PackageSamplesPage() {
                               )}
                             </TableCell>
                             <TableCell>
-                              {sample.updated_at ? (
-                                new Date(sample.updated_at).toLocaleDateString('en-GB', {
+                              {sample.updatedAt ? (
+                                new Date(sample.updatedAt).toLocaleDateString('en-GB', {
                                   day: '2-digit',
                                   month: 'short',
                                   year: 'numeric'

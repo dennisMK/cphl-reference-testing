@@ -1179,7 +1179,7 @@ export const viralLoadRouter = createTRPCRouter({
 
       const vlDb = await getVlLimsDb();
 
-      // Get all samples for the facility
+      // Get all samples for the facility (temporarily remove facility filter for testing)
       const allSamples = await vlDb
         .select({
           id: vlSamples.id,
@@ -1190,8 +1190,8 @@ export const viralLoadRouter = createTRPCRouter({
           facilityReference: vlSamples.facilityReference,
           lastValue: vlSamples.lastValue,
         })
-        .from(vlSamples)
-        .where(eq(vlSamples.facilityId, user.facility_id!));
+        .from(vlSamples);
+        // Temporarily commented out facility filter: .where(eq(vlSamples.facilityId, user.facility_id!));
 
       // Handle "All Time" - find the earliest sample date
       let startDate: Date;

@@ -88,7 +88,7 @@ export default function EditSamplePage(): React.JSX.Element {
           </div>
           
           <Badge variant="outline" className="text-sm">
-            ID: {sample.vl_sample_id}
+            ID: {sample.vlSampleId}
           </Badge>
         </div>
       </div>

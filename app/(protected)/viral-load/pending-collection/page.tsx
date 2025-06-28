@@ -49,23 +49,23 @@ import { Label } from "@/components/ui/label"
 
 export type ViralLoadSample = {
   id: number
-  patient_unique_id: string | null
-  vl_sample_id: string | null
-  form_number: string | null
-  date_collected: Date | null
-  date_received: Date | null
-  sample_type: string | null
-  created_at: Date
+  patientUniqueId: string | null
+  vlSampleId: string | null
+  formNumber: string | null
+  dateCollected: Date | null
+  dateReceived: Date | null
+  sampleType: string | null
+  createdAt: Date
   verified: number | null
-  in_worksheet: number | null
+  inWorksheet: number | null
 }
 
 const getStatusBadge = (sample: ViralLoadSample) => {
-  if (!sample.date_received) {
+  if (!sample.dateReceived) {
     return <Badge variant="secondary" className="text-orange-600 bg-orange-50">Pending Collection</Badge>
-  } else if (sample.date_collected && !sample.date_received) {
+  } else if (sample.dateCollected && !sample.dateReceived) {
     return <Badge variant="secondary" className="text-blue-600 bg-blue-50">Collected</Badge>
-  } else if (sample.date_received && !sample.verified) {
+  } else if (sample.dateReceived && !sample.verified) {
     return <Badge variant="secondary" className="text-purple-600 bg-purple-50">Processing</Badge>
   } else if (sample.verified === 1) {
     return <Badge variant="secondary" className="text-green-600 bg-green-50">Completed</Badge>
@@ -111,7 +111,7 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "patient_unique_id",
+    accessorKey: "patientUniqueId",
     header: ({ column }) => {
       return (
         <Button
@@ -125,11 +125,11 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
       )
     },
     cell: ({ row }) => (
-      <div className="font-medium">{row.getValue("patient_unique_id") || "N/A"}</div>
+      <div className="font-medium">{row.getValue("patientUniqueId") || "N/A"}</div>
     ),
   },
   {
-    accessorKey: "vl_sample_id",
+    accessorKey: "vlSampleId",
     header: ({ column }) => {
       return (
         <Button
@@ -143,20 +143,20 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
       )
     },
     cell: ({ row }) => (
-      <div className="font-mono text-sm">{row.getValue("vl_sample_id") || "N/A"}</div>
+      <div className="font-mono text-sm">{row.getValue("vlSampleId") || "N/A"}</div>
     ),
   },
   {
-    accessorKey: "sample_type",
+    accessorKey: "sampleType",
     header: "Sample Type",
     cell: ({ row }) => (
       <Badge variant="outline" className="text-xs">
-        {getSampleType(row.getValue("sample_type"))}
+        {getSampleType(row.getValue("sampleType"))}
       </Badge>
     ),
   },
   {
-    accessorKey: "date_collected",
+    accessorKey: "dateCollected",
     header: ({ column }) => {
       return (
         <Button
@@ -170,12 +170,12 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
       )
     },
     cell: ({ row }) => {
-      const date = row.getValue("date_collected") as Date | null
+      const date = row.getValue("dateCollected") as Date | null
       return <div className="text-sm">{date ? date.toLocaleDateString() : "Not collected"}</div>
     },
   },
   {
-    accessorKey: "date_received",
+    accessorKey: "dateReceived",
     header: ({ column }) => {
       return (
         <Button
@@ -189,7 +189,7 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
       )
     },
     cell: ({ row }) => {
-      const date = row.getValue("date_received") as Date | null
+      const date = row.getValue("dateReceived") as Date | null
       return (
         <div className="text-sm">
           {date ? date.toLocaleDateString() : "Not received"}
@@ -222,28 +222,28 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(sample.vl_sample_id)}
+              onClick={() => navigator.clipboard.writeText(sample.vlSampleId)}
             >
               <FileText className="mr-2 h-4 w-4" />
               Copy Sample ID
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <a href={`/viral-load/${sample.vl_sample_id}`}>
+              <a href={`/viral-load/${sample.vlSampleId}`}>
                 <Eye className="mr-2 h-4 w-4" />
                 View Details
               </a>
             </DropdownMenuItem>
-            {!sample.date_collected && (
+            {!sample.dateCollected && (
               <DropdownMenuItem asChild>
-                <a href={`/viral-load/${sample.vl_sample_id}/collect`}>
+                <a href={`/viral-load/${sample.vlSampleId}/collect`}>
                   <Package className="mr-2 h-4 w-4" />
                   Collect Sample
                 </a>
               </DropdownMenuItem>
             )}
             <DropdownMenuItem asChild>
-              <a href={`/viral-load/${sample.vl_sample_id}/edit`}>
+              <a href={`/viral-load/${sample.vlSampleId}/edit`}>
                 <Edit className="mr-2 h-4 w-4" />
                 Edit Sample
               </a>
@@ -276,9 +276,9 @@ export function ViralLoadDataTable() {
     if (!requestsData?.samples) return []
     if (statusFilter === "all") return requestsData.samples
     return requestsData.samples.filter((sample) => {
-      if (statusFilter === "pending") return !sample.date_collected
-      if (statusFilter === "collected") return sample.date_collected && !sample.date_received
-      if (statusFilter === "processing") return sample.date_received && !sample.verified
+      if (statusFilter === "pending") return !sample.dateCollected
+      if (statusFilter === "collected") return sample.dateCollected && !sample.dateReceived
+      if (statusFilter === "processing") return sample.dateReceived && !sample.verified
       if (statusFilter === "completed") return sample.verified === 1
       return true
     })
@@ -309,9 +309,9 @@ export function ViralLoadDataTable() {
         <div className="flex items-center space-x-2">
           <Input
             placeholder="Filter by Sample ID..."
-            value={(table.getColumn("vl_sample_id")?.getFilterValue() as string) ?? ""}
+            value={(table.getColumn("vlSampleId")?.getFilterValue() as string) ?? ""}
             onChange={(event) =>
-              table.getColumn("vl_sample_id")?.setFilterValue(event.target.value)
+              table.getColumn("vlSampleId")?.setFilterValue(event.target.value)
             }
             className="max-w-sm"
           />

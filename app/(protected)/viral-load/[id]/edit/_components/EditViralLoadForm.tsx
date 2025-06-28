@@ -131,51 +131,51 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
       // Prepare form data object
       const formData: Partial<FormData> = {
         // Patient Information
-        art_number: sample.patient_data?.art_number || sample.patient_unique_id || "",
-        other_id: sample.patient_data?.other_id || "",
+        art_number: sample.patient_data?.artNumber || sample.patientUniqueId || "",
+        other_id: sample.patient_data?.otherId || "",
         gender: (sample.patient_data?.gender && ["M", "F"].includes(sample.patient_data.gender)) 
           ? sample.patient_data.gender as "M" | "F" 
           : undefined,
         age: "", // Would need to be calculated or stored separately
         age_units: "Years",
-        patient_phone_number: sample.patient_phone_number || "",
+        patient_phone_number: sample.patientPhoneNumber || "",
         
         // Requesting Clinician
-        clinician_id: sample.clinician_id ? String(sample.clinician_id) : "",
-        requested_on: sample.requested_on 
-          ? (sample.requested_on instanceof Date ? sample.requested_on : new Date(sample.requested_on)).toISOString().split('T')[0]
+        clinician_id: sample.clinicianId ? String(sample.clinicianId) : "",
+        requested_on: sample.requestedOn 
+          ? (sample.requestedOn instanceof Date ? sample.requestedOn : new Date(sample.requestedOn)).toISOString().split('T')[0]
           : "",
         
         // Health Information
         pregnant: (sample.pregnant && ["Y", "N", "U"].includes(sample.pregnant)) 
           ? sample.pregnant as "Y" | "N" | "U" 
           : undefined,
-        anc_number: sample.anc_number || "",
-        breast_feeding: (sample.breast_feeding && ["Y", "N", "U"].includes(sample.breast_feeding)) 
-          ? sample.breast_feeding as "Y" | "N" | "U" 
+        anc_number: sample.ancNumber || "",
+        breast_feeding: (sample.breastFeeding && ["Y", "N", "U"].includes(sample.breastFeeding)) 
+          ? sample.breastFeeding as "Y" | "N" | "U" 
           : undefined,
-        active_tb_status: (sample.active_tb_status && ["Y", "N", "U"].includes(sample.active_tb_status)) 
-          ? sample.active_tb_status as "Y" | "N" | "U" 
+        active_tb_status: (sample.activeTbStatus && ["Y", "N", "U"].includes(sample.activeTbStatus)) 
+          ? sample.activeTbStatus as "Y" | "N" | "U" 
           : undefined,
         
         // Treatment Information
-        current_regimen_id: (sample.current_regimen_id !== null && sample.current_regimen_id !== undefined) 
-          ? String(sample.current_regimen_id) 
+        current_regimen_id: (sample.currentRegimenId !== null && sample.currentRegimenId !== undefined) 
+          ? String(sample.currentRegimenId) 
           : "",
-        tb_treatment_phase_id: (sample.tb_treatment_phase_id !== null && sample.tb_treatment_phase_id !== undefined) 
-          ? String(sample.tb_treatment_phase_id) 
+        tb_treatment_phase_id: (sample.tbTreatmentPhaseId !== null && sample.tbTreatmentPhaseId !== undefined) 
+          ? String(sample.tbTreatmentPhaseId) 
           : "",
-        arv_adherence_id: (sample.arv_adherence_id !== null && sample.arv_adherence_id !== undefined) 
-          ? String(sample.arv_adherence_id) 
+        arv_adherence_id: (sample.arvAdherenceId !== null && sample.arvAdherenceId !== undefined) 
+          ? String(sample.arvAdherenceId) 
           : "",
-        treatment_care_approach: (sample.treatment_care_approach !== null && sample.treatment_care_approach !== undefined) 
-          ? String(sample.treatment_care_approach) 
+        treatment_care_approach: (sample.treatmentCareApproach !== null && sample.treatmentCareApproach !== undefined) 
+          ? String(sample.treatmentCareApproach) 
           : "",
-        current_who_stage: (sample.current_who_stage !== null && sample.current_who_stage !== undefined) 
-          ? String(sample.current_who_stage) 
+        current_who_stage: (sample.currentWhoStage !== null && sample.currentWhoStage !== undefined) 
+          ? String(sample.currentWhoStage) 
           : "",
-        treatment_indication_id: (sample.treatment_indication_id !== null && sample.treatment_indication_id !== undefined) 
-          ? String(sample.treatment_indication_id) 
+        treatment_indication_id: (sample.treatmentIndicationId !== null && sample.treatmentIndicationId !== undefined) 
+          ? String(sample.treatmentIndicationId) 
           : "",
       };
 
@@ -188,16 +188,16 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
         formData.dob = dobDate.toISOString().split('T')[0];
       }
 
-      if (sample.treatment_initiation_date) {
-        const treatmentDate = new Date(sample.treatment_initiation_date);
+      if (sample.treatmentInitiationDate) {
+        const treatmentDate = new Date(sample.treatmentInitiationDate);
         setTreatmentDay(String(treatmentDate.getDate()).padStart(2, '0'));
         setTreatmentMonth(String(treatmentDate.getMonth() + 1).padStart(2, '0'));
         setTreatmentYear(String(treatmentDate.getFullYear()));
         formData.treatment_initiation_date = treatmentDate.toISOString().split('T')[0];
       }
 
-      if (sample.current_regimen_initiation_date) {
-        const regimenDate = new Date(sample.current_regimen_initiation_date);
+      if (sample.currentRegimenInitiationDate) {
+        const regimenDate = new Date(sample.currentRegimenInitiationDate);
         setRegimenDay(String(regimenDate.getDate()).padStart(2, '0'));
         setRegimenMonth(String(regimenDate.getMonth() + 1).padStart(2, '0'));
         setRegimenYear(String(regimenDate.getFullYear()));

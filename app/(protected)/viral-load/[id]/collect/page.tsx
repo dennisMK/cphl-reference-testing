@@ -62,8 +62,8 @@ export default function CollectSamplePage({ params }: { params: { id: string } }
   // Initialize form with sample data
   React.useEffect(() => {
     if (sample) {
-      setSampleIdBarcode(sample.vl_sample_id || "")
-      setSampleType(sample.sample_type || "")
+      setSampleIdBarcode(sample.vlSampleId || "")
+      setSampleType(sample.sampleType || "")
     }
   }, [sample])
 
@@ -141,7 +141,7 @@ export default function CollectSamplePage({ params }: { params: { id: string } }
         <div className="flex items-center gap-2 text-blue-800">
           <Package className="h-4 w-4" />
           <span className="font-medium">
-            Sample ID: {sample.vl_sample_id} | Patient ID: {sample.patient_unique_id} | Form: {sample.form_number}
+            Sample ID: {sample.vlSampleId} | Patient ID: {sample.patientUniqueId} | Form: {sample.formNumber}
           </span>
         </div>
       </div>
@@ -163,7 +163,7 @@ export default function CollectSamplePage({ params }: { params: { id: string } }
                 </Label>
                 <Input
                   id="patient-clinic-id"
-                  value={sample.patient_unique_id || ""}
+                  value={sample.patientUniqueId || ""}
                   readOnly
                   className="mt-2 h-10 bg-gray-50"
                 />
@@ -175,7 +175,7 @@ export default function CollectSamplePage({ params }: { params: { id: string } }
                 </Label>
                 <Input
                   id="sample-id"
-                  value={sample.vl_sample_id || ""}
+                  value={sample.vlSampleId || ""}
                   readOnly
                   className="mt-2 h-10 bg-gray-50"
                 />
@@ -187,7 +187,7 @@ export default function CollectSamplePage({ params }: { params: { id: string } }
                 </Label>
                 <Input
                   id="form-number"
-                  value={sample.form_number || ""}
+                  value={sample.formNumber || ""}
                   readOnly
                   className="mt-2 h-10 bg-gray-50"
                 />
