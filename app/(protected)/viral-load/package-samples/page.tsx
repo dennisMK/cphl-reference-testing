@@ -22,7 +22,7 @@ import {
   TableRow,
 } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Package, CheckCircle, ArrowUpDown, Loader2, Eye, PackageOpen } from "lucide-react"
+import { Package, CheckCircle, ArrowUpDown, Loader2, Eye, PackageOpen, Clock } from "lucide-react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import Link from "next/link"
@@ -142,6 +142,27 @@ export default function PackageSamplesPage() {
     }
   }
 
+  // Helper function to get sample status
+  const getSampleStatus = (sample: any) => {
+    // Primary validation: use date_received as the key indicator
+    if (sample.date_received) {
+      // If received and verified, it's completed
+      if (sample.verified === 1) {
+        return { label: "Completed", variant: "default" as const, color: "text-green-600 bg-green-50", icon: CheckCircle }
+      }
+      // If received but not verified, it's processing
+      return { label: "Processing", variant: "secondary" as const, color: "text-blue-600 bg-blue-50", icon: Package }
+    }
+    
+    // If not received but collected, it's ready for packaging
+    if (sample.date_collected) {
+      return { label: "Ready for Packaging", variant: "secondary" as const, color: "text-blue-600 bg-blue-50", icon: Package }
+    }
+    
+    // If not collected, it's pending
+    return { label: "Pending Collection", variant: "outline" as const, color: "text-orange-600 bg-orange-50", icon: Clock }
+  }
+
   if (error && packagedError) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -156,7 +177,7 @@ export default function PackageSamplesPage() {
   }
 
   return (
-    <div className="">
+    <div className="md:container md:px-0 px-4 pt-4 pb-20 md:mx-auto">
       {/* Header with title and actions */}
       <div className="mb-6 pb-4 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -249,8 +270,11 @@ export default function PackageSamplesPage() {
           <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
             <div className="pb-3 border-b border-gray-100">
               <h2 className="text-lg font-semibold text-gray-900">
-                Samples Pending Packaging ({totalSamples} total)
+                Samples Ready for Packaging ({totalSamples} total)
               </h2>
+              <p className="text-sm text-gray-600 mt-1">
+                Samples that have been collected and are ready to be packaged for transport
+              </p>
             </div>
 
             {/* Table Controls */}
@@ -349,10 +373,16 @@ export default function PackageSamplesPage() {
                               </TableCell>
                               <TableCell className="text-sm text-gray-600">{sample.form_number || "N/A"}</TableCell>
                               <TableCell>
-                                <Badge variant="secondary" className="text-green-600 bg-green-50">
-                                  <CheckCircle className="h-3 w-3 mr-1" />
-                                  Collected
-                                </Badge>
+                                {(() => {
+                                  const status = getSampleStatus(sample);
+                                  const Icon = status.icon;
+                                  return (
+                                    <Badge variant={status.variant} className={status.color}>
+                                      <Icon className="h-3 w-3 mr-1" />
+                                      {status.label}
+                                    </Badge>
+                                  );
+                                })()}
                               </TableCell>
                             </TableRow>
                           )
