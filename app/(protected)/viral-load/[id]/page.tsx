@@ -111,6 +111,127 @@ export default function SampleDetailPage() {
 
   const status = getSampleStatus()
 
+  // Handle download report
+  const handleDownloadReport = () => {
+    // Create a simple report with sample information
+    const reportContent = `
+VIRAL LOAD SAMPLE REPORT
+========================
+
+Sample ID: ${sample.vl_sample_id}
+Form Number: ${sample.form_number}
+Patient ID: ${sample.patient_unique_id}
+ART Number: ${sample.patient_data?.art_number || "Not specified"}
+Sample Type: ${sample.sample_type === "P" ? "Plasma" : sample.sample_type === "D" ? "DBS" : sample.sample_type === "W" ? "Whole Blood" : sample.sample_type}
+Status: ${status.charAt(0).toUpperCase() + status.slice(1)}
+
+Dates:
+------
+Created: ${sample.created_at ? new Date(sample.created_at).toLocaleDateString() : "Not specified"}
+${sample.date_collected ? `Collected: ${new Date(sample.date_collected).toLocaleDateString()}` : ""}
+${sample.date_received ? `Received: ${new Date(sample.date_received).toLocaleDateString()}` : ""}
+${sample.updated_at ? `Last Updated: ${new Date(sample.updated_at).toLocaleDateString()}` : ""}
+
+Patient Information:
+-------------------
+${sample.pregnant ? `Pregnant: ${sample.pregnant === "Y" ? "Yes" : "No"}` : ""}
+${sample.anc_number ? `ANC Number: ${sample.anc_number}` : ""}
+${sample.breast_feeding ? `Breast Feeding: ${sample.breast_feeding === "Y" ? "Yes" : "No"}` : ""}
+${sample.active_tb_status ? `Active TB: ${sample.active_tb_status === "Y" ? "Yes" : "No"}` : ""}
+
+Treatment Information:
+---------------------
+${sample.treatment_initiation_date ? `Treatment Initiation: ${new Date(sample.treatment_initiation_date).toLocaleDateString()}` : ""}
+${sample.current_regimen_initiation_date ? `Current Regimen Initiation: ${new Date(sample.current_regimen_initiation_date).toLocaleDateString()}` : ""}
+
+Generated on: ${new Date().toLocaleString()}
+    `.trim()
+
+    // Create and download the file
+    const blob = new Blob([reportContent], { type: 'text/plain' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `viral-load-report-${sample.vl_sample_id}.txt`
+    document.body.appendChild(a)
+    a.click()
+    window.URL.revokeObjectURL(url)
+    document.body.removeChild(a)
+  }
+
+  // Handle print label
+  const handlePrintLabel = () => {
+    // Create a printable label with sample information
+    const labelContent = `
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sample Label - ${sample.vl_sample_id}</title>
+    <style>
+        body { 
+            font-family: Arial, sans-serif; 
+            margin: 0; 
+            padding: 20px;
+            font-size: 12px;
+        }
+        .label {
+            border: 2px solid #000;
+            padding: 15px;
+            width: 300px;
+            margin: 0 auto;
+            text-align: center;
+        }
+        .sample-id {
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+        .barcode {
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            letter-spacing: 2px;
+            margin: 10px 0;
+            padding: 5px;
+            border: 1px solid #ccc;
+            background: #f9f9f9;
+        }
+        .info {
+            margin: 5px 0;
+            text-align: left;
+        }
+        @media print {
+            body { margin: 0; padding: 10px; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+    <div class="label">
+        <div class="sample-id">${sample.vl_sample_id}</div>
+        <div class="barcode">||||| ${sample.vl_sample_id} |||||</div>
+        <div class="info"><strong>Patient:</strong> ${sample.patient_unique_id}</div>
+        <div class="info"><strong>ART #:</strong> ${sample.patient_data?.art_number || "N/A"}</div>
+        <div class="info"><strong>Type:</strong> ${sample.sample_type === "P" ? "Plasma" : sample.sample_type === "D" ? "DBS" : sample.sample_type === "W" ? "Whole Blood" : sample.sample_type}</div>
+        <div class="info"><strong>Form:</strong> ${sample.form_number}</div>
+        <div class="info"><strong>Date:</strong> ${sample.date_collected ? new Date(sample.date_collected).toLocaleDateString() : new Date().toLocaleDateString()}</div>
+    </div>
+    <div class="no-print" style="margin-top: 20px; text-align: center;">
+        <button onclick="window.print()">Print Label</button>
+        <button onclick="window.close()">Close</button>
+    </div>
+</body>
+</html>
+    `
+
+    // Open print window
+    const printWindow = window.open('', '_blank')
+    if (printWindow) {
+      printWindow.document.write(labelContent)
+      printWindow.document.close()
+      printWindow.focus()
+    }
+  }
+
   return (
     <main className="md:container md:px-0 px-4 pt-4 pb-20 md:mx-auto">
       {/* Header */}
@@ -146,11 +267,11 @@ export default function SampleDetailPage() {
           <Edit className="h-4 w-4 mr-2" />
           Edit Sample
         </Button>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={handleDownloadReport}>
           <Download className="h-4 w-4 mr-2" />
           Download Report
         </Button>
-        <Button variant="outline" size="sm">
+        <Button variant="outline" size="sm" onClick={handlePrintLabel}>
           <Printer className="h-4 w-4 mr-2" />
           Print Label
         </Button>
