@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { CalendarIcon, Save, X, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { CalendarIcon, Save, X, Loader2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
@@ -69,8 +70,32 @@ interface EditViralLoadFormProps {
 export default function EditViralLoadForm({ sample, sampleId, user }: EditViralLoadFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  // Fetch clinicians for the dropdown
+  const { data: clinicians = [], isLoading: cliniciansLoading, refetch: refetchClinicians } = api.viralLoad.getClinicians.useQuery();
   const [isFormInitialized, setIsFormInitialized] = useState(false);
   const initializationRef = useRef(false);
+
+  // Add clinician dialog state
+  const [isAddClinicianOpen, setIsAddClinicianOpen] = useState(false);
+  const [newClinicianName, setNewClinicianName] = useState("");
+  const [newClinicianPhone, setNewClinicianPhone] = useState("");
+
+  // Create clinician mutation
+  const createClinicianMutation = api.viralLoad.createClinician.useMutation({
+    onSuccess: () => {
+      toast.success("Clinician added successfully!");
+      setIsAddClinicianOpen(false);
+      setNewClinicianName("");
+      setNewClinicianPhone("");
+      refetchClinicians(); // Refresh the clinicians list
+    },
+    onError: (error) => {
+      toast.error("Failed to add clinician", {
+        description: error.message,
+      });
+    },
+  });
 
   // Date component states
   const [dobDay, setDobDay] = useState<string>("");
@@ -256,6 +281,19 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
     }
   }, [regimenDay, regimenMonth, regimenYear, form, isFormInitialized]);
 
+  // Handle adding new clinician
+  const handleAddClinician = () => {
+    if (!newClinicianName.trim()) {
+      toast.error("Please enter a clinician name");
+      return;
+    }
+
+    createClinicianMutation.mutate({
+      name: newClinicianName.trim(),
+      phone: newClinicianPhone.trim() || undefined,
+    });
+  };
+
   const onSubmit = async (data: FormData): Promise<void> => {
     console.log("Form submission started", data);
     setIsSubmitting(true);
@@ -314,12 +352,89 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
             <Label htmlFor="clinician_id" className="text-sm font-medium text-gray-700">
               Clinician Name
             </Label>
-            <Input
-              id="clinician_id"
-              {...form.register("clinician_id")}
-              placeholder="Enter clinician name"
-              className="mt-2 h-10"
-            />
+            <div className="flex gap-2 mt-2">
+              <Select 
+                value={form.watch("clinician_id") || ""}
+                onValueChange={(value) => form.setValue("clinician_id", value)}
+              >
+                <SelectTrigger className="h-10 flex-1">
+                  <SelectValue placeholder={cliniciansLoading ? "Loading clinicians..." : "Select clinician"} />
+                </SelectTrigger>
+                <SelectContent>
+                  {!cliniciansLoading && clinicians.length > 0 ? (
+                    clinicians.map((clinician) => (
+                      <SelectItem key={clinician.id} value={clinician.id}>
+                        {clinician.name}
+                        {clinician.phone && (
+                          <span className="text-sm text-gray-500 ml-2">
+                            ({clinician.phone})
+                          </span>
+                        )}
+                      </SelectItem>
+                    ))
+                  ) : (
+                    <div className="p-2 text-sm text-gray-500 text-center">
+                      {cliniciansLoading ? "Loading clinicians..." : "No clinicians found"}
+                    </div>
+                  )}
+                </SelectContent>
+              </Select>
+              
+              <Dialog open={isAddClinicianOpen} onOpenChange={setIsAddClinicianOpen}>
+                <DialogTrigger asChild>
+                  <Button type="button" variant="outline" size="icon" className="h-10 w-10 shrink-0">
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                  <DialogHeader>
+                    <DialogTitle>Add New Clinician</DialogTitle>
+                  </DialogHeader>
+                  <div className="space-y-4 py-4">
+                    <div>
+                      <Label htmlFor="new-clinician-name" className="text-sm font-medium">
+                        Clinician Name *
+                      </Label>
+                      <Input
+                        id="new-clinician-name"
+                        value={newClinicianName}
+                        onChange={(e) => setNewClinicianName(e.target.value)}
+                        placeholder="Enter clinician name"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="new-clinician-phone" className="text-sm font-medium">
+                        Phone Number (Optional)
+                      </Label>
+                      <Input
+                        id="new-clinician-phone"
+                        value={newClinicianPhone}
+                        onChange={(e) => setNewClinicianPhone(e.target.value)}
+                        placeholder="Enter phone number"
+                        className="mt-1"
+                      />
+                    </div>
+                    <div className="flex justify-end gap-2 pt-4">
+                      <Button 
+                        type="button" 
+                        variant="outline" 
+                        onClick={() => setIsAddClinicianOpen(false)}
+                      >
+                        Cancel
+                      </Button>
+                      <Button 
+                        type="button" 
+                        onClick={handleAddClinician}
+                        disabled={createClinicianMutation.isPending || !newClinicianName.trim()}
+                      >
+                        {createClinicianMutation.isPending ? "Adding..." : "Add Clinician"}
+                      </Button>
+                    </div>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
           <div>

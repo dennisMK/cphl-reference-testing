@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq, and, desc, count } from "drizzle-orm";
 
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { vlPatients, vlSamples } from "@/server/db/schemas/vl_lims";
+import { vlPatients, vlSamples, vlClinicians, backendFacilities } from "@/server/db/schemas/vl_lims";
 import { getVlLimsDb } from "@/server/db";
 
 export const viralLoadRouter = createTRPCRouter({
@@ -1307,5 +1307,118 @@ export const viralLoadRouter = createTRPCRouter({
       }
 
       return analyticsData;
+    }),
+
+  // Get clinicians for the current user's facility
+  getClinicians: protectedProcedure.query(async ({ ctx }) => {
+    const user = ctx.user;
+    
+    if (!user.facility_id) {
+      return [];
+    }
+
+    const vlDb = await getVlLimsDb();
+
+    // Get clinicians for the user's facility
+    const clinicians = await vlDb
+      .select({
+        id: vlClinicians.id,
+        name: vlClinicians.cname,
+        phone: vlClinicians.cphone,
+        facilityId: vlClinicians.facilityId,
+      })
+      .from(vlClinicians)
+      .where(eq(vlClinicians.facilityId, user.facility_id!))
+      .orderBy(vlClinicians.cname);
+
+    return clinicians.map(clinician => ({
+      id: clinician.id.toString(),
+      name: clinician.name,
+      phone: clinician.phone,
+      value: clinician.id.toString(),
+      label: clinician.name,
+    }));
+  }),
+
+  // Get all facilities for dropdowns
+  getFacilities: protectedProcedure.query(async ({ ctx }) => {
+    const vlDb = await getVlLimsDb();
+
+    const facilities = await vlDb
+      .select({
+        id: backendFacilities.id,
+        name: backendFacilities.facility,
+        district: backendFacilities.districtId,
+        hub: backendFacilities.hubId,
+        active: backendFacilities.active,
+      })
+      .from(backendFacilities)
+      .where(eq(backendFacilities.active, 1))
+      .orderBy(backendFacilities.facility);
+
+    return facilities.map(facility => ({
+      id: facility.id.toString(),
+      name: facility.name,
+      value: facility.id.toString(),
+      label: facility.name,
+    }));
+  }),
+
+  // Create a new clinician
+  createClinician: protectedProcedure
+    .input(
+      z.object({
+        name: z.string().min(1, "Clinician name is required"),
+        phone: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const user = ctx.user;
+      
+      if (!user.facility_id) {
+        throw new Error("Please set up your facility information first.");
+      }
+
+      const vlDb = await getVlLimsDb();
+
+      // Check if clinician already exists for this facility
+      const existingClinician = await vlDb
+        .select({ id: vlClinicians.id })
+        .from(vlClinicians)
+        .where(
+          and(
+            eq(vlClinicians.facilityId, user.facility_id),
+            eq(vlClinicians.cname, input.name)
+          )
+        )
+        .limit(1);
+
+      if (existingClinician.length > 0) {
+        throw new Error("A clinician with this name already exists at your facility");
+      }
+
+      // Create new clinician
+      const clinicianData = {
+        cname: input.name,
+        cphone: input.phone || null,
+        facilityId: user.facility_id,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      };
+
+      const result = await vlDb
+        .insert(vlClinicians)
+        .values(clinicianData);
+
+      // Return the new clinician (we'll need to get the ID from the result)
+      return {
+        success: true,
+        message: "Clinician created successfully",
+        clinician: {
+          id: "new", // We'll handle this in the frontend
+          name: input.name,
+          phone: input.phone,
+        }
+      };
     }),
 }); 
