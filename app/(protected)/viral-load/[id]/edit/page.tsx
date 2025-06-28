@@ -26,7 +26,7 @@ const formSchema = z.object({
   // Patient Information
   art_number: z.string().min(1, "ART number is required"),
   other_id: z.string().optional(),
-  gender: z.enum(["M", "F"], { required_error: "Gender is required" }),
+  gender: z.enum(["M", "F"], { required_error: "Gender is required" }).optional(),
   dob: z.string().min(1, "Date of birth is required"),
   age: z.string().optional(),
   age_units: z.enum(["Years", "Months", "Days"]).optional(),
@@ -112,7 +112,7 @@ export default function EditSamplePage(): React.JSX.Element {
     defaultValues: {
       art_number: "",
       other_id: "",
-      gender: "M", // Set a default value instead of undefined
+      gender: undefined, // Allow undefined initially, will be set from sample data
       dob: "",
       age: "",
       age_units: "Years",
@@ -286,9 +286,17 @@ export default function EditSamplePage(): React.JSX.Element {
         throw new Error('Invalid sample ID');
       }
       
+      // Ensure gender is provided
+      if (!data.gender) {
+        toast.error("Please select a gender");
+        setIsSubmitting(false);
+        return;
+      }
+      
       await updateSampleMutation.mutateAsync({
         sampleId: id,
-        ...data
+        ...data,
+        gender: data.gender as "M" | "F" // Type assertion since we checked above
       });
     } catch (error) {
       console.error("Failed to update sample:", error);
@@ -470,14 +478,16 @@ export default function EditSamplePage(): React.JSX.Element {
                     Gender:
                   </Label>
                   <Select 
-                    value={form.watch("gender")} 
+                    value={form.watch("gender") || ""} 
                     onValueChange={(value) => {
-                      form.setValue("gender", value as "M" | "F");
-                      form.trigger("gender");
+                      if (value && (value === "M" || value === "F")) {
+                        form.setValue("gender", value as "M" | "F");
+                        form.trigger("gender");
+                      }
                     }}
                   >
                     <SelectTrigger className="mt-2 h-10 w-full">
-                      <SelectValue placeholder="" />
+                      <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="M">Male</SelectItem>
