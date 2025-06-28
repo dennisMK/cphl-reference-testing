@@ -2,7 +2,7 @@ import { z } from "zod";
 import { eq, and, desc, count } from "drizzle-orm";
 
 import { createTRPCRouter, protectedProcedure } from "@/server/api/trpc";
-import { vl_patients, vl_samples } from "@/server/db/schemas/vl_lims";
+import { vlPatients, vlSamples } from "@/server/db/schemas/vl_lims";
 import { getVlLimsDb } from "@/server/db";
 
 export const viralLoadRouter = createTRPCRouter({
@@ -31,20 +31,20 @@ export const viralLoadRouter = createTRPCRouter({
       // First, get all samples for the facility to apply filtering
       const allSamples = await vlDb
         .select({
-          id: vl_samples.id,
-          patient_unique_id: vl_samples.patient_unique_id,
-          vl_sample_id: vl_samples.vl_sample_id,
-          form_number: vl_samples.form_number,
-          date_collected: vl_samples.date_collected,
-          date_received: vl_samples.date_received,
-          sample_type: vl_samples.sample_type,
-          created_at: vl_samples.created_at,
-          verified: vl_samples.verified,
-          in_worksheet: vl_samples.in_worksheet,
+          id: vlSamples.id,
+          patientUniqueId: vlSamples.patientUniqueId,
+          vlSampleId: vlSamples.vlSampleId,
+          formNumber: vlSamples.formNumber,
+          dateCollected: vlSamples.dateCollected,
+          dateReceived: vlSamples.dateReceived,
+          sampleType: vlSamples.sampleType,
+          createdAt: vlSamples.createdAt,
+          verified: vlSamples.verified,
+          inWorksheet: vlSamples.inWorksheet,
         })
-        .from(vl_samples)
-        .where(eq(vl_samples.facility_id, user.facility_id!))
-        .orderBy(desc(vl_samples.created_at));
+        .from(vlSamples)
+        .where(eq(vlSamples.facilityId, user.facility_id!))
+        .orderBy(desc(vlSamples.createdAt));
 
       // Apply status filtering if specified
       let filteredSamples = allSamples;
@@ -52,11 +52,11 @@ export const viralLoadRouter = createTRPCRouter({
         filteredSamples = allSamples.filter(sample => {
           switch (input.status) {
             case "pending":
-              return !sample.date_collected; // Not yet collected
+              return !sample.dateCollected; // Not yet collected
             case "collected":
-              return sample.date_collected && !sample.date_received; // Collected but not received/packaged
+              return sample.dateCollected && !sample.dateReceived; // Collected but not received/packaged
             // case "processing":
-            //   return sample.date_received && !sample.verified; // Received but not verified
+            //   return sample.dateReceived && !sample.verified; // Received but not verified
             case "completed":
               return sample.verified === 1; // Verified/completed
             default:
@@ -123,24 +123,24 @@ export const viralLoadRouter = createTRPCRouter({
       
       // First, create or get the patient record
       const patientData = {
-        unique_id: patientUniqueId,
-        art_number: input.art_number,
-        other_id: input.other_id || null,
+        uniqueId: patientUniqueId,
+        artNumber: input.art_number,
+        otherId: input.other_id || null,
         gender: input.gender,
-        dob: new Date(input.dob),
-        treatment_initiation_date: new Date(input.treatment_initiation_date),
-        current_regimen_initiation_date: new Date(input.current_regimen_initiation_date),
-        created_at: new Date(),
-        updated_at: new Date(),
-        created_by_id: user.id,
-        facility_id: user.facility_id,
-        is_verified: 1,
-        is_the_clean_patient: 0,
-        is_cleaned: 0,
+        dob: input.dob,
+        treatmentInitiationDate: input.treatment_initiation_date,
+        currentRegimenInitiationDate: input.current_regimen_initiation_date,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdById: user.id,
+        facilityId: user.facility_id,
+        isVerified: 1,
+        isTheCleanPatient: 0,
+        isCleaned: 0,
       };
 
       const patientResult = await vlDb
-        .insert(vl_patients)
+        .insert(vlPatients)
         .values(patientData);
 
       // For now, use a generated ID since we can't easily access insertId with this setup
@@ -152,43 +152,43 @@ export const viralLoadRouter = createTRPCRouter({
 
       // Create the sample record
       const sampleData = {
-        patient_unique_id: patientUniqueId,
-        vl_sample_id: sampleId,
-        form_number: `FORM-${Date.now()}`,
+        patientUniqueId: patientUniqueId,
+        vlSampleId: sampleId,
+        formNumber: `FORM-${Date.now()}`,
         pregnant: input.pregnant || null,
-        anc_number: input.anc_number || null,
-        breast_feeding: input.breast_feeding || null,
-        active_tb_status: input.active_tb_status || null,
-        date_collected: new Date(),
-        treatment_initiation_date: new Date(input.treatment_initiation_date),
-        sample_type: "P", // Default to Plasma for now
+        ancNumber: input.anc_number || null,
+        breastFeeding: input.breast_feeding || null,
+        activeTbStatus: input.active_tb_status || null,
+        dateCollected: new Date().toISOString().split('T')[0],
+        treatmentInitiationDate: input.treatment_initiation_date,
+        sampleType: "P", // Default to Plasma for now
         verified: 1,
-        in_worksheet: 0,
-        created_at: new Date(),
-        updated_at: new Date(),
-        created_by_id: user.id,
-        facility_id: user.facility_id,
-        data_facility_id: user.facility_id,
-        patient_id: Number(patientId),
-        is_study_sample: 0,
-        is_data_entered: 0,
+        inWorksheet: 0,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+        createdById: user.id,
+        facilityId: user.facility_id,
+        dataFacilityId: user.facility_id,
+        patientId: Number(patientId),
+        isStudySample: 0,
+        isDataEntered: 0,
         stage: 1,
-        required_verification: 0,
-        current_regimen_initiation_date: new Date(input.current_regimen_initiation_date),
+        requiredVerification: 0,
+        currentRegimenInitiationDate: input.current_regimen_initiation_date,
         // Add new fields - properly handle empty strings and invalid numbers to avoid NaN
-        patient_phone_number: input.patient_phone_number || null,
-        requested_on: input.requested_on ? new Date(input.requested_on) : null,
-        clinician_id: (input.clinician_id && input.clinician_id.trim() !== "" && !isNaN(Number(input.clinician_id))) ? Number(input.clinician_id) : null,
-        current_regimen_id: (input.current_regimen_id && input.current_regimen_id.trim() !== "" && !isNaN(Number(input.current_regimen_id))) ? Number(input.current_regimen_id) : null,
-        tb_treatment_phase_id: (input.tb_treatment_phase_id && input.tb_treatment_phase_id.trim() !== "" && !isNaN(Number(input.tb_treatment_phase_id))) ? Number(input.tb_treatment_phase_id) : null,
-        arv_adherence_id: (input.arv_adherence_id && input.arv_adherence_id.trim() !== "" && !isNaN(Number(input.arv_adherence_id))) ? Number(input.arv_adherence_id) : null,
-        treatment_indication_id: (input.treatment_indication_id && input.treatment_indication_id.trim() !== "" && !isNaN(Number(input.treatment_indication_id))) ? Number(input.treatment_indication_id) : null,
-        treatment_care_approach: (input.treatment_care_approach && input.treatment_care_approach.trim() !== "" && !isNaN(Number(input.treatment_care_approach))) ? Number(input.treatment_care_approach) : null,
-        current_who_stage: (input.current_who_stage && input.current_who_stage.trim() !== "" && !isNaN(Number(input.current_who_stage))) ? Number(input.current_who_stage) : null,
+        patientPhoneNumber: input.patient_phone_number || null,
+        requestedOn: input.requested_on || null,
+        clinicianId: (input.clinician_id && input.clinician_id.trim() !== "" && !isNaN(Number(input.clinician_id))) ? Number(input.clinician_id) : null,
+        currentRegimenId: (input.current_regimen_id && input.current_regimen_id.trim() !== "" && !isNaN(Number(input.current_regimen_id))) ? Number(input.current_regimen_id) : null,
+        tbTreatmentPhaseId: (input.tb_treatment_phase_id && input.tb_treatment_phase_id.trim() !== "" && !isNaN(Number(input.tb_treatment_phase_id))) ? Number(input.tb_treatment_phase_id) : null,
+        arvAdherenceId: (input.arv_adherence_id && input.arv_adherence_id.trim() !== "" && !isNaN(Number(input.arv_adherence_id))) ? Number(input.arv_adherence_id) : null,
+        treatmentIndicationId: (input.treatment_indication_id && input.treatment_indication_id.trim() !== "" && !isNaN(Number(input.treatment_indication_id))) ? Number(input.treatment_indication_id) : null,
+        treatmentCareApproach: (input.treatment_care_approach && input.treatment_care_approach.trim() !== "" && !isNaN(Number(input.treatment_care_approach))) ? Number(input.treatment_care_approach) : null,
+        currentWhoStage: (input.current_who_stage && input.current_who_stage.trim() !== "" && !isNaN(Number(input.current_who_stage))) ? Number(input.current_who_stage) : null,
       };
 
       const sampleResult = await vlDb
-        .insert(vl_samples)
+        .insert(vlSamples)
         .values(sampleData);
 
       return {
@@ -213,42 +213,42 @@ export const viralLoadRouter = createTRPCRouter({
 
       const sample = await vlDb
         .select({
-          id: vl_samples.id,
-          patient_unique_id: vl_samples.patient_unique_id,
-          vl_sample_id: vl_samples.vl_sample_id,
-          form_number: vl_samples.form_number,
-          pregnant: vl_samples.pregnant,
-          anc_number: vl_samples.anc_number,
-          breast_feeding: vl_samples.breast_feeding,
-          active_tb_status: vl_samples.active_tb_status,
-          date_collected: vl_samples.date_collected,
-          date_received: vl_samples.date_received,
-          treatment_initiation_date: vl_samples.treatment_initiation_date,
-          sample_type: vl_samples.sample_type,
-          verified: vl_samples.verified,
-          in_worksheet: vl_samples.in_worksheet,
-          created_at: vl_samples.created_at,
-          updated_at: vl_samples.updated_at,
-          created_by_id: vl_samples.created_by_id,
-          facility_id: vl_samples.facility_id,
-          patient_id: vl_samples.patient_id,
-          current_regimen_initiation_date: vl_samples.current_regimen_initiation_date,
-          patient_phone_number: vl_samples.patient_phone_number,
-          requested_on: vl_samples.requested_on,
+          id: vlSamples.id,
+          patientUniqueId: vlSamples.patientUniqueId,
+          vlSampleId: vlSamples.vlSampleId,
+          formNumber: vlSamples.formNumber,
+          pregnant: vlSamples.pregnant,
+          ancNumber: vlSamples.ancNumber,
+          breastFeeding: vlSamples.breastFeeding,
+          activeTbStatus: vlSamples.activeTbStatus,
+          dateCollected: vlSamples.dateCollected,
+          dateReceived: vlSamples.dateReceived,
+          treatmentInitiationDate: vlSamples.treatmentInitiationDate,
+          sampleType: vlSamples.sampleType,
+          verified: vlSamples.verified,
+          inWorksheet: vlSamples.inWorksheet,
+          createdAt: vlSamples.createdAt,
+          updatedAt: vlSamples.updatedAt,
+          createdById: vlSamples.createdById,
+          facilityId: vlSamples.facilityId,
+          patientId: vlSamples.patientId,
+          currentRegimenInitiationDate: vlSamples.currentRegimenInitiationDate,
+          patientPhoneNumber: vlSamples.patientPhoneNumber,
+          requestedOn: vlSamples.requestedOn,
           // Add missing fields that exist in database schema
-          clinician_id: vl_samples.clinician_id,
-          current_regimen_id: vl_samples.current_regimen_id,
-          tb_treatment_phase_id: vl_samples.tb_treatment_phase_id,
-          arv_adherence_id: vl_samples.arv_adherence_id,
-          treatment_indication_id: vl_samples.treatment_indication_id,
-          treatment_care_approach: vl_samples.treatment_care_approach,
-          current_who_stage: vl_samples.current_who_stage,
+          clinicianId: vlSamples.clinicianId,
+          currentRegimenId: vlSamples.currentRegimenId,
+          tbTreatmentPhaseId: vlSamples.tbTreatmentPhaseId,
+          arvAdherenceId: vlSamples.arvAdherenceId,
+          treatmentIndicationId: vlSamples.treatmentIndicationId,
+          treatmentCareApproach: vlSamples.treatmentCareApproach,
+          currentWhoStage: vlSamples.currentWhoStage,
         })
-        .from(vl_samples)
+        .from(vlSamples)
         .where(
           and(
-            eq(vl_samples.vl_sample_id, input.sampleId),
-            eq(vl_samples.facility_id, user.facility_id!)
+            eq(vlSamples.vlSampleId, input.sampleId),
+            eq(vlSamples.facilityId, user.facility_id!)
           )
         )
         .limit(1);
@@ -257,17 +257,17 @@ export const viralLoadRouter = createTRPCRouter({
         throw new Error("Sample not found or access denied");
       }
 
-      // Get patient data from vl_patients table
+      // Get patient data from vlPatients table
       const patient = await vlDb
         .select({
-          unique_id: vl_patients.unique_id,
-          art_number: vl_patients.art_number,
-          other_id: vl_patients.other_id,
-          gender: vl_patients.gender,
-          dob: vl_patients.dob,
+          uniqueId: vlPatients.uniqueId,
+          artNumber: vlPatients.artNumber,
+          otherId: vlPatients.otherId,
+          gender: vlPatients.gender,
+          dob: vlPatients.dob,
         })
-        .from(vl_patients)
-        .where(eq(vl_patients.unique_id, sample[0].patient_unique_id!))
+        .from(vlPatients)
+        .where(eq(vlPatients.uniqueId, sample[0].patientUniqueId!))
         .limit(1);
 
       return {
@@ -323,66 +323,66 @@ export const viralLoadRouter = createTRPCRouter({
       // Update the sample record
       const sampleUpdateData = {
         pregnant: input.pregnant || null,
-        anc_number: input.anc_number || null,
-        breast_feeding: input.breast_feeding || null,
-        active_tb_status: input.active_tb_status || null,
-        treatment_initiation_date: new Date(input.treatment_initiation_date),
-        current_regimen_initiation_date: new Date(input.current_regimen_initiation_date),
-        updated_at: new Date(),
+        ancNumber: input.anc_number || null,
+        breastFeeding: input.breast_feeding || null,
+        activeTbStatus: input.active_tb_status || null,
+        treatmentInitiationDate: input.treatment_initiation_date,
+        currentRegimenInitiationDate: input.current_regimen_initiation_date,
+        updatedAt: new Date().toISOString(),
         // Add new fields - properly handle empty strings and invalid numbers to avoid NaN
-        patient_phone_number: input.patient_phone_number || null,
-        requested_on: input.requested_on ? new Date(input.requested_on) : null,
-        clinician_id: (input.clinician_id && input.clinician_id.trim() !== "" && !isNaN(Number(input.clinician_id))) ? Number(input.clinician_id) : null,
-        current_regimen_id: (input.current_regimen_id && input.current_regimen_id.trim() !== "" && !isNaN(Number(input.current_regimen_id))) ? Number(input.current_regimen_id) : null,
-        tb_treatment_phase_id: (input.tb_treatment_phase_id && input.tb_treatment_phase_id.trim() !== "" && !isNaN(Number(input.tb_treatment_phase_id))) ? Number(input.tb_treatment_phase_id) : null,
-        arv_adherence_id: (input.arv_adherence_id && input.arv_adherence_id.trim() !== "" && !isNaN(Number(input.arv_adherence_id))) ? Number(input.arv_adherence_id) : null,
-        treatment_indication_id: (input.treatment_indication_id && input.treatment_indication_id.trim() !== "" && !isNaN(Number(input.treatment_indication_id))) ? Number(input.treatment_indication_id) : null,
-        treatment_care_approach: (input.treatment_care_approach && input.treatment_care_approach.trim() !== "" && !isNaN(Number(input.treatment_care_approach))) ? Number(input.treatment_care_approach) : null,
-        current_who_stage: (input.current_who_stage && input.current_who_stage.trim() !== "" && !isNaN(Number(input.current_who_stage))) ? Number(input.current_who_stage) : null,
+        patientPhoneNumber: input.patient_phone_number || null,
+        requestedOn: input.requested_on || null,
+        clinicianId: (input.clinician_id && input.clinician_id.trim() !== "" && !isNaN(Number(input.clinician_id))) ? Number(input.clinician_id) : null,
+        currentRegimenId: (input.current_regimen_id && input.current_regimen_id.trim() !== "" && !isNaN(Number(input.current_regimen_id))) ? Number(input.current_regimen_id) : null,
+        tbTreatmentPhaseId: (input.tb_treatment_phase_id && input.tb_treatment_phase_id.trim() !== "" && !isNaN(Number(input.tb_treatment_phase_id))) ? Number(input.tb_treatment_phase_id) : null,
+        arvAdherenceId: (input.arv_adherence_id && input.arv_adherence_id.trim() !== "" && !isNaN(Number(input.arv_adherence_id))) ? Number(input.arv_adherence_id) : null,
+        treatmentIndicationId: (input.treatment_indication_id && input.treatment_indication_id.trim() !== "" && !isNaN(Number(input.treatment_indication_id))) ? Number(input.treatment_indication_id) : null,
+        treatmentCareApproach: (input.treatment_care_approach && input.treatment_care_approach.trim() !== "" && !isNaN(Number(input.treatment_care_approach))) ? Number(input.treatment_care_approach) : null,
+        currentWhoStage: (input.current_who_stage && input.current_who_stage.trim() !== "" && !isNaN(Number(input.current_who_stage))) ? Number(input.current_who_stage) : null,
       };
 
       await vlDb
-        .update(vl_samples)
+        .update(vlSamples)
         .set(sampleUpdateData)
         .where(
           and(
-            eq(vl_samples.vl_sample_id, input.sampleId),
-            eq(vl_samples.facility_id, user.facility_id!)
+            eq(vlSamples.vlSampleId, input.sampleId),
+            eq(vlSamples.facilityId, user.facility_id!)
           )
         );
 
       // Update patient record if it exists
       const patientUpdateData = {
-        art_number: input.art_number,
-        other_id: input.other_id || null,
+        artNumber: input.art_number,
+        otherId: input.other_id || null,
         gender: input.gender,
-        dob: new Date(input.dob),
-        treatment_initiation_date: new Date(input.treatment_initiation_date),
-        current_regimen_initiation_date: new Date(input.current_regimen_initiation_date),
-        updated_at: new Date(),
+        dob: input.dob,
+        treatmentInitiationDate: input.treatment_initiation_date,
+        currentRegimenInitiationDate: input.current_regimen_initiation_date,
+        updatedAt: new Date().toISOString(),
         // Add age and phone number to patient record as well
         age: input.age || null,
         age_units: input.age_units || null,
-        patient_phone_number: input.patient_phone_number || null,
+        patientPhoneNumber: input.patient_phone_number || null,
       };
 
-      // Get the sample to find patient_unique_id
+      // Get the sample to find patientUniqueId
       const sample = await vlDb
-        .select({ patient_unique_id: vl_samples.patient_unique_id })
-        .from(vl_samples)
+        .select({ patientUniqueId: vlSamples.patientUniqueId })
+        .from(vlSamples)
         .where(
           and(
-            eq(vl_samples.vl_sample_id, input.sampleId),
-            eq(vl_samples.facility_id, user.facility_id!)
+            eq(vlSamples.vlSampleId, input.sampleId),
+            eq(vlSamples.facilityId, user.facility_id!)
           )
         )
         .limit(1);
 
-      if (sample[0]?.patient_unique_id) {
+      if (sample[0]?.patientUniqueId) {
         await vlDb
-          .update(vl_patients)
+          .update(vlPatients)
           .set(patientUpdateData)
-          .where(eq(vl_patients.unique_id, sample[0].patient_unique_id));
+          .where(eq(vlPatients.uniqueId, sample[0].patientUniqueId));
       }
 
       return {
@@ -410,34 +410,34 @@ export const viralLoadRouter = createTRPCRouter({
       const vlDb = await getVlLimsDb();
 
       const updateData: Record<string, any> = {
-        updated_at: new Date(),
+        updatedAt: new Date().toISOString(),
       };
 
       switch (input.status) {
         case "collected":
-          updateData.date_collected = new Date();
+          updateData.dateCollected = new Date().toISOString().split('T')[0];
           break;
         case "received":
-          updateData.date_received = new Date();
-          updateData.received_by_id = user.id;
+          updateData.dateReceived = new Date().toISOString().split('T')[0];
+          updateData.receivedById = user.id;
           break;
         case "processing":
-          updateData.in_worksheet = 1;
+          updateData.inWorksheet = 1;
           break;
         case "completed":
           updateData.verified = 1;
-          updateData.verifier_id = user.id;
-          updateData.verified_at = new Date();
+          updateData.verifierId = user.id;
+          updateData.verifiedAt = new Date().toISOString().split('T')[0];
           break;
       }
 
       await vlDb
-        .update(vl_samples)
+        .update(vlSamples)
         .set(updateData)
         .where(
           and(
-            eq(vl_samples.vl_sample_id, input.sampleId),
-            eq(vl_samples.facility_id, user.facility_id!)
+            eq(vlSamples.vlSampleId, input.sampleId),
+            eq(vlSamples.facilityId, user.facility_id!)
           )
         );
 
@@ -465,18 +465,18 @@ export const viralLoadRouter = createTRPCRouter({
     // Get counts for different sample statuses
     const allSamples = await vlDb
       .select({
-        id: vl_samples.id,
-        date_collected: vl_samples.date_collected,
-        date_received: vl_samples.date_received,
-        verified: vl_samples.verified,
-        in_worksheet: vl_samples.in_worksheet,
+        id: vlSamples.id,
+        dateCollected: vlSamples.dateCollected,
+        dateReceived: vlSamples.dateReceived,
+        verified: vlSamples.verified,
+        inWorksheet: vlSamples.inWorksheet,
       })
-      .from(vl_samples)
-      .where(eq(vl_samples.facility_id, user.facility_id!));
+      .from(vlSamples)
+      .where(eq(vlSamples.facilityId, user.facility_id!));
 
     const totalSamples = allSamples.length;
-    const pendingSamples = allSamples.filter((s) => !s.date_collected).length;
-    const collectedSamples = allSamples.filter((s) => s.date_collected && !s.date_received).length;
+    const pendingSamples = allSamples.filter((s) => !s.dateCollected).length;
+    const collectedSamples = allSamples.filter((s) => s.dateCollected && !s.dateReceived).length;
     const completedSamples = allSamples.filter((s) => s.verified === 1).length;
 
     return {
@@ -511,29 +511,29 @@ export const viralLoadRouter = createTRPCRouter({
       // Get all samples for the facility (we'll filter in JavaScript for simplicity)
       const allSamples = await vlDb
         .select({
-          id: vl_samples.id,
-          vl_sample_id: vl_samples.vl_sample_id,
-          patient_unique_id: vl_samples.patient_unique_id,
-          form_number: vl_samples.form_number,
-          sample_type: vl_samples.sample_type,
-          date_collected: vl_samples.date_collected,
-          date_received: vl_samples.date_received,
-          facility_id: vl_samples.facility_id,
-          verified: vl_samples.verified,
-          created_at: vl_samples.created_at,
-          reception_art_number: vl_samples.reception_art_number,
-          data_art_number: vl_samples.data_art_number,
-          facility_reference: vl_samples.facility_reference,
+          id: vlSamples.id,
+          vlSampleId: vlSamples.vlSampleId,
+          patientUniqueId: vlSamples.patientUniqueId,
+          formNumber: vlSamples.formNumber,
+          sampleType: vlSamples.sampleType,
+          dateCollected: vlSamples.dateCollected,
+          dateReceived: vlSamples.dateReceived,
+          facilityId: vlSamples.facilityId,
+          verified: vlSamples.verified,
+          createdAt: vlSamples.createdAt,
+          receptionArtNumber: vlSamples.receptionArtNumber,
+          dataArtNumber: vlSamples.dataArtNumber,
+          facilityReference: vlSamples.facilityReference,
         })
-        .from(vl_samples)
-        .where(eq(vl_samples.facility_id, user.facility_id!))
-        .orderBy(desc(vl_samples.created_at));
+        .from(vlSamples)
+        .where(eq(vlSamples.facilityId, user.facility_id!))
+        .orderBy(desc(vlSamples.createdAt));
 
       // Filter samples that have been collected but not yet received (ready for packaging)
       const collectedSamples = allSamples.filter(sample => 
-        sample.date_collected && // Has collection date
-        !sample.date_received && // Not yet received
-        !sample.facility_reference // Not yet packaged
+        sample.dateCollected && // Has collection date
+        !sample.dateReceived && // Not yet received
+        !sample.facilityReference // Not yet packaged
       );
 
       // Apply pagination
@@ -567,19 +567,19 @@ export const viralLoadRouter = createTRPCRouter({
       const currentDate = new Date();
       const updatePromises = input.sampleIds.map(sampleId =>
         vlDb
-          .update(vl_samples)
+          .update(vlSamples)
           .set({
-            // Use facility_reference field to store package identifier
-            facility_reference: input.packageIdentifier,
-            // Set date_received when packaging (indicates sample has been received at lab)
-            date_received: currentDate,
-            updated_at: currentDate,
-            updated_by_id: user.id,
+            // Use facilityReference field to store package identifier
+            facilityReference: input.packageIdentifier,
+            // Set dateReceived when packaging (indicates sample has been received at lab)
+            dateReceived: currentDate.toISOString(),
+            updatedAt: currentDate.toISOString(),
+            updatedById: user.id,
           })
           .where(
             and(
-              eq(vl_samples.vl_sample_id, sampleId),
-              eq(vl_samples.facility_id, user.facility_id!)
+              eq(vlSamples.vlSampleId, sampleId),
+              eq(vlSamples.facilityId, user.facility_id!)
             )
           )
       );
@@ -617,9 +617,9 @@ export const viralLoadRouter = createTRPCRouter({
       const vlDb = await getVlLimsDb();
 
       // Build where conditions
-      const whereConditions = [eq(vl_samples.facility_id, user.facility_id!)];
+      const whereConditions = [eq(vlSamples.facilityId, user.facility_id!)];
       
-      // Only get samples that have been packaged (have facility_reference)
+      // Only get samples that have been packaged (have facilityReference)
       // Note: We'll filter this in JavaScript since it's easier with the current setup
       
       if (input.packageIdentifier) {
@@ -629,44 +629,44 @@ export const viralLoadRouter = createTRPCRouter({
       // Get all samples for the facility
       const allSamples = await vlDb
         .select({
-          id: vl_samples.id,
-          vl_sample_id: vl_samples.vl_sample_id,
-          patient_unique_id: vl_samples.patient_unique_id,
-          form_number: vl_samples.form_number,
-          sample_type: vl_samples.sample_type,
-          date_collected: vl_samples.date_collected,
-          date_received: vl_samples.date_received,
-          facility_id: vl_samples.facility_id,
-          verified: vl_samples.verified,
-          created_at: vl_samples.created_at,
-          updated_at: vl_samples.updated_at,
-          reception_art_number: vl_samples.reception_art_number,
-          data_art_number: vl_samples.data_art_number,
-          facility_reference: vl_samples.facility_reference,
-          updated_by_id: vl_samples.updated_by_id,
+          id: vlSamples.id,
+          vlSampleId: vlSamples.vlSampleId,
+          patientUniqueId: vlSamples.patientUniqueId,
+          formNumber: vlSamples.formNumber,
+          sampleType: vlSamples.sampleType,
+          dateCollected: vlSamples.dateCollected,
+          dateReceived: vlSamples.dateReceived,
+          facilityId: vlSamples.facilityId,
+          verified: vlSamples.verified,
+          createdAt: vlSamples.createdAt,
+          updatedAt: vlSamples.updatedAt,
+          receptionArtNumber: vlSamples.receptionArtNumber,
+          dataArtNumber: vlSamples.dataArtNumber,
+          facilityReference: vlSamples.facilityReference,
+          updatedById: vlSamples.updatedById,
         })
-        .from(vl_samples)
+        .from(vlSamples)
         .where(and(...whereConditions))
-        .orderBy(desc(vl_samples.updated_at));
+        .orderBy(desc(vlSamples.updatedAt));
 
-      // Filter packaged samples (samples with date_received and facility_reference)
+      // Filter packaged samples (samples with dateReceived and facilityReference)
       let packagedSamples = allSamples.filter(sample => 
-        sample.date_received && // Has been received (packaged)
-        sample.facility_reference && sample.facility_reference.trim() !== ""
+        sample.dateReceived && // Has been received (packaged)
+        sample.facilityReference && sample.facilityReference.trim() !== ""
       );
 
       // Filter by specific package if requested
       if (input.packageIdentifier) {
         packagedSamples = packagedSamples.filter(sample =>
-          sample.facility_reference === input.packageIdentifier
+          sample.facilityReference === input.packageIdentifier
         );
       }
 
       // Get unique package identifiers for the dropdown
       const packages = [...new Set(
         allSamples
-          .filter(sample => sample.facility_reference && sample.facility_reference.trim() !== "")
-          .map(sample => sample.facility_reference!)
+          .filter(sample => sample.facilityReference && sample.facilityReference.trim() !== "")
+          .map(sample => sample.facilityReference!)
       )].sort();
 
       // Apply pagination
@@ -697,37 +697,37 @@ export const viralLoadRouter = createTRPCRouter({
       // Get all packaged samples
       const allSamples = await vlDb
         .select({
-          facility_reference: vl_samples.facility_reference,
-          date_collected: vl_samples.date_collected,
-          updated_at: vl_samples.updated_at,
-          sample_type: vl_samples.sample_type,
+          facilityReference: vlSamples.facilityReference,
+          dateCollected: vlSamples.dateCollected,
+          updatedAt: vlSamples.updatedAt,
+          sampleType: vlSamples.sampleType,
         })
-        .from(vl_samples)
-        .where(eq(vl_samples.facility_id, user.facility_id!));
+        .from(vlSamples)
+        .where(eq(vlSamples.facilityId, user.facility_id!));
 
       // Filter and group by package
       const packagedSamples = allSamples.filter(sample => 
-        sample.facility_reference && sample.facility_reference.trim() !== ""
+        sample.facilityReference && sample.facilityReference.trim() !== ""
       );
 
       // Group by package identifier
       const packageGroups = packagedSamples.reduce((acc, sample) => {
-        const packageId = sample.facility_reference!;
+        const packageId = sample.facilityReference!;
         if (!acc[packageId]) {
           acc[packageId] = {
             packageIdentifier: packageId,
             sampleCount: 0,
-            lastUpdated: sample.updated_at,
+            lastUpdated: sample.updatedAt,
             sampleTypes: new Set<string>(),
           };
         }
         acc[packageId].sampleCount++;
-        if (sample.sample_type) {
-          acc[packageId].sampleTypes.add(sample.sample_type);
+        if (sample.sampleType) {
+          acc[packageId].sampleTypes.add(sample.sampleType);
         }
         // Keep the most recent update date
-        if (sample.updated_at && sample.updated_at > acc[packageId].lastUpdated) {
-          acc[packageId].lastUpdated = sample.updated_at;
+        if (sample.updatedAt && sample.updatedAt > acc[packageId].lastUpdated) {
+          acc[packageId].lastUpdated = sample.updatedAt;
         }
         return acc;
       }, {} as Record<string, any>);
@@ -773,34 +773,34 @@ export const viralLoadRouter = createTRPCRouter({
       // Get all samples for the facility that have been verified (completed)
       const allSamples = await vlDb
         .select({
-          id: vl_samples.id,
-          vl_sample_id: vl_samples.vl_sample_id,
-          patient_unique_id: vl_samples.patient_unique_id,
-          form_number: vl_samples.form_number,
-          sample_type: vl_samples.sample_type,
-          date_collected: vl_samples.date_collected,
-          date_received: vl_samples.date_received,
-          verified: vl_samples.verified,
-          verified_at: vl_samples.verified_at,
-          created_at: vl_samples.created_at,
-          updated_at: vl_samples.updated_at,
-          reception_art_number: vl_samples.reception_art_number,
-          data_art_number: vl_samples.data_art_number,
-          pregnant: vl_samples.pregnant,
-          breast_feeding: vl_samples.breast_feeding,
-          active_tb_status: vl_samples.active_tb_status,
-          treatment_initiation_date: vl_samples.treatment_initiation_date,
-          current_regimen_initiation_date: vl_samples.current_regimen_initiation_date,
-          facility_id: vl_samples.facility_id,
+          id: vlSamples.id,
+          vlSampleId: vlSamples.vlSampleId,
+          patientUniqueId: vlSamples.patientUniqueId,
+          formNumber: vlSamples.formNumber,
+          sampleType: vlSamples.sampleType,
+          dateCollected: vlSamples.dateCollected,
+          dateReceived: vlSamples.dateReceived,
+          verified: vlSamples.verified,
+          verifiedAt: vlSamples.verifiedAt,
+          createdAt: vlSamples.createdAt,
+          updatedAt: vlSamples.updatedAt,
+          receptionArtNumber: vlSamples.receptionArtNumber,
+          dataArtNumber: vlSamples.dataArtNumber,
+          pregnant: vlSamples.pregnant,
+          breastFeeding: vlSamples.breastFeeding,
+          activeTbStatus: vlSamples.activeTbStatus,
+          treatmentInitiationDate: vlSamples.treatmentInitiationDate,
+          currentRegimenInitiationDate: vlSamples.currentRegimenInitiationDate,
+          facilityId: vlSamples.facilityId,
           
           // Actual result fields from database
-          last_value: vl_samples.last_value,
-          last_test_date: vl_samples.last_test_date,
-          viral_load_testing_id: vl_samples.viral_load_testing_id,
+          lastValue: vlSamples.lastValue,
+          lastTestDate: vlSamples.lastTestDate,
+          viralLoadTestingId: vlSamples.viralLoadTestingId,
         })
-        .from(vl_samples)
-        .where(eq(vl_samples.facility_id, user.facility_id!))
-        .orderBy(desc(vl_samples.verified_at), desc(vl_samples.updated_at));
+        .from(vlSamples)
+        .where(eq(vlSamples.facilityId, user.facility_id!))
+        .orderBy(desc(vlSamples.verifiedAt), desc(vlSamples.updatedAt));
 
       // Filter only verified/completed samples (those with results)
       let completedSamples = allSamples.filter(sample => sample.verified === 1);
@@ -809,11 +809,11 @@ export const viralLoadRouter = createTRPCRouter({
       if (input.searchTerm && input.searchTerm.trim() !== "") {
         const searchTerm = input.searchTerm.toLowerCase();
         completedSamples = completedSamples.filter(sample =>
-          sample.patient_unique_id?.toLowerCase().includes(searchTerm) ||
-          sample.vl_sample_id?.toLowerCase().includes(searchTerm) ||
-          sample.reception_art_number?.toLowerCase().includes(searchTerm) ||
-          sample.data_art_number?.toLowerCase().includes(searchTerm) ||
-          sample.form_number?.toLowerCase().includes(searchTerm)
+          sample.patientUniqueId?.toLowerCase().includes(searchTerm) ||
+          sample.vlSampleId?.toLowerCase().includes(searchTerm) ||
+          sample.receptionArtNumber?.toLowerCase().includes(searchTerm) ||
+          sample.dataArtNumber?.toLowerCase().includes(searchTerm) ||
+          sample.formNumber?.toLowerCase().includes(searchTerm)
         );
       }
 
@@ -828,8 +828,8 @@ export const viralLoadRouter = createTRPCRouter({
         let detectionStatus = "unknown";
         let interpretation = "Pending";
         
-        if (sample.last_value && typeof sample.last_value === 'string') {
-          const lastValueStr = sample.last_value.toLowerCase().trim();
+        if (sample.lastValue && typeof sample.lastValue === 'string') {
+          const lastValueStr = sample.lastValue.toLowerCase().trim();
           
           // Handle "not detected" cases
           if (lastValueStr.includes('not detected') || lastValueStr.includes('undetected') || lastValueStr === 'nd') {
@@ -859,43 +859,43 @@ export const viralLoadRouter = createTRPCRouter({
         }
         
         // If no result available, show as pending
-        if (!sample.last_value && sample.verified === 1) {
+        if (!sample.lastValue && sample.verified === 1) {
           interpretation = "Result Pending";
         }
 
         return {
-          id: sample.vl_sample_id || sample.id.toString(),
-          sampleId: sample.vl_sample_id || `VL-${sample.id}`,
-          patientId: sample.reception_art_number || sample.data_art_number || sample.patient_unique_id || `P-${sample.id}`,
+          id: sample.vlSampleId || sample.id.toString(),
+          sampleId: sample.vlSampleId || `VL-${sample.id}`,
+          patientId: sample.receptionArtNumber || sample.dataArtNumber || sample.patientUniqueId || `P-${sample.id}`,
           
           // Real result data from database
           viralLoadValue,
           viralLoadUnit: "copies/mL",
           detectionStatus,
           interpretation,
-          resultDate: sample.last_test_date ? new Date(sample.last_test_date).toISOString().split('T')[0] : 
-                     (sample.verified_at ? new Date(sample.verified_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
-          resultTime: sample.verified_at ? new Date(sample.verified_at).toTimeString().slice(0, 5) : "14:30",
+          resultDate: sample.lastTestDate ? new Date(sample.lastTestDate).toISOString().split('T')[0] : 
+                     (sample.verifiedAt ? new Date(sample.verifiedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
+          resultTime: sample.verifiedAt ? new Date(sample.verifiedAt).toTimeString().slice(0, 5) : "14:30",
           
           // Sample information
-          sampleType: sample.sample_type === "P" ? "Plasma" : sample.sample_type === "D" ? "DBS" : "Whole Blood",
-          dateCollected: sample.date_collected ? new Date(sample.date_collected).toISOString().split('T')[0] : null,
-          dateReceived: sample.date_received ? new Date(sample.date_received).toISOString().split('T')[0] : null,
-          dateProcessed: sample.verified_at ? new Date(sample.verified_at).toISOString().split('T')[0] : null,
+          sampleType: sample.sampleType === "P" ? "Plasma" : sample.sampleType === "D" ? "DBS" : "Whole Blood",
+          dateCollected: sample.dateCollected ? new Date(sample.dateCollected).toISOString().split('T')[0] : null,
+          dateReceived: sample.dateReceived ? new Date(sample.dateReceived).toISOString().split('T')[0] : null,
+          dateProcessed: sample.verifiedAt ? new Date(sample.verifiedAt).toISOString().split('T')[0] : null,
           
           // Treatment information
-          treatmentInitiationDate: sample.treatment_initiation_date ? new Date(sample.treatment_initiation_date).toISOString().split('T')[0] : null,
-          currentRegimenInitiationDate: sample.current_regimen_initiation_date ? new Date(sample.current_regimen_initiation_date).toISOString().split('T')[0] : null,
+          treatmentInitiationDate: sample.treatmentInitiationDate ? new Date(sample.treatmentInitiationDate).toISOString().split('T')[0] : null,
+          currentRegimenInitiationDate: sample.currentRegimenInitiationDate ? new Date(sample.currentRegimenInitiationDate).toISOString().split('T')[0] : null,
           
           // Clinical information
           pregnant: sample.pregnant,
-          breastFeeding: sample.breast_feeding,
-          activeTbStatus: sample.active_tb_status,
+          breastFeeding: sample.breastFeeding,
+          activeTbStatus: sample.activeTbStatus,
           
           // Meta information
-          formNumber: sample.form_number,
-          createdAt: sample.created_at,
-          updatedAt: sample.updated_at,
+          formNumber: sample.formNumber,
+          createdAt: sample.createdAt,
+          updatedAt: sample.updatedAt,
           
           // Clinical significance based on real results
           clinicalSignificance: interpretation === "Suppressed" 
@@ -920,7 +920,7 @@ export const viralLoadRouter = createTRPCRouter({
           facility: user.facility_name || "Health Facility",
           requestingClinician: "Dr. Clinical Officer",
           
-          status: sample.last_value ? "completed" : "pending"
+          status: sample.lastValue ? "completed" : "pending"
         };
       });
 
@@ -942,39 +942,39 @@ export const viralLoadRouter = createTRPCRouter({
       
       const vlDb = await getVlLimsDb();
 
-      // Find the sample by vl_sample_id or id
+      // Find the sample by vlSampleId or id
       const sample = await vlDb
         .select({
-          id: vl_samples.id,
-          vl_sample_id: vl_samples.vl_sample_id,
-          patient_unique_id: vl_samples.patient_unique_id,
-          form_number: vl_samples.form_number,
-          sample_type: vl_samples.sample_type,
-          date_collected: vl_samples.date_collected,
-          date_received: vl_samples.date_received,
-          verified: vl_samples.verified,
-          verified_at: vl_samples.verified_at,
-          created_at: vl_samples.created_at,
-          updated_at: vl_samples.updated_at,
-          reception_art_number: vl_samples.reception_art_number,
-          data_art_number: vl_samples.data_art_number,
-          pregnant: vl_samples.pregnant,
-          breast_feeding: vl_samples.breast_feeding,
-          active_tb_status: vl_samples.active_tb_status,
-          treatment_initiation_date: vl_samples.treatment_initiation_date,
-          current_regimen_initiation_date: vl_samples.current_regimen_initiation_date,
-          facility_id: vl_samples.facility_id,
+          id: vlSamples.id,
+          vlSampleId: vlSamples.vlSampleId,
+          patientUniqueId: vlSamples.patientUniqueId,
+          formNumber: vlSamples.formNumber,
+          sampleType: vlSamples.sampleType,
+          dateCollected: vlSamples.dateCollected,
+          dateReceived: vlSamples.dateReceived,
+          verified: vlSamples.verified,
+          verifiedAt: vlSamples.verifiedAt,
+          createdAt: vlSamples.createdAt,
+          updatedAt: vlSamples.updatedAt,
+          receptionArtNumber: vlSamples.receptionArtNumber,
+          dataArtNumber: vlSamples.dataArtNumber,
+          pregnant: vlSamples.pregnant,
+          breastFeeding: vlSamples.breastFeeding,
+          activeTbStatus: vlSamples.activeTbStatus,
+          treatmentInitiationDate: vlSamples.treatmentInitiationDate,
+          currentRegimenInitiationDate: vlSamples.currentRegimenInitiationDate,
+          facilityId: vlSamples.facilityId,
           
           // Actual result fields from database
-          last_value: vl_samples.last_value,
-          last_test_date: vl_samples.last_test_date,
-          viral_load_testing_id: vl_samples.viral_load_testing_id,
+          lastValue: vlSamples.lastValue,
+          lastTestDate: vlSamples.lastTestDate,
+          viralLoadTestingId: vlSamples.viralLoadTestingId,
         })
-        .from(vl_samples)
+        .from(vlSamples)
         .where(
           and(
-            eq(vl_samples.facility_id, user.facility_id!),
-            eq(vl_samples.vl_sample_id, input.resultId)
+            eq(vlSamples.facilityId, user.facility_id!),
+            eq(vlSamples.vlSampleId, input.resultId)
           )
         )
         .limit(1);
@@ -990,8 +990,8 @@ export const viralLoadRouter = createTRPCRouter({
       let detectionStatus = "unknown";
       let interpretation = "Pending";
       
-      if (sampleData.last_value && typeof sampleData.last_value === 'string') {
-        const lastValueStr = sampleData.last_value.toLowerCase().trim();
+      if (sampleData.lastValue && typeof sampleData.lastValue === 'string') {
+        const lastValueStr = sampleData.lastValue.toLowerCase().trim();
         
         // Handle "not detected" cases
         if (lastValueStr.includes('not detected') || lastValueStr.includes('undetected') || lastValueStr === 'nd') {
@@ -1021,7 +1021,7 @@ export const viralLoadRouter = createTRPCRouter({
       }
       
       // If no result available, show as pending
-      if (!sampleData.last_value && sampleData.verified === 1) {
+      if (!sampleData.lastValue && sampleData.verified === 1) {
         interpretation = "Result Pending";
       }
 
@@ -1045,24 +1045,24 @@ export const viralLoadRouter = createTRPCRouter({
       ];
 
       return {
-        id: sampleData.vl_sample_id || sampleData.id.toString(),
-        sampleId: sampleData.vl_sample_id || `VL-${sampleData.id}`,
-        patientId: sampleData.reception_art_number || sampleData.data_art_number || sampleData.patient_unique_id || `P-${sampleData.id}`,
+        id: sampleData.vlSampleId || sampleData.id.toString(),
+        sampleId: sampleData.vlSampleId || `VL-${sampleData.id}`,
+        patientId: sampleData.receptionArtNumber || sampleData.dataArtNumber || sampleData.patientUniqueId || `P-${sampleData.id}`,
         
         // Real result data from database
         viralLoadValue,
         viralLoadUnit: "copies/mL",
         detectionStatus,
         interpretation,
-        resultDate: sampleData.last_test_date ? new Date(sampleData.last_test_date).toISOString().split('T')[0] : 
-                   (sampleData.verified_at ? new Date(sampleData.verified_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
-        resultTime: sampleData.verified_at ? new Date(sampleData.verified_at).toTimeString().slice(0, 5) : "14:30",
+        resultDate: sampleData.lastTestDate ? new Date(sampleData.lastTestDate).toISOString().split('T')[0] : 
+                   (sampleData.verifiedAt ? new Date(sampleData.verifiedAt).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]),
+        resultTime: sampleData.verifiedAt ? new Date(sampleData.verifiedAt).toTimeString().slice(0, 5) : "14:30",
         
         // Sample information
-        sampleType: sampleData.sample_type === "P" ? "Plasma" : sampleData.sample_type === "D" ? "DBS" : "Whole Blood",
-        dateCollected: sampleData.date_collected ? new Date(sampleData.date_collected).toISOString().split('T')[0] : null,
-        dateReceived: sampleData.date_received ? new Date(sampleData.date_received).toISOString().split('T')[0] : null,
-        dateProcessed: sampleData.verified_at ? new Date(sampleData.verified_at).toISOString().split('T')[0] : null,
+        sampleType: sampleData.sampleType === "P" ? "Plasma" : sampleData.sampleType === "D" ? "DBS" : "Whole Blood",
+        dateCollected: sampleData.dateCollected ? new Date(sampleData.dateCollected).toISOString().split('T')[0] : null,
+        dateReceived: sampleData.dateReceived ? new Date(sampleData.dateReceived).toISOString().split('T')[0] : null,
+        dateProcessed: sampleData.verifiedAt ? new Date(sampleData.verifiedAt).toISOString().split('T')[0] : null,
         
         // Extended information for detail view
         clinicalSignificance: interpretation === "Suppressed" 
@@ -1086,7 +1086,7 @@ export const viralLoadRouter = createTRPCRouter({
         referenceRange: "< 50 copies/mL (Suppressed)",
         
         // Patient information (would come from patient table in real system)
-        patientName: `Patient #${sampleData.reception_art_number || sampleData.data_art_number || sampleData.patient_unique_id}`,
+        patientName: `Patient #${sampleData.receptionArtNumber || sampleData.dataArtNumber || sampleData.patientUniqueId}`,
         gender: "Unknown", // Would come from patient table
         age: null, // Would come from patient table
         currentRegimen: "TDF/3TC/DTG", // Would come from regimen table
@@ -1103,13 +1103,13 @@ export const viralLoadRouter = createTRPCRouter({
         
         // Treatment information
         pregnant: sampleData.pregnant,
-        breastFeeding: sampleData.breast_feeding,
-        activeTbStatus: sampleData.active_tb_status,
-        treatmentInitiationDate: sampleData.treatment_initiation_date ? new Date(sampleData.treatment_initiation_date).toISOString().split('T')[0] : null,
-        currentRegimenInitiationDate: sampleData.current_regimen_initiation_date ? new Date(sampleData.current_regimen_initiation_date).toISOString().split('T')[0] : null,
+        breastFeeding: sampleData.breastFeeding,
+        activeTbStatus: sampleData.activeTbStatus,
+        treatmentInitiationDate: sampleData.treatmentInitiationDate ? new Date(sampleData.treatmentInitiationDate).toISOString().split('T')[0] : null,
+        currentRegimenInitiationDate: sampleData.currentRegimenInitiationDate ? new Date(sampleData.currentRegimenInitiationDate).toISOString().split('T')[0] : null,
         
-        formNumber: sampleData.form_number,
-        status: sampleData.last_value ? "completed" : "pending"
+        formNumber: sampleData.formNumber,
+        status: sampleData.lastValue ? "completed" : "pending"
       };
     }),
 
@@ -1133,25 +1133,25 @@ export const viralLoadRouter = createTRPCRouter({
 
       // Update the sample collection status
       const updateData: any = {
-        updated_at: new Date(),
-        updated_by_id: user.id,
+        updatedAt: new Date().toISOString(),
+        updatedById: user.id,
       };
 
       if (input.collected) {
         // Set collection date (either provided or current date)
-        updateData.date_collected = input.collectionDate || new Date();
+        updateData.dateCollected = input.collectionDate?.toISOString() || new Date().toISOString();
       } else {
         // Clear collection date if uncollecting
-        updateData.date_collected = null;
+        updateData.dateCollected = null;
       }
 
       await vlDb
-        .update(vl_samples)
+        .update(vlSamples)
         .set(updateData)
         .where(
           and(
-            eq(vl_samples.vl_sample_id, input.sampleId),
-            eq(vl_samples.facility_id, user.facility_id!)
+            eq(vlSamples.vlSampleId, input.sampleId),
+            eq(vlSamples.facilityId, user.facility_id!)
           )
         );
 
@@ -1182,16 +1182,16 @@ export const viralLoadRouter = createTRPCRouter({
       // Get all samples for the facility
       const allSamples = await vlDb
         .select({
-          id: vl_samples.id,
-          date_collected: vl_samples.date_collected,
-          date_received: vl_samples.date_received,
-          verified: vl_samples.verified,
-          created_at: vl_samples.created_at,
-          facility_reference: vl_samples.facility_reference,
-          last_value: vl_samples.last_value,
+          id: vlSamples.id,
+          dateCollected: vlSamples.dateCollected,
+          dateReceived: vlSamples.dateReceived,
+          verified: vlSamples.verified,
+          createdAt: vlSamples.createdAt,
+          facilityReference: vlSamples.facilityReference,
+          lastValue: vlSamples.lastValue,
         })
-        .from(vl_samples)
-        .where(eq(vl_samples.facility_id, user.facility_id!));
+        .from(vlSamples)
+        .where(eq(vlSamples.facilityId, user.facility_id!));
 
       // Handle "All Time" - find the earliest sample date
       let startDate: Date;
@@ -1200,7 +1200,7 @@ export const viralLoadRouter = createTRPCRouter({
       if (input.days >= 999) {
         // "All Time" - find earliest sample
         const earliestSample = allSamples.reduce((earliest, sample) => {
-          const sampleDate = new Date(sample.created_at);
+          const sampleDate = new Date(sample.createdAt);
           return !earliest || sampleDate < earliest ? sampleDate : earliest;
         }, null as Date | null);
         
@@ -1234,13 +1234,13 @@ export const viralLoadRouter = createTRPCRouter({
           const dateStr = currentDate.toISOString().split('T')[0];
           
           const samplesUpToThisDate = allSamples.filter(sample => {
-            const sampleDate = new Date(sample.created_at);
+            const sampleDate = new Date(sample.createdAt);
             return sampleDate <= monthEnd;
           });
 
-          const pending = samplesUpToThisDate.filter(s => !s.date_collected).length;
-          const packaged = samplesUpToThisDate.filter(s => s.facility_reference && s.date_received).length;
-          const results = samplesUpToThisDate.filter(s => s.verified === 1 && s.last_value).length;
+          const pending = samplesUpToThisDate.filter(s => !s.dateCollected).length;
+          const packaged = samplesUpToThisDate.filter(s => s.facilityReference && s.dateReceived).length;
+          const results = samplesUpToThisDate.filter(s => s.verified === 1 && s.lastValue).length;
 
           analyticsData.push({
             date: dateStr,
@@ -1265,13 +1265,13 @@ export const viralLoadRouter = createTRPCRouter({
           const dateStr = currentDate.toISOString().split('T')[0];
           
           const samplesUpToThisDate = allSamples.filter(sample => {
-            const sampleDate = new Date(sample.created_at);
+            const sampleDate = new Date(sample.createdAt);
             return sampleDate <= weekEnd;
           });
 
-          const pending = samplesUpToThisDate.filter(s => !s.date_collected).length;
-          const packaged = samplesUpToThisDate.filter(s => s.facility_reference && s.date_received).length;
-          const results = samplesUpToThisDate.filter(s => s.verified === 1 && s.last_value).length;
+          const pending = samplesUpToThisDate.filter(s => !s.dateCollected).length;
+          const packaged = samplesUpToThisDate.filter(s => s.facilityReference && s.dateReceived).length;
+          const results = samplesUpToThisDate.filter(s => s.verified === 1 && s.lastValue).length;
 
           analyticsData.push({
             date: dateStr,
@@ -1289,13 +1289,13 @@ export const viralLoadRouter = createTRPCRouter({
           const dateStr = currentDate.toISOString().split('T')[0];
           
           const samplesUpToThisDate = allSamples.filter(sample => {
-            const sampleDate = new Date(sample.created_at);
+            const sampleDate = new Date(sample.createdAt);
             return sampleDate <= currentDate;
           });
 
-          const pending = samplesUpToThisDate.filter(s => !s.date_collected).length;
-          const packaged = samplesUpToThisDate.filter(s => s.facility_reference && s.date_received).length;
-          const results = samplesUpToThisDate.filter(s => s.verified === 1 && s.last_value).length;
+          const pending = samplesUpToThisDate.filter(s => !s.dateCollected).length;
+          const packaged = samplesUpToThisDate.filter(s => s.facilityReference && s.dateReceived).length;
+          const results = samplesUpToThisDate.filter(s => s.verified === 1 && s.lastValue).length;
 
           analyticsData.push({
             date: dateStr,
