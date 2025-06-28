@@ -138,6 +138,10 @@ export default function NewViralLoadRequest(): React.JSX.Element {
       treatment_initiation_date: "",
       current_regimen_initiation_date: "",
       requested_on: new Date().toISOString().split('T')[0],
+      pregnant: "N",
+      breast_feeding: "N",
+      anc_number: "",
+      active_tb_status: undefined,
     },
   });
 
@@ -145,7 +149,8 @@ export default function NewViralLoadRequest(): React.JSX.Element {
   const watchedGender = form.watch("gender");
   useEffect(() => {
     if (watchedGender === "M") {
-      form.setValue("pregnant", undefined);
+      form.setValue("pregnant", "N");
+      form.setValue("breast_feeding", "N");
     }
   }, [watchedGender, form]);
 
@@ -229,7 +234,7 @@ export default function NewViralLoadRequest(): React.JSX.Element {
   };
 
   return (
-    <div className="md:container md:px-0 px-4 pt-4 md:mx-auto">
+    <div className="md:container md:px-0 px-4 pt-4 pb-20 md:mx-auto">
       {/* Header with title and actions */}
       <div className="mb-6 pb-4 border-b border-gray-200">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
