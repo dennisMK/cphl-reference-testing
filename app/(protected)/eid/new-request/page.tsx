@@ -10,36 +10,50 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { toast } from "sonner";
-import { IconBabyCarriage, IconArrowLeft, IconLoader2 } from "@tabler/icons-react";
+import { IconBabyCarriage, IconArrowLeft, IconLoader2, IconUser, IconTestPipe } from "@tabler/icons-react";
 import { api } from "@/trpc/react";
 
-// Form validation schema
+// Form validation schema matching the HTML form
 const eidRequestSchema = z.object({
-  // Infant information
-  infant_name: z.string().min(1, "Infant name is required"),
-  infant_gender: z.enum(["MALE", "FEMALE", "NOT_RECORDED"]).default("NOT_RECORDED"),
-  infant_age: z.string().optional(),
-  infant_age_units: z.enum(["weeks", "months", "years"]).optional(),
-  infant_dob: z.string().optional(),
-  infant_is_breast_feeding: z.enum(["YES", "NO", "UNKNOWN"]).default("UNKNOWN"),
-  infant_contact_phone: z.string().optional(),
-  infant_feeding: z.string().optional(),
+  // Requesting clinician
+  infant_entryPoint: z.string().optional(),
+  senders_name: z.string().min(1, "Requested by is required"),
+  senders_telephone: z.string().min(1, "Telephone number is required"),
   
-  // Mother information
+  // Patient information
+  infant_name: z.string().min(1, "Infant name is required"),
+  infant_exp_id: z.string().min(1, "EXP No is required"),
+  infant_gender: z.enum(["MALE", "FEMALE", "NOT_RECORDED"]),
+  infant_age: z.string().min(1, "Age is required"),
+  infant_age_units: z.enum(["months", "days", "weeks", "years"]),
+  infant_contact_phone: z.string().optional(),
+  given_contri: z.enum(["BLANK", "Y", "N"]),
+  delivered_at_hc: z.enum(["BLANK", "Y", "N"]),
+  infant_arvs: z.string().optional(),
+  env_num1: z.string().optional(),
+  
+  // Other section
+  infant_feeding: z.string().min(1, "Infant feeding is required"),
+  test_type: z.enum(["P", "S", "B"]).optional(),
+  pcr: z.enum(["UNKNOWN", "FIRST", "SECOND", "THIRD"]),
+  non_routine: z.enum(["NONE", "R1", "R2", "R3"]).optional(),
   mother_htsnr: z.string().optional(),
   mother_artnr: z.string().optional(),
   mother_nin: z.string().optional(),
+  mother_antenatal_prophylaxis: z.string().optional(),
+  mother_delivery_prophylaxis: z.string().optional(),
+  mother_postnatal_prophylaxis: z.string().optional(),
   
-  // Test information
-  test_type: z.string().optional(),
-  pcr: z.enum(["FIRST", "SECOND", "NON_ROUTINE", "UNKNOWN", "THIRD"]).default("FIRST"),
-  PCR_test_requested: z.enum(["NO", "YES"]).default("YES"),
-  SCD_test_requested: z.enum(["NO", "YES"]).default("NO"),
+  // Hidden SCD fields
+  sample_type: z.enum(["DBS", "Whole blood"]).optional(),
+  first_symptom_age: z.enum(["BLANK", "1", "2"]).optional(),
+  diagnosis_age: z.enum(["BLANK", "1", "2"]).optional(),
+  test_reason: z.string().optional(),
+  fam_history: z.string().optional(),
+  screening_program: z.string().optional(),
 });
 
 type EIDRequestForm = z.infer<typeof eidRequestSchema>;
@@ -52,10 +66,11 @@ export default function NewEIDRequest(): React.JSX.Element {
     resolver: zodResolver(eidRequestSchema),
     defaultValues: {
       infant_gender: "NOT_RECORDED",
-      infant_is_breast_feeding: "UNKNOWN",
-      pcr: "FIRST",
-      PCR_test_requested: "YES",
-      SCD_test_requested: "NO",
+      infant_age_units: "months",
+      given_contri: "BLANK",
+      delivered_at_hc: "BLANK",
+      pcr: "UNKNOWN",
+      non_routine: "NONE",
     },
   });
 
@@ -82,7 +97,7 @@ export default function NewEIDRequest(): React.JSX.Element {
 
   return (
     <main className="md:container md:px-0 px-4 pt-4 pb-20 md:mx-auto">
-      <div >
+      <div>
         {/* Header */}
         <div className="mb-6 sm:mb-8 lg:mb-12">
           <div className="flex items-center space-x-3 sm:space-x-4 mb-4 sm:mb-6">
@@ -117,24 +132,115 @@ export default function NewEIDRequest(): React.JSX.Element {
         {/* EID Request Form */}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-            {/* Infant Information */}
+            
+            {/* Requesting Clinician */}
+            <Card className="border-0 shadow-sm bg-white rounded-xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                  <IconUser className="h-5 w-5 text-blue-600" />
+                  <span>Requesting Clinician</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="infant_entryPoint"
+                    render={({ field }) => (
+                      <FormItem className="w-full">
+                        <FormLabel>Entry Point:</FormLabel>
+                        <Select  onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue  placeholder="Select entry point" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent >
+                            <SelectItem value="53">ART Clinic</SelectItem>
+                            <SelectItem value="54">EID/MBCP</SelectItem>
+                            <SelectItem value="55">Lab</SelectItem>
+                            <SelectItem value="56">Left Blank</SelectItem>
+                            <SelectItem value="57">Maternity</SelectItem>
+                            <SelectItem value="58">MCH/PMTCT/ANC</SelectItem>
+                            <SelectItem value="59">OPD</SelectItem>
+                            <SelectItem value="60">Other</SelectItem>
+                            <SelectItem value="61">Outreach</SelectItem>
+                            <SelectItem value="62">Peadiatric Ward</SelectItem>
+                            <SelectItem value="63">PNC</SelectItem>
+                            <SelectItem value="64">Unknown</SelectItem>
+                            <SelectItem value="65">YCC/Immunisation</SelectItem>
+                            <SelectItem value="83">EPI</SelectItem>
+                            <SelectItem value="84">Nutrition</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="senders_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Requested by: *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter requester name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="senders_telephone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Tel No: *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter telephone number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Patient Information */}
             <Card className="border-0 shadow-sm bg-white rounded-xl">
               <CardHeader className="pb-4">
                 <CardTitle className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
                   <IconBabyCarriage className="h-5 w-5 text-blue-600" />
-                  <span>Infant Information</span>
+                  <span>Patient Information</span>
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <FormField
                     control={form.control}
                     name="infant_name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Infant Name *</FormLabel>
+                        <FormLabel>Infant Name: *</FormLabel>
                         <FormControl>
                           <Input placeholder="Enter infant name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="infant_exp_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>EXP No: *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter EXP number" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -146,45 +252,33 @@ export default function NewEIDRequest(): React.JSX.Element {
                     name="infant_gender"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Gender</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormLabel>Sex: *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
                             <SelectTrigger>
                               <SelectValue placeholder="Select gender" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="MALE">Male</SelectItem>
-                            <SelectItem value="FEMALE">Female</SelectItem>
-                            <SelectItem value="NOT_RECORDED">Not Recorded</SelectItem>
+                            <SelectItem value="MALE">M</SelectItem>
+                            <SelectItem value="FEMALE">F</SelectItem>
+                            <SelectItem value="NOT_RECORDED">Blank</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+                </div>
 
-                  <FormField
-                    control={form.control}
-                    name="infant_dob"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>Date of Birth</FormLabel>
-                        <FormControl>
-                          <Input type="date" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 gap-2">
                     <FormField
                       control={form.control}
                       name="infant_age"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Age</FormLabel>
+                        <FormItem className="w-full">
+                          <FormLabel>Age: *</FormLabel>
                           <FormControl>
                             <Input placeholder="Age" {...field} />
                           </FormControl>
@@ -196,17 +290,18 @@ export default function NewEIDRequest(): React.JSX.Element {
                       control={form.control}
                       name="infant_age_units"
                       render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Units</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormItem className="w-full">
+                          <FormLabel>Units: *</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Units" />
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="weeks">Weeks</SelectItem>
                               <SelectItem value="months">Months</SelectItem>
+                              <SelectItem value="days">Days</SelectItem>
+                              <SelectItem value="weeks">Weeks</SelectItem>
                               <SelectItem value="years">Years</SelectItem>
                             </SelectContent>
                           </Select>
@@ -218,20 +313,59 @@ export default function NewEIDRequest(): React.JSX.Element {
 
                   <FormField
                     control={form.control}
-                    name="infant_is_breast_feeding"
+                    name="infant_contact_phone"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Is Breast Feeding?</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormLabel>Care Giver Phone Number:</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Phone number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="given_contri"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Given Contrimoxazole: *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select feeding status" />
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="YES">Yes</SelectItem>
-                            <SelectItem value="NO">No</SelectItem>
-                            <SelectItem value="UNKNOWN">Unknown</SelectItem>
+                            <SelectItem value="BLANK">Blank</SelectItem>
+                            <SelectItem value="Y">Y</SelectItem>
+                            <SelectItem value="N">N</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="delivered_at_hc"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Delivered at H/C: *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="BLANK">UNKNOWN</SelectItem>
+                            <SelectItem value="Y">Y</SelectItem>
+                            <SelectItem value="N">N</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -241,122 +375,75 @@ export default function NewEIDRequest(): React.JSX.Element {
 
                   <FormField
                     control={form.control}
-                    name="infant_contact_phone"
+                    name="infant_arvs"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Contact Phone</FormLabel>
-                        <FormControl>
-                          <Input placeholder="Phone number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <FormField
-                  control={form.control}
-                  name="infant_feeding"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Feeding Details</FormLabel>
-                      <FormControl>
-                        <Textarea 
-                          placeholder="Additional feeding information"
-                          className="resize-none"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormDescription>
-                        Provide any additional information about infant feeding
-                      </FormDescription>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </CardContent>
-            </Card>
-
-            {/* Mother Information */}
-            <Card className="border-0 shadow-sm bg-white rounded-xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-semibold text-gray-900">Mother Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="mother_htsnr"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>HTS Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="HTS number" {...field} />
-                        </FormControl>
-                        <FormDescription>HIV Testing Services number</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="mother_artnr"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>ART Number</FormLabel>
-                        <FormControl>
-                          <Input placeholder="ART number" {...field} />
-                        </FormControl>
-                        <FormDescription>Antiretroviral therapy number</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control}
-                    name="mother_nin"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>National ID</FormLabel>
-                        <FormControl>
-                          <Input placeholder="National ID number" {...field} />
-                        </FormControl>
-                        <FormDescription>National identification number</FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Test Information */}
-            <Card className="border-0 shadow-sm bg-white rounded-xl">
-              <CardHeader className="pb-4">
-                <CardTitle className="text-lg font-semibold text-gray-900">Test Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="pcr"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel>PCR Test Type</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormLabel>Infant PMTCT ARVS:</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select PCR type" />
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select ARV regimen" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>
-                            <SelectItem value="FIRST">First PCR (6 weeks)</SelectItem>
-                            <SelectItem value="SECOND">Second PCR (14 weeks)</SelectItem>
-                            <SelectItem value="THIRD">Third PCR (6 months)</SelectItem>
-                            <SelectItem value="NON_ROUTINE">Non-routine</SelectItem>
-                            <SelectItem value="UNKNOWN">Unknown</SelectItem>
+                            <SelectItem value="1">1-Received NVP syrup at birth for 6 weeks</SelectItem>
+                            <SelectItem value="2">2-Received NVP syrup at birth for 12 weeks</SelectItem>
+                            <SelectItem value="3">3-AZT/3TC/NVP</SelectItem>
+                            <SelectItem value="4">4-No ARVs taken</SelectItem>
+                            <SelectItem value="5">5-Unkown-Infant EMTCT regimen not known</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="env_num1"
+                    render={({ field }) => (
+                      <FormItem className="hidden">
+                        <FormLabel>Envelope Number:</FormLabel>
+                        <FormControl>
+                          <Input {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Other Section */}
+            <Card className="border-0 shadow-sm bg-white rounded-xl">
+              <CardHeader className="pb-4">
+                <CardTitle className="text-lg font-semibold text-gray-900 flex items-center space-x-2">
+                  <IconTestPipe className="h-5 w-5 text-blue-600" />
+                  <span>Other</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="infant_feeding"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Infant Feeding: *</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select feeding type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="EBF">Exclusive Breast Feeding</SelectItem>
+                            <SelectItem value="MF">Mixed Feeding (below 6 months)</SelectItem>
+                            <SelectItem value="W">Wean from breastfeeding</SelectItem>
+                            <SelectItem value="RF">Replacement Feeding (never breastfed)</SelectItem>
+                            <SelectItem value="CF">Complimentary Feeding (above 6 months)</SelectItem>
+                            <SelectItem value="NLB">No longer Breastfeeding</SelectItem>
                           </SelectContent>
                         </Select>
                         <FormMessage />
@@ -369,9 +456,110 @@ export default function NewEIDRequest(): React.JSX.Element {
                     name="test_type"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Test Classification</FormLabel>
+                        <FormLabel>Type of Test:</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select test type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="P">PCR</SelectItem>
+                            <SelectItem value="S">SCD</SelectItem>
+                            <SelectItem value="B">Both</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="pcr"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>PCR:</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="UNKNOWN">Blank</SelectItem>
+                            <SelectItem value="FIRST">1st</SelectItem>
+                            <SelectItem value="SECOND">2nd</SelectItem>
+                            <SelectItem value="THIRD">3rd</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="non_routine"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Non Routine PCR:</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select non-routine" />
+                            </SelectTrigger>
+                          </FormControl>
+                                                     <SelectContent>
+                             <SelectItem value="NONE">None</SelectItem>
+                             <SelectItem value="R1">R1</SelectItem>
+                             <SelectItem value="R2">R2</SelectItem>
+                             <SelectItem value="R3">R3</SelectItem>
+                           </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="mother_htsnr"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mothers HTS No:</FormLabel>
                         <FormControl>
-                          <Input placeholder="e.g., Initial, Follow-up, Confirmatory" {...field} />
+                          <Input placeholder="HTS number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="mother_artnr"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ART No:</FormLabel>
+                        <FormControl>
+                          <Input placeholder="ART number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="mother_nin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>NIN:</FormLabel>
+                        <FormControl>
+                          <Input placeholder="National ID number" {...field} />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -379,46 +567,220 @@ export default function NewEIDRequest(): React.JSX.Element {
                   />
                 </div>
 
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="mother_antenatal_prophylaxis"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Antenatal:</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select antenatal" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="80">1:Lifelong ART</SelectItem>
+                            <SelectItem value="81">2:No ART</SelectItem>
+                            <SelectItem value="82">3:Unknown</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="mother_delivery_prophylaxis"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Delivery:</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select delivery" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="80">1:Lifelong ART</SelectItem>
+                            <SelectItem value="81">2:No ART</SelectItem>
+                            <SelectItem value="82">3:Unknown</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="mother_postnatal_prophylaxis"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Postnatal:</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select postnatal" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="80">1:Lifelong ART</SelectItem>
+                            <SelectItem value="81">2:No ART</SelectItem>
+                            <SelectItem value="82">3:Unknown</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Hidden SCD Testing Fields */}
+                <div className="hidden space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <FormField
                       control={form.control}
-                      name="PCR_test_requested"
+                      name="sample_type"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value === "YES"}
-                              onCheckedChange={(checked) => 
-                                field.onChange(checked ? "YES" : "NO")
-                              }
-                            />
-                          </FormControl>
-                          <FormLabel className="text-sm font-normal">
-                            PCR Test Requested
-                          </FormLabel>
+                        <FormItem>
+                          <FormLabel>Type of sample collected:</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="DBS">DBS</SelectItem>
+                              <SelectItem value="Whole blood">Whole blood</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="first_symptom_age"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Age of first symptom:</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="BLANK">Blank</SelectItem>
+                              <SelectItem value="1">Below 36 months</SelectItem>
+                              <SelectItem value="2">3 years or above</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="diagnosis_age"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Age at diagnosis:</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="BLANK">Blank</SelectItem>
+                              <SelectItem value="1">Below 36 months</SelectItem>
+                              <SelectItem value="2">3 years or above</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
                   </div>
 
-                  <div className="flex items-center space-x-3">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <FormField
                       control={form.control}
-                      name="SCD_test_requested"
+                      name="test_reason"
                       render={({ field }) => (
-                        <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-                          <FormControl>
-                            <Checkbox
-                              checked={field.value === "YES"}
-                              onCheckedChange={(checked) => 
-                                field.onChange(checked ? "YES" : "NO")
-                              }
-                            />
-                          </FormControl>
-                          <FormLabel className="text-sm font-normal">
-                            Sickle Cell Disease Test Requested
-                          </FormLabel>
+                        <FormItem>
+                          <FormLabel>Reason for testing:</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select reason" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Known positive family history">Known positive family history</SelectItem>
+                              <SelectItem value="Screening program">Screening program</SelectItem>
+                              <SelectItem value="Illness">Illness</SelectItem>
+                              <SelectItem value="Pregnancy">Pregnancy</SelectItem>
+                              <SelectItem value="Surgery">Surgery</SelectItem>
+                              <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="fam_history"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Known positive family history:</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select family history" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="One parent with AS">One parent with AS</SelectItem>
+                              <SelectItem value="Both parents with AS">Both parents with AS</SelectItem>
+                              <SelectItem value="Sibling with SCD">Sibling with SCD</SelectItem>
+                              <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="screening_program"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Early screening program:</FormLabel>
+                          <Select onValueChange={field.onChange} value={field.value}>
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select screening program" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Birth">Birth</SelectItem>
+                              <SelectItem value="First immunization">First immunization</SelectItem>
+                              <SelectItem value="subsequent immunization">subsequent immunization</SelectItem>
+                              <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
                         </FormItem>
                       )}
                     />
@@ -449,7 +811,7 @@ export default function NewEIDRequest(): React.JSX.Element {
                 ) : (
                   <IconBabyCarriage className="h-4 w-4" />
                 )}
-                <span>{isSubmitting ? "Creating..." : "Create EID Request"}</span>
+                <span>{isSubmitting ? "Creating..." : "Save"}</span>
               </Button>
             </div>
           </form>
