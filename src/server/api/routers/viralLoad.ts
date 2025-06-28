@@ -119,7 +119,7 @@ export const viralLoadRouter = createTRPCRouter({
       const vlDb = await getVlLimsDb();
 
       // Generate a unique patient ID based on ART number and facility
-      const patientUniqueId = `${input.art_number}-${user.facility_id}-${Date.now()}`;
+      const patientUniqueId = `${input.art_number}`;
       
       // First, create or get the patient record
       const patientData = {

@@ -236,7 +236,7 @@ export function AppNavigation() {
                   <Button
                     variant="ghost"
                     className={cn(
-                      "flex items-center rounded-full space-x-2 px-3 py-2 text-sm font-medium transition-all duration-200 rounded-lg",
+                      "flex items-center rounded-full space-x-2 px-3 py-2 text-sm font-medium transition-all duration-200",
                       active
                         ? currentSection === "dashboard"
                           ? "bg-primary text-primary-foreground hover:bg-primary/90"
@@ -302,7 +302,7 @@ export function AppNavigation() {
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem asChild>
-                <Link href="/settings/edit-profile">
+                <Link href="/settings">
                   <IconSettings className="mr-2 h-4 w-4" />
                   <span>Settings</span>
                 </Link>

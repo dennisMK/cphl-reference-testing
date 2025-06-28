@@ -149,6 +149,14 @@ export default function NewViralLoadRequest(): React.JSX.Element {
     }
   }, [watchedGender, form]);
 
+  // Handle conditional logic for TB treatment phase field
+  const watchedTbStatus = form.watch("active_tb_status");
+  useEffect(() => {
+    if (watchedTbStatus === "N") {
+      form.setValue("tb_treatment_phase_id", undefined);
+    }
+  }, [watchedTbStatus, form]);
+
   // Combine date parts into complete dates
   useEffect(() => {
     if (dobDay && dobMonth && dobYear) {
@@ -651,11 +659,14 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                 </div>
 
                 <div>
-                  <Label htmlFor="tb_treatment_phase_id" className="text-sm font-medium text-gray-700">
+                  <Label htmlFor="tb_treatment_phase_id" className={`text-sm font-medium ${watchedTbStatus === "N" ? "text-gray-400" : "text-gray-700"}`}>
                     TB Treatment Phase:
                   </Label>
-                  <Select onValueChange={(value) => form.setValue("tb_treatment_phase_id", value)}>
-                    <SelectTrigger className="mt-2 h-10 w-full">
+                  <Select 
+                    onValueChange={(value) => form.setValue("tb_treatment_phase_id", value)}
+                    disabled={watchedTbStatus === "N"}
+                  >
+                    <SelectTrigger className={`mt-2 h-10 w-full ${watchedTbStatus === "N" ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}>
                       <SelectValue placeholder="Select one" />
                     </SelectTrigger>
                     <SelectContent>
