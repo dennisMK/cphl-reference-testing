@@ -5,29 +5,38 @@ import {
   int,
   text,
   tinyint,
+  unique,
 } from "drizzle-orm/mysql-core";
 
-// Users table from etest_users database - matches exact database schema
-export const users = mysqlTable("users", {
-  id: int("id").primaryKey().autoincrement(),
-  name: varchar("name", { length: 255 }).notNull(),
-  email: varchar("email", { length: 255 }),
-  password: varchar("password", { length: 60 }).notNull(),
-  remember_token: varchar("remember_token", { length: 100 }),
-  created_at: timestamp("created_at").defaultNow().notNull(),
-  updated_at: timestamp("updated_at").defaultNow().onUpdateNow().notNull(),
-  username: varchar("username", { length: 64 }).notNull().unique(),
-  telephone: varchar("telephone", { length: 64 }),
-  facility_id: int("facility_id"),
-  facility_name: text("facility_name"),
-  hub_id: int("hub_id"),
-  hub_name: varchar("hub_name", { length: 255 }),
-  deactivated: tinyint("deactivated").default(0).notNull(),
-  other_facilities: text("other_facilities"),
-  ip_id: int("ip_id"),
-  ip_name: varchar("ip_name", { length: 255 }),
-  requesting_facility_id: int("requesting_facility_id"),
-});
+// Auto-generated users schema from drizzle-kit pull
+export const users = mysqlTable(
+  "users",
+  {
+    id: int().autoincrement().notNull(),
+    name: varchar({ length: 255 }).notNull(),
+    email: varchar({ length: 255 }),
+    password: varchar({ length: 60 }).notNull(),
+    rememberToken: varchar("remember_token", { length: 100 }),
+    createdAt: timestamp("created_at", { mode: "string" })
+      .default("current_timestamp()")
+      .notNull(),
+    updatedAt: timestamp("updated_at", { mode: "string" })
+      .default("current_timestamp()")
+      .notNull(),
+    username: varchar({ length: 64 }).notNull(),
+    telephone: varchar({ length: 64 }),
+    facilityId: int("facility_id"),
+    facilityName: text("facility_name"),
+    hubId: int("hub_id"),
+    hubName: varchar("hub_name", { length: 255 }),
+    deactivated: tinyint().default(0).notNull(),
+    otherFacilities: text("other_facilities"),
+    ipId: int("ip_id"),
+    ipName: varchar("ip_name", { length: 255 }),
+    requestingFacilityId: int("requesting_facility_id"),
+  },
+  (table) => [unique("users_username_unique").on(table.username)]
+);
 
 // Type for the complete user object from database
 export type User = typeof users.$inferSelect;
@@ -47,4 +56,6 @@ export type ApiUser = {
   ip_id: number | null;
   ip_name: string | null;
   requesting_facility_id: number | null;
-}; 
+};
+
+export type NewUser = typeof users.$inferInsert;
