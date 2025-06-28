@@ -1398,12 +1398,13 @@ export const viralLoadRouter = createTRPCRouter({
       }
 
       // Create new clinician
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' '); // Convert to MySQL datetime format
       const clinicianData = {
         cname: input.name,
         cphone: input.phone || null,
         facilityId: user.facility_id,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+        createdAt: now,
+        updatedAt: now,
       };
 
       const result = await vlDb

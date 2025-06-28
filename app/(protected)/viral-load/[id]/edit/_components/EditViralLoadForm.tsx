@@ -8,10 +8,26 @@ import * as z from "zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Calendar } from "@/components/ui/calendar";
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { CalendarIcon, Save, X, Loader2, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
@@ -19,45 +35,56 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { api } from "@/trpc/react";
 
-const formSchema = z.object({
-  // Patient Information
-  art_number: z.string().min(1, "ART number is required"),
-  other_id: z.string().optional(),
-  gender: z.enum(["M", "F"], { required_error: "Gender is required" }).optional(),
-  dob: z.string().min(1, "Date of birth is required"),
-  age: z.string().optional(),
-  age_units: z.enum(["Years", "Months", "Days"]).optional(),
-  patient_phone_number: z.string().optional(),
-  
-  // Requesting Clinician
-  clinician_id: z.string().optional(),
-  requested_on: z.string().optional(),
-  
-  // Treatment Information
-  treatment_initiation_date: z.string().min(1, "Treatment initiation date is required"),
-  current_regimen_id: z.string().optional(),
-  current_regimen_initiation_date: z.string().min(1, "Current regimen initiation date is required"),
-  
-  // Health Information
-  pregnant: z.enum(["Y", "N", "U"]).optional(),
-  anc_number: z.string().optional(),
-  breast_feeding: z.enum(["Y", "N", "U"]).optional(),
-  active_tb_status: z.enum(["Y", "N", "U"]).optional(),
-  tb_treatment_phase_id: z.string().optional(),
-  arv_adherence_id: z.string().optional(),
-  treatment_care_approach: z.string().optional(),
-  current_who_stage: z.string().optional(),
-  treatment_indication_id: z.string().optional(),
-}).refine((data) => {
-  // If gender is female, pregnancy status is required
-  if (data.gender === "F") {
-    return data.pregnant && ["Y", "N", "U"].includes(data.pregnant);
-  }
-  return true;
-}, {
-  message: "Please select pregnancy status for female patients",
-  path: ["pregnant"],
-});
+const formSchema = z
+  .object({
+    // Patient Information
+    art_number: z.string().min(1, "ART number is required"),
+    other_id: z.string().optional(),
+    gender: z
+      .enum(["M", "F"], { required_error: "Gender is required" })
+      .optional(),
+    dob: z.string().min(1, "Date of birth is required"),
+    age: z.string().optional(),
+    age_units: z.enum(["Years", "Months", "Days"]).optional(),
+    patient_phone_number: z.string().optional(),
+
+    // Requesting Clinician
+    clinician_id: z.string().optional(),
+    requested_on: z.string().optional(),
+
+    // Treatment Information
+    treatment_initiation_date: z
+      .string()
+      .min(1, "Treatment initiation date is required"),
+    current_regimen_id: z.string().optional(),
+    current_regimen_initiation_date: z
+      .string()
+      .min(1, "Current regimen initiation date is required"),
+
+    // Health Information
+    pregnant: z.enum(["Y", "N", "U"]).optional(),
+    anc_number: z.string().optional(),
+    breast_feeding: z.enum(["Y", "N", "U"]).optional(),
+    active_tb_status: z.enum(["Y", "N", "U"]).optional(),
+    tb_treatment_phase_id: z.string().optional(),
+    arv_adherence_id: z.string().optional(),
+    treatment_care_approach: z.string().optional(),
+    current_who_stage: z.string().optional(),
+    treatment_indication_id: z.string().optional(),
+  })
+  .refine(
+    (data) => {
+      // If gender is female, pregnancy status is required
+      if (data.gender === "F") {
+        return data.pregnant && ["Y", "N", "U"].includes(data.pregnant);
+      }
+      return true;
+    },
+    {
+      message: "Please select pregnancy status for female patients",
+      path: ["pregnant"],
+    }
+  );
 
 type FormData = z.infer<typeof formSchema>;
 
@@ -67,12 +94,20 @@ interface EditViralLoadFormProps {
   user: any;
 }
 
-export default function EditViralLoadForm({ sample, sampleId, user }: EditViralLoadFormProps) {
+export default function EditViralLoadForm({
+  sample,
+  sampleId,
+  user,
+}: EditViralLoadFormProps) {
   const router = useRouter();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Fetch clinicians for the dropdown
-  const { data: clinicians = [], isLoading: cliniciansLoading, refetch: refetchClinicians } = api.viralLoad.getClinicians.useQuery();
+  const {
+    data: clinicians = [],
+    isLoading: cliniciansLoading,
+    refetch: refetchClinicians,
+  } = api.viralLoad.getClinicians.useQuery();
   const [isFormInitialized, setIsFormInitialized] = useState(false);
   const initializationRef = useRef(false);
 
@@ -101,11 +136,11 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
   const [dobDay, setDobDay] = useState<string>("");
   const [dobMonth, setDobMonth] = useState<string>("");
   const [dobYear, setDobYear] = useState<string>("");
-  
+
   const [treatmentDay, setTreatmentDay] = useState<string>("");
   const [treatmentMonth, setTreatmentMonth] = useState<string>("");
   const [treatmentYear, setTreatmentYear] = useState<string>("");
-  
+
   const [regimenDay, setRegimenDay] = useState<string>("");
   const [regimenMonth, setRegimenMonth] = useState<string>("");
   const [regimenYear, setRegimenYear] = useState<string>("");
@@ -117,8 +152,8 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
       setIsSubmitting(false);
     },
     onError: (error: any) => {
-      toast.error(`Failed to update sample: ${error.message}`)
-      setIsSubmitting(false)
+      toast.error(`Failed to update sample: ${error.message}`);
+      setIsSubmitting(false);
     },
   });
 
@@ -147,86 +182,120 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
 
   // Initialize form with sample data - only runs once when sample is provided
   useEffect(() => {
-    console.log("useEffect triggered:", { sample: !!sample, patient_data: !!sample?.patient_data, isFormInitialized, initializationRef: initializationRef.current });
-    
+    console.log("useEffect triggered:", {
+      sample: !!sample,
+      patient_data: !!sample?.patient_data,
+      isFormInitialized,
+      initializationRef: initializationRef.current,
+    });
+
     if (sample && !initializationRef.current) {
       console.log("Initializing form with sample data:", sample);
       console.log("Sample patient_data:", sample.patient_data);
-      
+
       // Prepare form data object
       const formData: Partial<FormData> = {
         // Patient Information
-        art_number: sample.patient_data?.artNumber || sample.patientUniqueId || "",
+        art_number:
+          sample.patient_data?.artNumber || sample.patientUniqueId || "",
         other_id: sample.patient_data?.otherId || "",
-        gender: (sample.patient_data?.gender && ["M", "F"].includes(sample.patient_data.gender)) 
-          ? sample.patient_data.gender as "M" | "F" 
-          : undefined,
+        gender:
+          sample.patient_data?.gender &&
+          ["M", "F"].includes(sample.patient_data.gender)
+            ? (sample.patient_data.gender as "M" | "F")
+            : undefined,
         age: "", // Would need to be calculated or stored separately
         age_units: "Years",
         patient_phone_number: sample.patientPhoneNumber || "",
-        
+
         // Requesting Clinician
         clinician_id: sample.clinicianId ? String(sample.clinicianId) : "",
-        requested_on: sample.requestedOn 
-          ? (sample.requestedOn instanceof Date ? sample.requestedOn : new Date(sample.requestedOn)).toISOString().split('T')[0]
+        requested_on: sample.requestedOn
+          ? (sample.requestedOn instanceof Date
+              ? sample.requestedOn
+              : new Date(sample.requestedOn)
+            )
+              .toISOString()
+              .split("T")[0]
           : "",
-        
+
         // Health Information
-        pregnant: (sample.pregnant && ["Y", "N", "U"].includes(sample.pregnant)) 
-          ? sample.pregnant as "Y" | "N" | "U" 
-          : undefined,
+        pregnant:
+          sample.pregnant && ["Y", "N", "U"].includes(sample.pregnant)
+            ? (sample.pregnant as "Y" | "N" | "U")
+            : undefined,
         anc_number: sample.ancNumber || "",
-        breast_feeding: (sample.breastFeeding && ["Y", "N", "U"].includes(sample.breastFeeding)) 
-          ? sample.breastFeeding as "Y" | "N" | "U" 
-          : undefined,
-        active_tb_status: (sample.activeTbStatus && ["Y", "N", "U"].includes(sample.activeTbStatus)) 
-          ? sample.activeTbStatus as "Y" | "N" | "U" 
-          : undefined,
-        
+        breast_feeding:
+          sample.breastFeeding && ["Y", "N", "U"].includes(sample.breastFeeding)
+            ? (sample.breastFeeding as "Y" | "N" | "U")
+            : undefined,
+        active_tb_status:
+          sample.activeTbStatus &&
+          ["Y", "N", "U"].includes(sample.activeTbStatus)
+            ? (sample.activeTbStatus as "Y" | "N" | "U")
+            : undefined,
+
         // Treatment Information
-        current_regimen_id: (sample.currentRegimenId !== null && sample.currentRegimenId !== undefined) 
-          ? String(sample.currentRegimenId) 
-          : "",
-        tb_treatment_phase_id: (sample.tbTreatmentPhaseId !== null && sample.tbTreatmentPhaseId !== undefined) 
-          ? String(sample.tbTreatmentPhaseId) 
-          : "",
-        arv_adherence_id: (sample.arvAdherenceId !== null && sample.arvAdherenceId !== undefined) 
-          ? String(sample.arvAdherenceId) 
-          : "",
-        treatment_care_approach: (sample.treatmentCareApproach !== null && sample.treatmentCareApproach !== undefined) 
-          ? String(sample.treatmentCareApproach) 
-          : "",
-        current_who_stage: (sample.currentWhoStage !== null && sample.currentWhoStage !== undefined) 
-          ? String(sample.currentWhoStage) 
-          : "",
-        treatment_indication_id: (sample.treatmentIndicationId !== null && sample.treatmentIndicationId !== undefined) 
-          ? String(sample.treatmentIndicationId) 
-          : "",
+        current_regimen_id:
+          sample.currentRegimenId !== null &&
+          sample.currentRegimenId !== undefined
+            ? String(sample.currentRegimenId)
+            : "",
+        tb_treatment_phase_id:
+          sample.tbTreatmentPhaseId !== null &&
+          sample.tbTreatmentPhaseId !== undefined
+            ? String(sample.tbTreatmentPhaseId)
+            : "",
+        arv_adherence_id:
+          sample.arvAdherenceId !== null && sample.arvAdherenceId !== undefined
+            ? String(sample.arvAdherenceId)
+            : "",
+        treatment_care_approach:
+          sample.treatmentCareApproach !== null &&
+          sample.treatmentCareApproach !== undefined
+            ? String(sample.treatmentCareApproach)
+            : "",
+        current_who_stage:
+          sample.currentWhoStage !== null &&
+          sample.currentWhoStage !== undefined
+            ? String(sample.currentWhoStage)
+            : "",
+        treatment_indication_id:
+          sample.treatmentIndicationId !== null &&
+          sample.treatmentIndicationId !== undefined
+            ? String(sample.treatmentIndicationId)
+            : "",
       };
 
       // Handle dates
       if (sample.patient_data?.dob) {
         const dobDate = new Date(sample.patient_data.dob);
-        setDobDay(String(dobDate.getDate()).padStart(2, '0'));
-        setDobMonth(String(dobDate.getMonth() + 1).padStart(2, '0'));
+        setDobDay(String(dobDate.getDate()).padStart(2, "0"));
+        setDobMonth(String(dobDate.getMonth() + 1).padStart(2, "0"));
         setDobYear(String(dobDate.getFullYear()));
-        formData.dob = dobDate.toISOString().split('T')[0];
+        formData.dob = dobDate.toISOString().split("T")[0];
       }
 
       if (sample.treatmentInitiationDate) {
         const treatmentDate = new Date(sample.treatmentInitiationDate);
-        setTreatmentDay(String(treatmentDate.getDate()).padStart(2, '0'));
-        setTreatmentMonth(String(treatmentDate.getMonth() + 1).padStart(2, '0'));
+        setTreatmentDay(String(treatmentDate.getDate()).padStart(2, "0"));
+        setTreatmentMonth(
+          String(treatmentDate.getMonth() + 1).padStart(2, "0")
+        );
         setTreatmentYear(String(treatmentDate.getFullYear()));
-        formData.treatment_initiation_date = treatmentDate.toISOString().split('T')[0];
+        formData.treatment_initiation_date = treatmentDate
+          .toISOString()
+          .split("T")[0];
       }
 
       if (sample.currentRegimenInitiationDate) {
         const regimenDate = new Date(sample.currentRegimenInitiationDate);
-        setRegimenDay(String(regimenDate.getDate()).padStart(2, '0'));
-        setRegimenMonth(String(regimenDate.getMonth() + 1).padStart(2, '0'));
+        setRegimenDay(String(regimenDate.getDate()).padStart(2, "0"));
+        setRegimenMonth(String(regimenDate.getMonth() + 1).padStart(2, "0"));
         setRegimenYear(String(regimenDate.getFullYear()));
-        formData.current_regimen_initiation_date = regimenDate.toISOString().split('T')[0];
+        formData.current_regimen_initiation_date = regimenDate
+          .toISOString()
+          .split("T")[0];
       }
 
       // Use reset() to properly initialize the form
@@ -234,12 +303,15 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
       form.reset(formData);
       initializationRef.current = true;
       setIsFormInitialized(true);
-      
-      console.log("Form reset completed. Current form values:", form.getValues());
-      console.log("Form state after reset:", { 
+
+      console.log(
+        "Form reset completed. Current form values:",
+        form.getValues()
+      );
+      console.log("Form state after reset:", {
         isFormInitialized: true,
         formValues: form.getValues(),
-        errors: form.formState.errors 
+        errors: form.formState.errors,
       });
     }
   }, [sample?.id]); // Only depend on sample ID to prevent double initialization
@@ -297,7 +369,7 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
   const onSubmit = async (data: FormData): Promise<void> => {
     console.log("Form submission started", data);
     setIsSubmitting(true);
-    
+
     try {
       // Ensure gender is provided
       if (!data.gender) {
@@ -305,11 +377,11 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
         setIsSubmitting(false);
         return;
       }
-      
+
       await updateSampleMutation.mutateAsync({
         sampleId: sampleId,
         ...data,
-        gender: data.gender as "M" | "F"
+        gender: data.gender as "M" | "F",
       });
     } catch (error) {
       console.error("Failed to update sample:", error);
@@ -330,13 +402,20 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
   }
 
   return (
-    <form id="viral-load-edit-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8 pb-20">
+    <form
+      id="viral-load-edit-form"
+      onSubmit={form.handleSubmit(onSubmit)}
+      className="space-y-8 pb-20"
+    >
       {/* Facility Information - Single Line Display */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
         <div className="text-sm text-blue-800">
-          <span className="font-medium">Facility:</span> {user?.facility_name || "Not specified"} | 
-          <span className="font-medium"> District:</span> {user?.hub_name ? user.hub_name.split(' ')[0] : "Not specified"} | 
-          <span className="font-medium"> Hub:</span> {user?.hub_name || "Not specified"}
+          <span className="font-medium">Facility:</span>{" "}
+          {user?.facility_name || "Not specified"} |
+          <span className="font-medium"> District:</span>{" "}
+          {user?.hub_name ? user.hub_name.split(" ")[0] : "Not specified"} |
+          <span className="font-medium"> Hub:</span>{" "}
+          {user?.hub_name || "Not specified"}
         </div>
       </div>
 
@@ -349,16 +428,25 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="clinician_id" className="text-sm font-medium text-gray-700">
+            <Label
+              htmlFor="clinician_id"
+              className="text-sm font-medium text-gray-700"
+            >
               Clinician Name
             </Label>
             <div className="flex gap-2 mt-2">
-              <Select 
+              <Select
                 value={form.watch("clinician_id") || ""}
                 onValueChange={(value) => form.setValue("clinician_id", value)}
               >
                 <SelectTrigger className="h-10 flex-1">
-                  <SelectValue placeholder={cliniciansLoading ? "Loading clinicians..." : "Select clinician"} />
+                  <SelectValue
+                    placeholder={
+                      cliniciansLoading
+                        ? "Loading clinicians..."
+                        : "Select clinician"
+                    }
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {!cliniciansLoading && clinicians.length > 0 ? (
@@ -374,15 +462,27 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                     ))
                   ) : (
                     <div className="p-2 text-sm text-gray-500 text-center">
-                      {cliniciansLoading ? "Loading clinicians..." : "No clinicians found"}
+                      {cliniciansLoading
+                        ? "Loading clinicians..."
+                        : "No clinicians found"}
                     </div>
                   )}
                 </SelectContent>
               </Select>
-              
-              <Dialog open={isAddClinicianOpen} onOpenChange={setIsAddClinicianOpen}>
+
+              <Dialog
+                open={isAddClinicianOpen}
+                onOpenChange={setIsAddClinicianOpen}
+              >
                 <DialogTrigger asChild>
-                  <Button type="button" variant="outline" size="icon" className="h-10 w-10 shrink-0">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="icon"
+                    className="h-10 w-10 shrink-0
+                  
+                  "
+                  >
                     <Plus className="h-4 w-4" />
                   </Button>
                 </DialogTrigger>
@@ -392,7 +492,10 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                   </DialogHeader>
                   <div className="space-y-4 py-4">
                     <div>
-                      <Label htmlFor="new-clinician-name" className="text-sm font-medium">
+                      <Label
+                        htmlFor="new-clinician-name"
+                        className="text-sm font-medium"
+                      >
                         Clinician Name *
                       </Label>
                       <Input
@@ -404,7 +507,10 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                       />
                     </div>
                     <div>
-                      <Label htmlFor="new-clinician-phone" className="text-sm font-medium">
+                      <Label
+                        htmlFor="new-clinician-phone"
+                        className="text-sm font-medium"
+                      >
                         Phone Number (Optional)
                       </Label>
                       <Input
@@ -416,19 +522,24 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                       />
                     </div>
                     <div className="flex justify-end gap-2 pt-4">
-                      <Button 
-                        type="button" 
-                        variant="outline" 
+                      <Button
+                        type="button"
+                        variant="outline"
                         onClick={() => setIsAddClinicianOpen(false)}
                       >
                         Cancel
                       </Button>
-                      <Button 
-                        type="button" 
+                      <Button
+                        type="button"
                         onClick={handleAddClinician}
-                        disabled={createClinicianMutation.isPending || !newClinicianName.trim()}
+                        disabled={
+                          createClinicianMutation.isPending ||
+                          !newClinicianName.trim()
+                        }
                       >
-                        {createClinicianMutation.isPending ? "Adding..." : "Add Clinician"}
+                        {createClinicianMutation.isPending
+                          ? "Adding..."
+                          : "Add Clinician"}
                       </Button>
                     </div>
                   </div>
@@ -438,7 +549,10 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
           </div>
 
           <div>
-            <Label htmlFor="requested_on" className="text-sm font-medium text-gray-700">
+            <Label
+              htmlFor="requested_on"
+              className="text-sm font-medium text-gray-700"
+            >
               Request Date
             </Label>
             <Popover>
@@ -451,14 +565,27 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                   )}
                 >
                   <CalendarIcon className="mr-2 h-4 w-4" />
-                  {form.watch("requested_on") ? format(new Date(form.watch("requested_on")!), "PPP") : <span>Pick a date</span>}
+                  {form.watch("requested_on") ? (
+                    format(new Date(form.watch("requested_on")!), "PPP")
+                  ) : (
+                    <span>Pick a date</span>
+                  )}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0">
                 <Calendar
                   mode="single"
-                  selected={form.watch("requested_on") ? new Date(form.watch("requested_on")!) : undefined}
-                  onSelect={(date) => form.setValue("requested_on", date ? date.toISOString().split('T')[0] : "")}
+                  selected={
+                    form.watch("requested_on")
+                      ? new Date(form.watch("requested_on")!)
+                      : undefined
+                  }
+                  onSelect={(date) =>
+                    form.setValue(
+                      "requested_on",
+                      date ? date.toISOString().split("T")[0] : ""
+                    )
+                  }
                   initialFocus
                 />
               </PopoverContent>
@@ -478,7 +605,10 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
           {/* First Row: Patient Clinic ID/ART #, Other ID, Gender */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="art_number" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="art_number"
+                className="text-sm font-medium text-gray-700"
+              >
                 Patient Clinic ID/ART #: *
               </Label>
               <Input
@@ -488,12 +618,17 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                 className="mt-2 h-10"
               />
               {form.formState.errors.art_number && (
-                <p className="text-sm text-red-500 mt-1">{form.formState.errors.art_number.message}</p>
+                <p className="text-sm text-red-500 mt-1">
+                  {form.formState.errors.art_number.message}
+                </p>
               )}
             </div>
 
             <div>
-              <Label htmlFor="other_id" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="other_id"
+                className="text-sm font-medium text-gray-700"
+              >
                 Other ID:
               </Label>
               <Input
@@ -505,11 +640,14 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
             </div>
 
             <div>
-              <Label htmlFor="gender" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="gender"
+                className="text-sm font-medium text-gray-700"
+              >
                 Gender:
               </Label>
-              <Select 
-                value={form.watch("gender") || ""} 
+              <Select
+                value={form.watch("gender") || ""}
                 onValueChange={(value) => {
                   if (value && (value === "M" || value === "F")) {
                     form.setValue("gender", value as "M" | "F");
@@ -526,7 +664,9 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                 </SelectContent>
               </Select>
               {form.formState.errors.gender && (
-                <p className="text-sm text-red-500 mt-1">{form.formState.errors.gender.message}</p>
+                <p className="text-sm text-red-500 mt-1">
+                  {form.formState.errors.gender.message}
+                </p>
               )}
             </div>
           </div>
@@ -534,7 +674,10 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
           {/* Second Row: Date of Birth, Age, Phone Number */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="dob" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="dob"
+                className="text-sm font-medium text-gray-700"
+              >
                 Date of Birth:
               </Label>
               <div className="flex gap-1 mt-2 items-center">
@@ -543,9 +686,12 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                     <SelectValue placeholder="" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({length: 31}, (_, i) => (
-                      <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
-                        {String(i+1).padStart(2, '0')}
+                    {Array.from({ length: 31 }, (_, i) => (
+                      <SelectItem
+                        key={i + 1}
+                        value={String(i + 1).padStart(2, "0")}
+                      >
+                        {String(i + 1).padStart(2, "0")}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -556,9 +702,12 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                     <SelectValue placeholder="" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({length: 12}, (_, i) => (
-                      <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
-                        {String(i+1).padStart(2, '0')}
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <SelectItem
+                        key={i + 1}
+                        value={String(i + 1).padStart(2, "0")}
+                      >
+                        {String(i + 1).padStart(2, "0")}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -569,21 +718,26 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                     <SelectValue placeholder="" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({length: 100}, (_, i) => (
-                      <SelectItem key={2024-i} value={String(2024-i)}>
-                        {2024-i}
+                    {Array.from({ length: 100 }, (_, i) => (
+                      <SelectItem key={2024 - i} value={String(2024 - i)}>
+                        {2024 - i}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               {form.formState.errors.dob && (
-                <p className="text-sm text-red-500 mt-1">{form.formState.errors.dob.message}</p>
+                <p className="text-sm text-red-500 mt-1">
+                  {form.formState.errors.dob.message}
+                </p>
               )}
             </div>
 
             <div>
-              <Label htmlFor="age" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="age"
+                className="text-sm font-medium text-gray-700"
+              >
                 Age:
               </Label>
               <div className="flex gap-2 mt-2 items-center">
@@ -607,7 +761,10 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
             </div>
 
             <div>
-              <Label htmlFor="patient_phone_number" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="patient_phone_number"
+                className="text-sm font-medium text-gray-700"
+              >
                 Phone Number:
               </Label>
               <Input
@@ -632,7 +789,10 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
           {/* First Row: Treatment Initiation Date, Current regimen, Current regimen initiation date */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="treatment_initiation_date" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="treatment_initiation_date"
+                className="text-sm font-medium text-gray-700"
+              >
                 Treatment Initiation Date:
               </Label>
               <div className="flex gap-1 mt-2 items-center">
@@ -641,22 +801,31 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                     <SelectValue placeholder="" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({length: 31}, (_, i) => (
-                      <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
-                        {String(i+1).padStart(2, '0')}
+                    {Array.from({ length: 31 }, (_, i) => (
+                      <SelectItem
+                        key={i + 1}
+                        value={String(i + 1).padStart(2, "0")}
+                      >
+                        {String(i + 1).padStart(2, "0")}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <span className="text-gray-500">/</span>
-                <Select onValueChange={setTreatmentMonth} value={treatmentMonth}>
+                <Select
+                  onValueChange={setTreatmentMonth}
+                  value={treatmentMonth}
+                >
                   <SelectTrigger className="h-10 w-20">
                     <SelectValue placeholder="" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({length: 12}, (_, i) => (
-                      <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
-                        {String(i+1).padStart(2, '0')}
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <SelectItem
+                        key={i + 1}
+                        value={String(i + 1).padStart(2, "0")}
+                      >
+                        {String(i + 1).padStart(2, "0")}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -667,26 +836,33 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                     <SelectValue placeholder="" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({length: 100}, (_, i) => (
-                      <SelectItem key={2024-i} value={String(2024-i)}>
-                        {2024-i}
+                    {Array.from({ length: 100 }, (_, i) => (
+                      <SelectItem key={2024 - i} value={String(2024 - i)}>
+                        {2024 - i}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               {form.formState.errors.treatment_initiation_date && (
-                <p className="text-sm text-red-500 mt-1">{form.formState.errors.treatment_initiation_date.message}</p>
+                <p className="text-sm text-red-500 mt-1">
+                  {form.formState.errors.treatment_initiation_date.message}
+                </p>
               )}
             </div>
 
             <div>
-              <Label htmlFor="current_regimen_id" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="current_regimen_id"
+                className="text-sm font-medium text-gray-700"
+              >
                 Current regimen:
               </Label>
-              <Select 
-                value={form.watch("current_regimen_id") || ""} 
-                onValueChange={(value) => form.setValue("current_regimen_id", value)}
+              <Select
+                value={form.watch("current_regimen_id") || ""}
+                onValueChange={(value) =>
+                  form.setValue("current_regimen_id", value)
+                }
               >
                 <SelectTrigger className="mt-2 h-10 w-full">
                   <SelectValue placeholder="Select one" />
@@ -706,7 +882,10 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
             </div>
 
             <div>
-              <Label htmlFor="current_regimen_initiation_date" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="current_regimen_initiation_date"
+                className="text-sm font-medium text-gray-700"
+              >
                 Current regimen initiation date:
               </Label>
               <div className="flex gap-1 mt-2 items-center">
@@ -715,9 +894,12 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                     <SelectValue placeholder="" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({length: 31}, (_, i) => (
-                      <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
-                        {String(i+1).padStart(2, '0')}
+                    {Array.from({ length: 31 }, (_, i) => (
+                      <SelectItem
+                        key={i + 1}
+                        value={String(i + 1).padStart(2, "0")}
+                      >
+                        {String(i + 1).padStart(2, "0")}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -728,9 +910,12 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                     <SelectValue placeholder="" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({length: 12}, (_, i) => (
-                      <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
-                        {String(i+1).padStart(2, '0')}
+                    {Array.from({ length: 12 }, (_, i) => (
+                      <SelectItem
+                        key={i + 1}
+                        value={String(i + 1).padStart(2, "0")}
+                      >
+                        {String(i + 1).padStart(2, "0")}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -741,16 +926,21 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                     <SelectValue placeholder="" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Array.from({length: 100}, (_, i) => (
-                      <SelectItem key={2024-i} value={String(2024-i)}>
-                        {2024-i}
+                    {Array.from({ length: 100 }, (_, i) => (
+                      <SelectItem key={2024 - i} value={String(2024 - i)}>
+                        {2024 - i}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </div>
               {form.formState.errors.current_regimen_initiation_date && (
-                <p className="text-sm text-red-500 mt-1">{form.formState.errors.current_regimen_initiation_date.message}</p>
+                <p className="text-sm text-red-500 mt-1">
+                  {
+                    form.formState.errors.current_regimen_initiation_date
+                      .message
+                  }
+                </p>
               )}
             </div>
           </div>
@@ -758,15 +948,22 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
           {/* Second Row: Pregnant, ANC Number, Mother Breast-Feeding */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="pregnant" className={`text-sm font-medium ${watchedGender !== "F" ? "text-gray-400" : "text-gray-700"}`}>
+              <Label
+                htmlFor="pregnant"
+                className={`text-sm font-medium ${watchedGender !== "F" ? "text-gray-400" : "text-gray-700"}`}
+              >
                 Pregnant:
               </Label>
-              <Select 
+              <Select
                 value={form.watch("pregnant") || ""}
-                onValueChange={(value) => form.setValue("pregnant", value as "Y" | "N" | "U")}
+                onValueChange={(value) =>
+                  form.setValue("pregnant", value as "Y" | "N" | "U")
+                }
                 disabled={watchedGender !== "F"}
               >
-                <SelectTrigger className={`mt-2 h-10 w-full ${watchedGender !== "F" ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}>
+                <SelectTrigger
+                  className={`mt-2 h-10 w-full ${watchedGender !== "F" ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}
+                >
                   <SelectValue placeholder="Select one" />
                 </SelectTrigger>
                 <SelectContent>
@@ -778,7 +975,10 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
             </div>
 
             <div>
-              <Label htmlFor="anc_number" className={`text-sm font-medium ${watchedGender !== "F" ? "text-gray-400" : "text-gray-700"}`}>
+              <Label
+                htmlFor="anc_number"
+                className={`text-sm font-medium ${watchedGender !== "F" ? "text-gray-400" : "text-gray-700"}`}
+              >
                 ANC Number:
               </Label>
               <Input
@@ -791,15 +991,22 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
             </div>
 
             <div>
-              <Label htmlFor="breast_feeding" className={`text-sm font-medium ${watchedGender !== "F" ? "text-gray-400" : "text-gray-700"}`}>
+              <Label
+                htmlFor="breast_feeding"
+                className={`text-sm font-medium ${watchedGender !== "F" ? "text-gray-400" : "text-gray-700"}`}
+              >
                 Mother Breast-Feeding:
               </Label>
-              <Select 
+              <Select
                 value={form.watch("breast_feeding") || ""}
-                onValueChange={(value) => form.setValue("breast_feeding", value as "Y" | "N" | "U")}
+                onValueChange={(value) =>
+                  form.setValue("breast_feeding", value as "Y" | "N" | "U")
+                }
                 disabled={watchedGender !== "F"}
               >
-                <SelectTrigger className={`mt-2 h-10 w-full ${watchedGender !== "F" ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}>
+                <SelectTrigger
+                  className={`mt-2 h-10 w-full ${watchedGender !== "F" ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}
+                >
                   <SelectValue placeholder="Select one" />
                 </SelectTrigger>
                 <SelectContent>
@@ -814,12 +1021,17 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
           {/* Third Row: Active TB Status, TB Treatment Phase, ARV Adherence */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="active_tb_status" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="active_tb_status"
+                className="text-sm font-medium text-gray-700"
+              >
                 Active TB Status:
               </Label>
-              <Select 
+              <Select
                 value={form.watch("active_tb_status") || ""}
-                onValueChange={(value) => form.setValue("active_tb_status", value as "Y" | "N" | "U")}
+                onValueChange={(value) =>
+                  form.setValue("active_tb_status", value as "Y" | "N" | "U")
+                }
               >
                 <SelectTrigger className="mt-2 h-10 w-full">
                   <SelectValue placeholder="Select one" />
@@ -833,15 +1045,22 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
             </div>
 
             <div>
-              <Label htmlFor="tb_treatment_phase_id" className={`text-sm font-medium ${watchedTbStatus === "N" ? "text-gray-400" : "text-gray-700"}`}>
+              <Label
+                htmlFor="tb_treatment_phase_id"
+                className={`text-sm font-medium ${watchedTbStatus === "N" ? "text-gray-400" : "text-gray-700"}`}
+              >
                 TB Treatment Phase:
               </Label>
-              <Select 
+              <Select
                 value={form.watch("tb_treatment_phase_id") || ""}
-                onValueChange={(value) => form.setValue("tb_treatment_phase_id", value)}
+                onValueChange={(value) =>
+                  form.setValue("tb_treatment_phase_id", value)
+                }
                 disabled={watchedTbStatus === "N"}
               >
-                <SelectTrigger className={`mt-2 h-10 w-full ${watchedTbStatus === "N" ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}>
+                <SelectTrigger
+                  className={`mt-2 h-10 w-full ${watchedTbStatus === "N" ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}
+                >
                   <SelectValue placeholder="Select one" />
                 </SelectTrigger>
                 <SelectContent>
@@ -852,12 +1071,17 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
             </div>
 
             <div>
-              <Label htmlFor="arv_adherence_id" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="arv_adherence_id"
+                className="text-sm font-medium text-gray-700"
+              >
                 ARV Adherence:
               </Label>
-              <Select 
+              <Select
                 value={form.watch("arv_adherence_id") || ""}
-                onValueChange={(value) => form.setValue("arv_adherence_id", value)}
+                onValueChange={(value) =>
+                  form.setValue("arv_adherence_id", value)
+                }
               >
                 <SelectTrigger className="mt-2 h-10 w-full">
                   <SelectValue placeholder="Select one" />
@@ -874,12 +1098,17 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
           {/* Fourth Row: Treatment Care Approach, Current WHO Stage, Indication for Viral Load Testing */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
-              <Label htmlFor="treatment_care_approach" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="treatment_care_approach"
+                className="text-sm font-medium text-gray-700"
+              >
                 Treatment Care Approach (DSDM):
               </Label>
-              <Select 
+              <Select
                 value={form.watch("treatment_care_approach") || ""}
-                onValueChange={(value) => form.setValue("treatment_care_approach", value)}
+                onValueChange={(value) =>
+                  form.setValue("treatment_care_approach", value)
+                }
               >
                 <SelectTrigger className="mt-2 h-10 w-full">
                   <SelectValue placeholder="Select one" />
@@ -896,12 +1125,17 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
             </div>
 
             <div>
-              <Label htmlFor="current_who_stage" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="current_who_stage"
+                className="text-sm font-medium text-gray-700"
+              >
                 Current WHO Stage:
               </Label>
-              <Select 
+              <Select
                 value={form.watch("current_who_stage") || ""}
-                onValueChange={(value) => form.setValue("current_who_stage", value)}
+                onValueChange={(value) =>
+                  form.setValue("current_who_stage", value)
+                }
               >
                 <SelectTrigger className="mt-2 h-10 w-full">
                   <SelectValue placeholder="Select one" />
@@ -916,12 +1150,17 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
             </div>
 
             <div>
-              <Label htmlFor="treatment_indication_id" className="text-sm font-medium text-gray-700">
+              <Label
+                htmlFor="treatment_indication_id"
+                className="text-sm font-medium text-gray-700"
+              >
                 Indication for Viral Load Testing:
               </Label>
-              <Select 
+              <Select
                 value={form.watch("treatment_indication_id") || ""}
-                onValueChange={(value) => form.setValue("treatment_indication_id", value)}
+                onValueChange={(value) =>
+                  form.setValue("treatment_indication_id", value)
+                }
               >
                 <SelectTrigger className="mt-2 h-10 w-full">
                   <SelectValue placeholder="Select one" />
@@ -929,9 +1168,15 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
                 <SelectContent>
                   <SelectItem value="93">Routine Monitoring</SelectItem>
                   <SelectItem value="94">Repeat Viral Load</SelectItem>
-                  <SelectItem value="95">Suspected Treatment Failure</SelectItem>
-                  <SelectItem value="97">6 months after ART initiation</SelectItem>
-                  <SelectItem value="98">12 months after ART initiation</SelectItem>
+                  <SelectItem value="95">
+                    Suspected Treatment Failure
+                  </SelectItem>
+                  <SelectItem value="97">
+                    6 months after ART initiation
+                  </SelectItem>
+                  <SelectItem value="98">
+                    12 months after ART initiation
+                  </SelectItem>
                   <SelectItem value="99">Repeat (after IAC)</SelectItem>
                   <SelectItem value="100">1st ANC For PMTCT</SelectItem>
                   <SelectItem value="220">Special Consideration</SelectItem>
@@ -970,4 +1215,4 @@ export default function EditViralLoadForm({ sample, sampleId, user }: EditViralL
       </div>
     </form>
   );
-} 
+}

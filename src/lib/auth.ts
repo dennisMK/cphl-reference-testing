@@ -93,10 +93,10 @@ export async function getCurrentUser(): Promise<User | null> {
       username: foundUser.username,
       name: foundUser.name,
       email: foundUser.email,
-      facility_id: foundUser.facility_id,
-      facility_name: foundUser.facility_name,
-      hub_id: foundUser.hub_id,
-      hub_name: foundUser.hub_name,
+      facility_id: foundUser.facilityId,
+      facility_name: foundUser.facilityName,
+      hub_id: foundUser.hubId,
+      hub_name: foundUser.hubName,
       deactivated: foundUser.deactivated,
     };
   } catch (error) {
