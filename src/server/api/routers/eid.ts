@@ -7,28 +7,42 @@ import { getEidDb } from "@/server/db";
 
 // Input validation schemas
 const createEIDRequestSchema = z.object({
+  // Requesting clinician
+  infant_entryPoint: z.string().optional(),
+  senders_name: z.string().min(1, "Requested by is required"),
+  senders_telephone: z.string().min(1, "Telephone number is required"),
+  
   // Infant information
   infant_name: z.string().min(1, "Infant name is required"),
+  infant_exp_id: z.string().min(1, "EXP No is required"),
   infant_gender: z.enum(["MALE", "FEMALE", "NOT_RECORDED"]).default("NOT_RECORDED"),
-  infant_age: z.string().optional(),
-  infant_age_units: z.string().optional(),
-  infant_dob: z.string().optional(),
-  infant_is_breast_feeding: z.enum(["YES", "NO", "UNKNOWN"]).default("UNKNOWN"),
+  infant_age: z.string().min(1, "Age is required"),
+  infant_age_units: z.enum(["months", "days", "weeks", "years"]),
   infant_contact_phone: z.string().optional(),
-  infant_feeding: z.string().optional(),
+  given_contri: z.enum(["BLANK", "Y", "N"]).default("BLANK"),
+  delivered_at_hc: z.enum(["BLANK", "Y", "N"]).default("BLANK"),
+  infant_arvs: z.string().optional(),
+  env_num1: z.string().optional(),
   
-  // Mother information
+  // Other section
+  infant_feeding: z.string().min(1, "Infant feeding is required"),
+  test_type: z.enum(["P", "S", "B"]).optional(),
+  pcr: z.enum(["UNKNOWN", "FIRST", "SECOND", "THIRD"]).default("UNKNOWN"),
+  non_routine: z.enum(["NONE", "R1", "R2", "R3"]).optional(),
   mother_htsnr: z.string().optional(),
   mother_artnr: z.string().optional(),
   mother_nin: z.string().optional(),
+  mother_antenatal_prophylaxis: z.string().optional(),
+  mother_delivery_prophylaxis: z.string().optional(),
+  mother_postnatal_prophylaxis: z.string().optional(),
   
-  // Test information
-  test_type: z.string().optional(),
-  pcr: z.enum(["FIRST", "SECOND", "NON_ROUTINE", "UNKNOWN", "THIRD"]).default("FIRST"),
-  PCR_test_requested: z.enum(["NO", "YES"]).default("YES"),
-  SCD_test_requested: z.enum(["NO", "YES"]).default("NO"),
-  
-  // Batch/facility information will be auto-filled from user context
+  // Hidden SCD fields
+  sample_type: z.enum(["DBS", "Whole blood"]).optional(),
+  first_symptom_age: z.enum(["BLANK", "1", "2"]).optional(),
+  diagnosis_age: z.enum(["BLANK", "1", "2"]).optional(),
+  test_reason: z.string().optional(),
+  fam_history: z.string().optional(),
+  screening_program: z.string().optional(),
 });
 
 const updateEIDRequestSchema = z.object({
@@ -279,23 +293,36 @@ export const eidRouter = createTRPCRouter({
 
         if (!batch[0]) {
           // Create a new batch with all required fields
-          const newBatch = await eidDb.insert(batches).values({
+          const newBatchResult = await eidDb.insert(batches).values({
             facility_id: user.facility_id!,
             facility_name: user.facility_name || "Unknown Facility",
             facility_district: (user as any).facility_district || "Unknown District",
             entered_by: user.id,
-            senders_name: user.name || user.username || "Unknown",
-            senders_telephone: (user as any).phone || "",
+            senders_name: input.senders_name,
+            senders_telephone: input.senders_telephone,
             senders_comments: "EID batch created via electronic system",
             results_return_address: user.facility_name || "Facility Address",
             results_transport_method: "COLLECTED_FROM_LAB",
-            tests_requested: input.SCD_test_requested === "YES" ? "BOTH_PCR_AND_SCD" : "PCR",
+            tests_requested: input.test_type === "S" ? "SCD" : (input.test_type === "B" ? "BOTH_PCR_AND_SCD" : "PCR"),
             requesting_unit: "EID Unit",
             // Set required date fields
             date_entered_in_DB: new Date().toISOString().split('T')[0],
             is_single_form: 0,
           });
-          batchId = (newBatch as any).insertId;
+          
+          // Get the inserted batch ID properly
+          const insertedBatch = await eidDb
+            .select({ id: batches.id })
+            .from(batches)
+            .where(eq(batches.entered_by, user.id))
+            .orderBy(desc(batches.id))
+            .limit(1);
+          
+          if (!insertedBatch[0]) {
+            throw new Error("Failed to create batch");
+          }
+          
+          batchId = insertedBatch[0].id;
         } else {
           batchId = batch[0].id;
         }
@@ -319,20 +346,27 @@ export const eidRouter = createTRPCRouter({
           pos_in_batch: nextPosition,
           is_single_form: 0,
           infant_name: input.infant_name,
+          infant_exp_id: input.infant_exp_id,
           infant_gender: input.infant_gender || "NOT_RECORDED",
-          infant_age: input.infant_age || null,
-          infant_age_units: input.infant_age_units || null,
-          infant_dob: input.infant_dob ? input.infant_dob : null,
-          infant_is_breast_feeding: input.infant_is_breast_feeding || "UNKNOWN",
+          infant_age: input.infant_age,
+          infant_age_units: input.infant_age_units,
+          infant_entryPoint: input.infant_entryPoint ? parseInt(input.infant_entryPoint) : null,
           infant_contact_phone: input.infant_contact_phone || null,
-          infant_feeding: input.infant_feeding || null,
+          given_contri: input.given_contri || "BLANK",
+          delivered_at_hc: input.delivered_at_hc || "BLANK",
+          infant_feeding: input.infant_feeding,
           mother_htsnr: input.mother_htsnr || null,
           mother_artnr: input.mother_artnr || null,
           mother_nin: input.mother_nin || null,
           test_type: input.test_type || null,
           pcr: input.pcr || "UNKNOWN",
-          PCR_test_requested: input.PCR_test_requested || "YES",
-          SCD_test_requested: input.SCD_test_requested || "NO",
+          non_routine: input.non_routine === "NONE" ? null : input.non_routine,
+          mother_antenatal_prophylaxis: input.mother_antenatal_prophylaxis ? parseInt(input.mother_antenatal_prophylaxis) : null,
+          mother_delivery_prophylaxis: input.mother_delivery_prophylaxis ? parseInt(input.mother_delivery_prophylaxis) : null,
+          mother_postnatal_prophylaxis: input.mother_postnatal_prophylaxis ? parseInt(input.mother_postnatal_prophylaxis) : null,
+          // Determine test requests based on test_type
+          PCR_test_requested: (input.test_type === "P" || input.test_type === "B") ? "YES" : "NO",
+          SCD_test_requested: (input.test_type === "S" || input.test_type === "B") ? "YES" : "NO",
           // Set the required date field to today instead of the default
           date_data_entered: new Date().toISOString().split('T')[0],
         });
