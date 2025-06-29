@@ -344,7 +344,7 @@ export default function VLResultsPage() {
           
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Viral Load Results</h1>
+              <h1 className="text-2xl font-bold text-gray-900">Viral Load Requests</h1>
               <p className="text-gray-600 mt-1">
                 {totalResults > 0 ? `${totalResults} results found` : "No results available"}
               </p>
@@ -533,7 +533,7 @@ export default function VLResultsPage() {
               <p className="text-gray-600 mb-4">
                 {searchTerm 
                   ? `No results match "${searchTerm}". Try adjusting your search.` 
-                  : "No viral load results are available yet."
+                  : "No Viral Load Requests are available yet."
                 }
               </p>
               {searchTerm && (

@@ -786,7 +786,7 @@ export const viralLoadRouter = createTRPCRouter({
       };
     }),
 
-  // Get viral load results for completed tests
+  // Get Viral Load Request for completed tests
   getResults: protectedProcedure
     .input(
       z.object({

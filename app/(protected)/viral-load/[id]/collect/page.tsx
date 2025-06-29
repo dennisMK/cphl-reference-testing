@@ -53,6 +53,7 @@ export default function CollectSamplePage() {
     onSuccess: () => {
       toast.success("Sample collection submitted successfully!")
       setTimeout(() => {
+        
         router.push("/viral-load/pending-collection")
       }, 1000)
     },
