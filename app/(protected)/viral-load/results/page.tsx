@@ -112,7 +112,16 @@ export default function VLResultsPage() {
   const totalPages = useMemo(() => Math.ceil(totalResults / pageSize), [totalResults, pageSize]);
 
   // Memoized badge component to prevent re-renders
-  const getResultBadge = useCallback((interpretation: string, value: number | null) => {
+  const getResultBadge = useCallback((interpretation: string, status: string) => {
+    if (status === "pending") {
+      return (
+        <Badge variant="outline" className="bg-yellow-50 text-yellow-700 border-yellow-200">
+          <Clock className="h-3 w-3 mr-1" />
+          Pending
+        </Badge>
+      );
+    }
+    
     if (interpretation === "Suppressed") {
       return (
         <Badge className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
@@ -125,6 +134,13 @@ export default function VLResultsPage() {
         <Badge className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">
           <AlertTriangle className="h-3 w-3 mr-1" />
           Unsuppressed
+        </Badge>
+      );
+    } else if (interpretation === "Result Pending") {
+      return (
+        <Badge variant="outline" className="bg-orange-50 text-orange-700 border-orange-200">
+          <Loader2 className="h-3 w-3 mr-1" />
+          Processing
         </Badge>
       );
     }
@@ -220,7 +236,7 @@ export default function VLResultsPage() {
               </div>
               
               <div className="flex items-center gap-3">
-                {getResultBadge(selectedResult.interpretation, selectedResult.viralLoadValue)}
+                {getResultBadge(selectedResult.interpretation, selectedResult.status)}
                 <Button variant="outline" size="sm">
                   <Download className="h-4 w-4 mr-2" />
                   Download
@@ -261,7 +277,7 @@ export default function VLResultsPage() {
           </Card>
 
           {/* Details Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {/* Sample Information */}
             <Card>
               <CardHeader className="pb-3">
@@ -271,10 +287,14 @@ export default function VLResultsPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="grid grid-cols-2 gap-3 text-sm">
+                <div className="grid grid-cols-1 gap-3 text-sm">
                   <div>
                     <p className="text-gray-600">Sample ID</p>
-                    <p className="font-medium">{selectedResult.sampleId}</p>
+                    <p className="font-medium font-mono">{selectedResult.sampleId}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Form Number</p>
+                    <p className="font-medium font-mono">{selectedResult.formNumber}</p>
                   </div>
                   <div>
                     <p className="text-gray-600">Type</p>
@@ -285,8 +305,12 @@ export default function VLResultsPage() {
                     <p className="font-medium">{selectedResult.dateCollected || "N/A"}</p>
                   </div>
                   <div>
+                    <p className="text-gray-600">Received</p>
+                    <p className="font-medium">{selectedResult.dateReceived || "N/A"}</p>
+                  </div>
+                  <div>
                     <p className="text-gray-600">Processed</p>
-                    <p className="font-medium">{selectedResult.dateProcessed || "N/A"}</p>
+                    <p className="font-medium">{selectedResult.dateProcessed || "Pending"}</p>
                   </div>
                 </div>
               </CardContent>
@@ -311,17 +335,78 @@ export default function VLResultsPage() {
                     <p className="font-medium">{selectedResult.facility}</p>
                   </div>
                   <div>
+                    <p className="text-gray-600">Clinician</p>
+                    <p className="font-medium">{selectedResult.requestingClinician}</p>
+                  </div>
+                  <div>
                     <p className="text-gray-600">Result Date</p>
                     <p className="font-medium">{selectedResult.resultDate}</p>
                   </div>
                   <div>
-                    <p className="text-gray-600">Result Time</p>
-                    <p className="font-medium">{selectedResult.resultTime}</p>
+                    <p className="text-gray-600">Status</p>
+                    <p className="font-medium capitalize">{selectedResult.status}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Laboratory Information */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Activity className="h-5 w-5 text-purple-600" />
+                  Laboratory Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="grid grid-cols-1 gap-3 text-sm">
+                  <div>
+                    <p className="text-gray-600">Laboratory</p>
+                    <p className="font-medium">{selectedResult.laboratoryName}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Test Method</p>
+                    <p className="font-medium">{selectedResult.testMethod}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Instrument</p>
+                    <p className="font-medium">{selectedResult.instrument}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Quality Control</p>
+                    <p className="font-medium">{selectedResult.qualityControl}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Reference Range</p>
+                    <p className="font-medium">{selectedResult.referenceRange}</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600">Detection Status</p>
+                    <p className="font-medium capitalize">{selectedResult.detectionStatus?.replace('_', ' ')}</p>
                   </div>
                 </div>
               </CardContent>
             </Card>
           </div>
+
+          {/* Clinical Information */}
+          {selectedResult.recommendation && (
+            <Card className="mt-6">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="h-5 w-5 text-green-600" />
+                  Clinical Recommendation
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Alert className="border-blue-200 bg-blue-50">
+                  <AlertDescription className="text-blue-800">
+                    {selectedResult.recommendation}
+                  </AlertDescription>
+                </Alert>
+              </CardContent>
+            </Card>
+          )}
         </div>
       </div>
     );
@@ -419,7 +504,8 @@ export default function VLResultsPage() {
                       <TableHead className="font-semibold">Sample</TableHead>
                       <TableHead className="font-semibold">Result</TableHead>
                       <TableHead className="font-semibold">Status</TableHead>
-                      <TableHead className="font-semibold">Date</TableHead>
+                      <TableHead className="font-semibold">Facility</TableHead>
+                      <TableHead className="font-semibold">Collected</TableHead>
                       <TableHead className="font-semibold">Type</TableHead>
                       <TableHead className="font-semibold">Action</TableHead>
                     </TableRow>
@@ -427,25 +513,55 @@ export default function VLResultsPage() {
                   <TableBody>
                     {results.map((result) => (
                       <TableRow key={result.id} className="hover:bg-gray-50">
-                        <TableCell className="font-medium">{result.patientId}</TableCell>
+                        <TableCell>
+                          <div>
+                            <span className="font-medium">{result.patientId}</span>
+                            {result.formNumber && (
+                              <div className="text-xs text-gray-500 font-mono">{result.formNumber}</div>
+                            )}
+                          </div>
+                        </TableCell>
                         <TableCell className="font-mono text-sm text-gray-600">
-                          {result.sampleId}
+                          <div>
+                            <div>{result.sampleId}</div>
+                            {result.dateReceived && (
+                              <div className="text-xs text-gray-400">Received: {result.dateReceived}</div>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <div>
                             <span className="font-medium">
                               {formatViralLoadValue(result.viralLoadValue, result.detectionStatus)}
                             </span>
-                            {result.detectionStatus !== "not_detected" && (
-                              <span className="text-xs text-gray-500 ml-1">copies/mL</span>
+                            {result.detectionStatus !== "not_detected" && result.viralLoadValue && (
+                              <span className="text-xs text-gray-500 ml-1">{result.viralLoadUnit}</span>
+                            )}
+                            {result.detectionStatus && (
+                              <div className="text-xs text-gray-400 capitalize">
+                                {result.detectionStatus.replace('_', ' ')}
+                              </div>
                             )}
                           </div>
                         </TableCell>
                         <TableCell>
-                          {getResultBadge(result.interpretation, result.viralLoadValue)}
+                          {getResultBadge(result.interpretation, result.status)}
+                        </TableCell>
+                        <TableCell className="text-sm">
+                          <div>
+                            <div className="font-medium text-gray-900">{result.facility}</div>
+                            {result.requestingClinician && (
+                              <div className="text-xs text-gray-500">{result.requestingClinician}</div>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell className="text-sm text-gray-600">
-                          {result.resultDate}
+                          <div>
+                            <div>{result.dateCollected}</div>
+                            {result.resultDate && result.resultDate !== result.dateCollected && (
+                              <div className="text-xs text-gray-400">Result: {result.resultDate}</div>
+                            )}
+                          </div>
                         </TableCell>
                         <TableCell>
                           <Badge variant="outline" className="text-xs">

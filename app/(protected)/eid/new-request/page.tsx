@@ -74,9 +74,20 @@ export default function NewEIDRequest(): React.JSX.Element {
     },
   });
 
+
+   // Fetch dashboard statistics
+    const { refetch: refetchStats } = api.eid.getDashboardStats.useQuery();
+  
+    // Fetch real analytics data from the API
+    const { refetch: refetchAnalytics } = api.eid.getAnalytics.useQuery({
+      days: 15,
+    });
+
   const createRequestMutation = api.eid.createRequest.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast.success("EID request created successfully!");
+      await refetchStats();
+      await refetchAnalytics();
       router.push(`/eid`);
     },
     onError: (error) => {
@@ -251,15 +262,15 @@ export default function NewEIDRequest(): React.JSX.Element {
                     control={form.control}
                     name="infant_gender"
                     render={({ field }) => (
-                      <FormItem>
+                      <FormItem className="w-full">
                         <FormLabel>Sex: *</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
+                        <Select  onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select gender" />
+                            <SelectTrigger className="w-full">
+                              <SelectValue  placeholder="Select gender" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                          <SelectContent >
                             <SelectItem value="MALE">M</SelectItem>
                             <SelectItem value="FEMALE">F</SelectItem>
                             <SelectItem value="NOT_RECORDED">Blank</SelectItem>

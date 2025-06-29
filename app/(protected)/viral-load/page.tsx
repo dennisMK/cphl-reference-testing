@@ -5,11 +5,13 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Plus, Clock, Package, FileText } from "lucide-react";
 import Link from "next/link";
-import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import { Bar, BarChart, CartesianGrid, XAxis, YAxis, ResponsiveContainer, Legend } from "recharts";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
+  ChartLegend,
+  ChartLegendContent,
 } from "@/components/ui/chart";
 import type { ChartConfig } from "@/components/ui/chart";
 import { api } from "@/trpc/react";
@@ -21,12 +23,12 @@ const chartConfig = {
     color: "#ef4444", // red-500
   },
   packaged: {
-    label: "Packaged Samples",
-    color: "#f97316", // orange-500
+    label: "Packaged Samples", 
+    color: "#ef4444", // red-500
   },
   results: {
     label: "Results Received",
-    color: "#22c55e", // green-500
+    color: "#ef4444", // red-500
   },
 } satisfies ChartConfig;
 
@@ -39,7 +41,7 @@ const timeRanges = [
 ];
 
 export default function page() {
-  const [activeChart, setActiveChart] = React.useState<keyof typeof chartConfig>("pending");
+  const [activeChart, setActiveChart] = React.useState<keyof typeof chartConfig | "all">("all");
   const [selectedTimeRange, setSelectedTimeRange] = React.useState(15);
 
   // Fetch real analytics data from the API
@@ -47,19 +49,38 @@ export default function page() {
     days: selectedTimeRange,
   });
 
-  const total = React.useMemo(
+  // Get current active values (latest date for current status)
+  const currentValues = React.useMemo(
     () => {
-      if (!analyticsData) {
+      if (!analyticsData || analyticsData.length === 0) {
         return { pending: 0, packaged: 0, results: 0 };
       }
       
-      // Get the latest values from the most recent date
       const latestData = analyticsData[analyticsData.length - 1];
       return {
         pending: latestData?.pending || 0,
         packaged: latestData?.packaged || 0,
         results: latestData?.results || 0,
       };
+    },
+    [analyticsData]
+  );
+
+  // Calculate total values (sum across the time period)
+  const totalValues = React.useMemo(
+    () => {
+      if (!analyticsData) {
+        return { pending: 0, packaged: 0, results: 0 };
+      }
+      
+      return analyticsData.reduce(
+        (acc, day) => ({
+          pending: acc.pending + (day.pending || 0),
+          packaged: acc.packaged + (day.packaged || 0),
+          results: acc.results + (day.results || 0),
+        }),
+        { pending: 0, packaged: 0, results: 0 }
+      );
     },
     [analyticsData]
   );
@@ -168,29 +189,69 @@ export default function page() {
             <div className="flex flex-1 flex-col justify-center gap-1 px-6 pt-4 pb-3 sm:!py-0">
               <CardTitle>Viral Load Testing Overview</CardTitle>
               <CardDescription>
-                Showing testing workflow metrics for the {getSelectedTimeRangeLabel()}
+                {activeChart === "all" 
+                  ? `Comparing all workflow metrics for the ${getSelectedTimeRangeLabel()}` 
+                  : `Showing ${chartConfig[activeChart as keyof typeof chartConfig].label.toLowerCase()} for the ${getSelectedTimeRangeLabel()}`
+                }
               </CardDescription>
             </div>
             <div className="flex">
+              <button
+                data-active={activeChart === "all"}
+                className={`relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-4 py-3 text-left transition-colors sm:border-t-0 sm:border-l sm:px-6 sm:py-4 ${
+                  activeChart === "all" ? "bg-muted/50" : "hover:bg-muted/20"
+                }`}
+                onClick={() => setActiveChart("all")}
+              >
+                <span className="text-muted-foreground text-xs">All Metrics</span>
+                <div className="flex flex-col gap-1">
+                  <span className="text-lg leading-none font-bold sm:text-2xl">
+                    {isLoading ? (
+                      <div className="h-5 w-8 bg-gray-200 animate-pulse rounded"></div>
+                    ) : (
+                      (currentValues.pending + currentValues.packaged + currentValues.results).toLocaleString()
+                    )}
+                  </span>
+                  <span className="text-xs text-muted-foreground">
+                    {isLoading ? (
+                      <div className="h-3 w-12 bg-gray-200 animate-pulse rounded"></div>
+                    ) : (
+                      "current total"
+                    )}
+                  </span>
+                </div>
+              </button>
               {(["pending", "packaged", "results"] as const).map((key) => {
                 const chart = key as keyof typeof chartConfig;
+                const isActive = activeChart === chart;
                 return (
                   <button
                     key={chart}
-                    data-active={activeChart === chart}
-                    className="data-[active=true]:bg-muted/50 relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l sm:border-t-0 sm:border-l sm:px-8 sm:py-6"
+                    data-active={isActive}
+                    className={`relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-4 py-3 text-left transition-colors even:border-l sm:border-t-0 sm:border-l sm:px-6 sm:py-4 ${
+                      isActive ? "bg-muted/50" : "hover:bg-muted/20"
+                    }`}
                     onClick={() => setActiveChart(chart)}
                   >
                     <span className="text-muted-foreground text-xs">
                       {chartConfig[chart].label}
                     </span>
-                    <span className="text-lg leading-none font-bold sm:text-3xl">
-                      {isLoading ? (
-                        <div className="h-6 w-12 bg-gray-200 animate-pulse rounded"></div>
-                      ) : (
-                        total[key].toLocaleString()
-                      )}
-                    </span>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-lg leading-none font-bold sm:text-2xl">
+                        {isLoading ? (
+                          <div className="h-5 w-8 bg-gray-200 animate-pulse rounded"></div>
+                        ) : (
+                          currentValues[key].toLocaleString()
+                        )}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {isLoading ? (
+                          <div className="h-3 w-12 bg-gray-200 animate-pulse rounded"></div>
+                        ) : (
+                          `${totalValues[key]} total`
+                        )}
+                      </span>
+                    </div>
                   </button>
                 );
               })}
@@ -198,33 +259,44 @@ export default function page() {
           </CardHeader>
           <CardContent className="px-2 sm:p-6">
             {isLoading ? (
-              <div className="h-[250px] w-full flex items-center justify-center">
+              <div className="h-[350px] w-full flex items-center justify-center">
                 <div className="text-muted-foreground">Loading analytics...</div>
               </div>
             ) : !analyticsData || analyticsData.length === 0 ? (
-              <div className="h-[250px] w-full flex items-center justify-center">
-                <div className="text-muted-foreground">No data available</div>
+              <div className="h-[350px] w-full flex items-center justify-center">
+                <div className="text-center">
+                  <div className="text-muted-foreground mb-2">No data available</div>
+                  <p className="text-sm text-muted-foreground">Data will appear here once viral load tests are processed</p>
+                </div>
               </div>
             ) : (
               <ChartContainer
                 config={chartConfig}
-                className="aspect-auto h-[250px] w-full"
+                className="aspect-auto h-[350px] w-full"
               >
                 <BarChart
                   accessibilityLayer
                   data={analyticsData}
                   margin={{
-                    left: 12,
-                    right: 12,
+                    left: 20,
+                    right: 20,
+                    top: 20,
+                    bottom: 20,
                   }}
                 >
-                  <CartesianGrid vertical={false} />
+                  <CartesianGrid 
+                    vertical={false} 
+                    strokeDasharray="3 3" 
+                    stroke="hsl(var(--muted-foreground))" 
+                    opacity={0.3}
+                  />
                   <XAxis
                     dataKey="date"
                     tickLine={false}
                     axisLine={false}
                     tickMargin={8}
-                    minTickGap={32}
+                    minTickGap={24}
+                    tick={{ fontSize: 12 }}
                     tickFormatter={(value) => {
                       const date = new Date(value);
                       return date.toLocaleDateString("en-US", {
@@ -233,22 +305,66 @@ export default function page() {
                       });
                     }}
                   />
+                  <YAxis 
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    tick={{ fontSize: 12 }}
+                    allowDecimals={false}
+                  />
                   <ChartTooltip
                     content={
                       <ChartTooltipContent
-                        className="w-[150px]"
-                        nameKey="samples"
+                        className="w-[200px]"
                         labelFormatter={(value) => {
                           return new Date(value).toLocaleDateString("en-US", {
+                            weekday: "short",
                             month: "short",
                             day: "numeric",
                             year: "numeric",
                           });
                         }}
+                        formatter={(value, name) => [
+                          `${value} ${name === 'pending' ? 'pending' : name === 'packaged' ? 'packaged' : 'results'}`,
+                          chartConfig[name as keyof typeof chartConfig]?.label || name
+                        ]}
                       />
                     }
                   />
-                  <Bar dataKey={activeChart} fill={chartConfig[activeChart].color} />
+                  {activeChart === "all" ? (
+                    <>
+                      <Bar 
+                        dataKey="pending" 
+                        fill={chartConfig.pending.color} 
+                        name="pending"
+                        radius={[2, 2, 0, 0]}
+                        opacity={0.8}
+                      />
+                      <Bar 
+                        dataKey="packaged" 
+                        fill={chartConfig.packaged.color} 
+                        name="packaged"
+                        radius={[2, 2, 0, 0]}
+                        opacity={0.8}
+                      />
+                      <Bar 
+                        dataKey="results" 
+                        fill={chartConfig.results.color} 
+                        name="results"
+                        radius={[2, 2, 0, 0]}
+                        opacity={0.8}
+                      />
+                      <ChartLegend content={<ChartLegendContent />} />
+                    </>
+                  ) : (
+                    <Bar 
+                      dataKey={activeChart} 
+                      fill={chartConfig[activeChart as keyof typeof chartConfig].color} 
+                      name={activeChart}
+                      radius={[4, 4, 0, 0]}
+                      opacity={0.9}
+                    />
+                  )}
                 </BarChart>
               </ChartContainer>
             )}

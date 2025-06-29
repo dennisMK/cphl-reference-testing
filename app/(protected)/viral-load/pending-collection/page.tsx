@@ -479,10 +479,12 @@ export default function page() {
   })
 
   const samples = requestsData?.samples || []
-  const pendingCount = samples.filter((sample) => !sample.date_received).length
-  const collectedCount = samples.filter((sample) => sample.date_received && !sample.date_received).length
-  const processingCount = samples.filter((sample) => sample.date_received && !sample.verified).length
-  const completedCount = samples.filter((sample) => sample.date_received && sample.verified === 1).length
+  
+  // Calculate stats based on stage codes: 20 (pending collection), 25 (pending packaging), 30 (in transit)
+  const pendingCount = samples.filter((sample) => sample.stage === 20).length
+  const collectedCount = samples.filter((sample) => sample.stage === 25).length
+  const inTransitCount = samples.filter((sample) => sample.stage === 30).length
+  const completedCount = samples.filter((sample) => sample.verified === 1).length
 
   return (
     <main className="container mx-auto px-4 py-6">
@@ -508,39 +510,26 @@ export default function page() {
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-blue-500" />
-              Collected Samples
+              <Package className="h-5 w-5 text-blue-500" />
+              Pending Packaging
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">{collectedCount}</div>
-            <p className="text-sm text-muted-foreground">Samples collected, ready for packaging</p>
+            <p className="text-sm text-muted-foreground">Samples ready for packaging</p>
           </CardContent>
         </Card>
-
-        {/* <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Package className="h-5 w-5 text-purple-500" />
-              Processing
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-4xl font-bold">{processingCount}</div>
-            <p className="text-sm text-muted-foreground">Samples being processed</p>
-          </CardContent>
-        </Card> */}
 
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <CheckCircle className="h-5 w-5 text-green-500" />
-              Completed
+              <FileText className="h-5 w-5 text-purple-500" />
+              In Transit
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">{completedCount}</div>
-            <p className="text-sm text-muted-foreground">Results available</p>
+            <div className="text-4xl font-bold">{inTransitCount}</div>
+            <p className="text-sm text-muted-foreground">Samples being processed</p>
           </CardContent>
         </Card>
       </div>
