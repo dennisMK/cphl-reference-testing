@@ -441,25 +441,30 @@ export const viralLoadRouter = createTRPCRouter({
       
       const vlDb = await getVlLimsDb();
 
+      const now = new Date().toISOString().slice(0, 19).replace('T', ' ');
       const updateData: Record<string, any> = {
-        updatedAt: new Date().toISOString(),
+        updatedAt: now,
       };
 
       switch (input.status) {
         case "collected":
           updateData.dateCollected = new Date().toISOString().split('T')[0];
+          updateData.stage = 25; // Status Code 25: Pending packaging
           break;
         case "received":
           updateData.dateReceived = new Date().toISOString().split('T')[0];
           updateData.receivedById = user.id;
+          updateData.stage = 30; // Status Code 30: In transit
           break;
         case "processing":
           updateData.inWorksheet = 1;
+          // Keep current stage (likely 30)
           break;
         case "completed":
           updateData.verified = 1;
           updateData.verifierId = user.id;
           updateData.verifiedAt = new Date().toISOString().split('T')[0];
+          // Completed samples don't need stage update (handled by verified flag)
           break;
       }
 
