@@ -104,12 +104,12 @@ export default function SettingsPage() {
               </CardTitle>
               <CardDescription>Your facility and hub assignment details</CardDescription>
                   </div>
-            <Link href="/settings/edit-facility">
+            {/* <Link href="/settings/edit-facility">
               <Button variant="outline" size="sm" className="flex items-center gap-2">
                 <Edit className="h-4 w-4" />
                 Edit Facility
               </Button>
-            </Link>
+            </Link> */}
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

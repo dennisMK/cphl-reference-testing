@@ -106,6 +106,145 @@ export const eidRouter = createTRPCRouter({
     };
   }),
 
+  // Get analytics data for charts
+  getAnalytics: protectedProcedure
+    .input(
+      z.object({
+        days: z.number().min(1).max(999).default(15),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const user = ctx.user;
+      
+      if (!user.facility_id) {
+        return [];
+      }
+
+      const eidDb = await getEidDb();
+
+      // Get all samples for the facility
+      const allSamples = await eidDb
+        .select({
+          id: dbs_samples.id,
+          date_dbs_taken: dbs_samples.date_dbs_taken,
+          date_rcvd_by_cphl: batches.date_rcvd_by_cphl,
+          testing_completed: dbs_samples.testing_completed,
+          accepted_result: dbs_samples.accepted_result,
+          created_at: dbs_samples.created_at,
+        })
+        .from(dbs_samples)
+        .leftJoin(batches, eq(dbs_samples.batch_id, batches.id))
+        .where(eq(batches.facility_id, user.facility_id!));
+
+      // Handle "All Time" - find the earliest sample date
+      let startDate: Date;
+      const endDate = new Date();
+      
+      if (input.days >= 999) {
+        // "All Time" - find earliest sample
+        const earliestSample = allSamples.reduce((earliest, sample) => {
+          const sampleDate = new Date(sample.created_at);
+          return !earliest || sampleDate < earliest ? sampleDate : earliest;
+        }, null as Date | null);
+        
+        if (earliestSample) {
+          startDate = new Date(earliestSample);
+        } else {
+          // No samples, default to 30 days ago
+          startDate = new Date();
+          startDate.setDate(endDate.getDate() - 30);
+        }
+      } else {
+        // Regular time range
+        startDate = new Date();
+        startDate.setDate(endDate.getDate() - input.days + 1);
+      }
+
+      const analyticsData = [];
+
+      // For longer periods, group by weeks or months for performance
+      const totalDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      const shouldGroupByWeeks = totalDays > 90;
+      const shouldGroupByMonths = totalDays > 365;
+
+      if (shouldGroupByMonths) {
+        // Group by months for very long periods
+        const currentDate = new Date(startDate);
+        currentDate.setDate(1); // Start of month
+        
+        while (currentDate <= endDate) {
+          const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0);
+          const dateStr = currentDate.toISOString().split('T')[0];
+          
+          const samplesUpToThisDate = allSamples.filter(sample => {
+            const sampleDate = new Date(sample.created_at);
+            return sampleDate <= monthEnd;
+          });
+
+          const pending = samplesUpToThisDate.filter(s => !s.date_dbs_taken).length;
+          const collected = samplesUpToThisDate.filter(s => s.date_dbs_taken).length;
+
+          analyticsData.push({
+            date: dateStr,
+            pending,
+            collected,
+          });
+
+          currentDate.setMonth(currentDate.getMonth() + 1);
+        }
+      } else if (shouldGroupByWeeks) {
+        // Group by weeks for medium periods
+        const currentDate = new Date(startDate);
+        const dayOfWeek = currentDate.getDay();
+        const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+        currentDate.setDate(currentDate.getDate() + mondayOffset);
+        
+        while (currentDate <= endDate) {
+          const weekEnd = new Date(currentDate);
+          weekEnd.setDate(weekEnd.getDate() + 6);
+          const dateStr = currentDate.toISOString().split('T')[0];
+          
+          const samplesUpToThisDate = allSamples.filter(sample => {
+            const sampleDate = new Date(sample.created_at);
+            return sampleDate <= weekEnd;
+          });
+
+          const pending = samplesUpToThisDate.filter(s => !s.date_dbs_taken).length;
+          const collected = samplesUpToThisDate.filter(s => s.date_dbs_taken).length;
+
+          analyticsData.push({
+            date: dateStr,
+            pending,
+            collected,
+          });
+
+          currentDate.setDate(currentDate.getDate() + 7);
+        }
+      } else {
+        // Daily data for short periods (≤ 90 days)
+        for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+          const currentDate = new Date(d);
+          const dateStr = currentDate.toISOString().split('T')[0];
+          
+          const samplesUpToThisDate = allSamples.filter(sample => {
+            const sampleDate = new Date(sample.created_at);
+            return sampleDate <= currentDate;
+          });
+
+          const pending = samplesUpToThisDate.filter(s => !s.date_dbs_taken).length;
+          const collected = samplesUpToThisDate.filter(s => s.date_dbs_taken).length;
+
+          analyticsData.push({
+            date: dateStr,
+            pending,
+            collected,
+          });
+        }
+      }
+
+      return analyticsData;
+    }),
+
   // Get EID requests for the current user's facility
   getRequests: protectedProcedure
     .input(

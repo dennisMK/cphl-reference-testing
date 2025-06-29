@@ -1,16 +1,72 @@
 "use client";
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Plus, TestTube, Clock, CheckCircle, FileText, Package } from "lucide-react";
 import Link from "next/link";
+import { Bar, BarChart, CartesianGrid, XAxis } from "recharts";
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from "@/components/ui/chart";
+import type { ChartConfig } from "@/components/ui/chart";
 import { api } from "@/trpc/react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { cn } from "@/lib/utils";
+
+const chartConfig = {
+  pending: {
+    label: "Pending Collection",
+    color: "#ef4444", // red-500
+  },
+  collected: {
+    label: "Collected Samples",
+    color: "#22c55e", // green-500
+  },
+} satisfies ChartConfig;
+
+const timeRanges = [
+  { label: "15 Days", value: 15, key: "15d" },
+  { label: "30 Days", value: 30, key: "30d" },
+  { label: "3 Months", value: 90, key: "3m" },
+  { label: "1 Year", value: 365, key: "1y" },
+  { label: "All Time", value: 999, key: "all" },
+];
 
 export default function EIDPage() {
+  const [activeChart, setActiveChart] = React.useState<keyof typeof chartConfig>("pending");
+  const [selectedTimeRange, setSelectedTimeRange] = React.useState(15);
+
   // Fetch dashboard statistics
   const { data: stats, isLoading: statsLoading } = api.eid.getDashboardStats.useQuery();
+
+  // Fetch real analytics data from the API
+  const { data: analyticsData, isLoading: analyticsLoading } = api.eid.getAnalytics.useQuery({
+    days: selectedTimeRange,
+  });
+
+  const total = React.useMemo(
+    () => {
+      if (!analyticsData) {
+        return { pending: 0, collected: 0 };
+      }
+      
+      // Get the latest values from the most recent date
+      const latestData = analyticsData[analyticsData.length - 1];
+      return {
+        pending: latestData?.pending || 0,
+        collected: latestData?.collected || 0,
+      };
+    },
+    [analyticsData]
+  );
+
+  const getSelectedTimeRangeLabel = () => {
+    const range = timeRanges.find(r => r.value === selectedTimeRange);
+    return range ? range.label.toLowerCase() : "15 days";
+  };
 
   const actions = [
     { 
@@ -41,13 +97,13 @@ export default function EIDPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Clock className="h-8 w-8 text-orange-500" />
+              <Clock className="h-8 w-8 text-red-500" />
               <div>
                 <p className="text-sm text-gray-600">Pending Collection</p>
-                {statsLoading ? (
+                {analyticsLoading ? (
                   <Skeleton className="h-8 w-12" />
                 ) : (
-                  <p className="text-2xl font-bold text-orange-600">{stats?.pendingSamples || 0}</p>
+                  <p className="text-2xl font-bold text-red-600">{total.pending}</p>
                 )}
               </div>
             </div>
@@ -57,30 +113,29 @@ export default function EIDPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Package className="h-8 w-8 text-blue-500" />
+              <CheckCircle className="h-8 w-8 text-green-500" />
               <div>
                 <p className="text-sm text-gray-600">Collected</p>
-                {statsLoading ? (
+                {analyticsLoading ? (
                   <Skeleton className="h-8 w-12" />
                 ) : (
-                  <p className="text-2xl font-bold text-blue-600">{stats?.collectedSamples || 0}</p>
+                  <p className="text-2xl font-bold text-green-600">{total.collected}</p>
                 )}
               </div>
             </div>
           </CardContent>
         </Card>
 
-        
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <FileText className="h-8 w-8 text-purple-500" />
+              <FileText className="h-8 w-8 text-blue-500" />
               <div>
                 <p className="text-sm text-gray-600">Total Samples</p>
                 {statsLoading ? (
                   <Skeleton className="h-8 w-12" />
                 ) : (
-                  <p className="text-2xl font-bold text-purple-600">{stats?.totalSamples || 0}</p>
+                  <p className="text-2xl font-bold text-blue-600">{stats?.totalSamples || 0}</p>
                 )}
               </div>
             </div>
@@ -116,41 +171,128 @@ export default function EIDPage() {
         })}
       </div>
 
-      {/* Additional Quick Links */}
-      <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-4">
-        <Link href="/eid/collect-sample">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <TestTube className="h-6 w-6 text-blue-600" />
-                <div>
-                  <p className="font-medium">Pending Collections</p>
-                  <p className="text-sm text-gray-600">
-                    {statsLoading ? "Loading..." : `${stats?.pendingSamples || 0} samples awaiting collection`}
-                  </p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
+     
 
-        
+      {/* Analytics Charts */}
+      <div className="mt-8 space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold mb-2">EID Testing Analytics</h2>
+            <p className="text-muted-foreground">Track early infant diagnosis testing progress and workflow metrics</p>
+          </div>
+          
+          {/* Time Range Filter */}
+          <div className="flex flex-wrap gap-2">
+            {timeRanges.map((range) => (
+              <Button
+                key={range.key}
+                variant={selectedTimeRange === range.value ? "default" : "outline"}
+                size="sm"
+                className={cn(
+                  "transition-all",
+                  selectedTimeRange === range.value 
+                    ? "bg-blue-600 hover:bg-blue-700 text-white"
+                    : "hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
+                )}
+                onClick={() => setSelectedTimeRange(range.value)}
+              >
+                {range.label}
+              </Button>
+            ))}
+          </div>
+        </div>
 
-        <Link href="/eid">
-          <Card className="hover:shadow-md transition-shadow cursor-pointer">
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-3">
-                <FileText className="h-6 w-6 text-purple-600" />
-                <div>
-                  <p className="font-medium">All Requests</p>
-                  <p className="text-sm text-gray-600">
-                    {statsLoading ? "Loading..." : `${stats?.totalSamples || 0} total EID requests`}
-                  </p>
-                </div>
+        <Card className="py-0">
+          <CardHeader className="flex flex-col items-stretch border-b !p-0 sm:flex-row">
+            <div className="flex flex-1 flex-col justify-center gap-1 px-6 pt-4 pb-3 sm:!py-0">
+              <CardTitle>EID Testing Overview</CardTitle>
+              <CardDescription>
+                Showing testing workflow metrics for the {getSelectedTimeRangeLabel()}
+              </CardDescription>
+            </div>
+            <div className="flex">
+              {(["pending", "collected"] as const).map((key) => {
+                const chart = key as keyof typeof chartConfig;
+                return (
+                  <button
+                    key={chart}
+                    data-active={activeChart === chart}
+                    className="data-[active=true]:bg-muted/50 relative z-30 flex flex-1 flex-col justify-center gap-1 border-t px-6 py-4 text-left even:border-l sm:border-t-0 sm:border-l sm:px-8 sm:py-6"
+                    onClick={() => setActiveChart(chart)}
+                  >
+                    <span className="text-muted-foreground text-xs">
+                      {chartConfig[chart].label}
+                    </span>
+                    <span className="text-lg leading-none font-bold sm:text-3xl">
+                      {analyticsLoading ? (
+                        <div className="h-6 w-12 bg-gray-200 animate-pulse rounded"></div>
+                      ) : (
+                        total[key].toLocaleString()
+                      )}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </CardHeader>
+          <CardContent className="px-2 sm:p-6">
+            {analyticsLoading ? (
+              <div className="h-[250px] w-full flex items-center justify-center">
+                <div className="text-muted-foreground">Loading analytics...</div>
               </div>
-            </CardContent>
-          </Card>
-        </Link>
+            ) : !analyticsData || analyticsData.length === 0 ? (
+              <div className="h-[250px] w-full flex items-center justify-center">
+                <div className="text-muted-foreground">No data available</div>
+              </div>
+            ) : (
+              <ChartContainer
+                config={chartConfig}
+                className="aspect-auto h-[250px] w-full"
+              >
+                <BarChart
+                  accessibilityLayer
+                  data={analyticsData}
+                  margin={{
+                    left: 12,
+                    right: 12,
+                  }}
+                >
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="date"
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={8}
+                    minTickGap={32}
+                    tickFormatter={(value) => {
+                      const date = new Date(value);
+                      return date.toLocaleDateString("en-US", {
+                        month: "short",
+                        day: "numeric",
+                      });
+                    }}
+                  />
+                  <ChartTooltip
+                    content={
+                      <ChartTooltipContent
+                        className="w-[150px]"
+                        nameKey="samples"
+                        labelFormatter={(value) => {
+                          return new Date(value).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          });
+                        }}
+                      />
+                    }
+                  />
+                  <Bar dataKey={activeChart} fill={chartConfig[activeChart].color} />
+                </BarChart>
+              </ChartContainer>
+            )}
+          </CardContent>
+        </Card>
       </div>
     </main>
   );
