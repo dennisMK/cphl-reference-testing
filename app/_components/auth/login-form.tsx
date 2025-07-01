@@ -64,11 +64,9 @@ export function LoginForm({
             />
           </div>
           <h1 className="text-4xl font-semibold text-gray-900 mb-3">
-            Uganda Lab e-Test Requests
+            Uganda Lab <br/> e-Test Requests
           </h1>
-          <p className="text-lg text-gray-600">
-            Manage your account
-          </p>
+         
         </div>
 
         {/* Form Container - Apple Style Grouped Inputs */}
@@ -163,28 +161,7 @@ export function LoginForm({
             </Button>
           </form>
 
-          {/* Forgot Password Link */}
-          <div className="text-center mb-8">
-            <Link
-              href="/auth/forgot-password"
-              className="text-black hover:text-gray-700 font-medium text-sm"
-            >
-              Forgot password? →
-            </Link>
-          </div>
-
-          {/* Footer */}
-          <div className="text-center">
-            <p className="text-gray-600">
-              Don't have an account?{" "}
-              <Link
-                href="/auth/signup"
-                className="text-black hover:text-gray-700 font-medium"
-              >
-                Create Account
-              </Link>
-            </p>
-          </div>
+         
         </div>
       </div>
 
