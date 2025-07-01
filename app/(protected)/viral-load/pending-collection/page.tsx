@@ -148,9 +148,14 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
         </Button>
       )
     },
-    cell: ({ row }) => (
-      <div className="font-mono text-sm">{row.getValue("vlSampleId") || "N/A"}</div>
-    ),
+    cell: ({ row }) => {
+      const sample = row.original;
+      // Only show Sample ID if sample has been collected (stage > 20)
+      if (sample.stage === 20) {
+        return <div className="text-sm text-muted-foreground italic">Not collected</div>
+      }
+      return <div className="font-mono text-sm">{row.getValue("vlSampleId") || "N/A"}</div>
+    },
   },
   {
     accessorKey: "sampleType",
@@ -218,6 +223,7 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
     enableHiding: false,
     cell: ({ row }) => {
       const sample = row.original
+      const isNotCollected = sample.stage === 20
 
       return (
         <DropdownMenu>
@@ -229,20 +235,13 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
-            <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(sample.vlSampleId || "")}
-            >
-              <FileText className="mr-2 h-4 w-4" />
-              Copy Sample ID
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
               <a href={`/viral-load/${sample.vlSampleId}`}>
                 <Eye className="mr-2 h-4 w-4" />
                 View Details
               </a>
             </DropdownMenuItem>
-            {!sample.dateCollected && (
+            {isNotCollected && (
               <DropdownMenuItem asChild>
                 <a href={`/viral-load/${sample.vlSampleId}/collect`}>
                   <Package className="mr-2 h-4 w-4" />
@@ -253,13 +252,15 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
             <DropdownMenuItem asChild>
               <a href={`/viral-load/${sample.vlSampleId}/edit`}>
                 <Edit className="mr-2 h-4 w-4" />
-                Edit Sample
+                {isNotCollected ? "Edit Request" : "Edit Sample"}
               </a>
             </DropdownMenuItem>
-            <DropdownMenuItem className="text-red-600">
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Sample
-            </DropdownMenuItem>
+            {isNotCollected && (
+              <DropdownMenuItem className="text-red-600">
+                <Trash2 className="mr-2 h-4 w-4" />
+                Delete Request
+              </DropdownMenuItem>
+            )}
           </DropdownMenuContent>
         </DropdownMenu>
       )
