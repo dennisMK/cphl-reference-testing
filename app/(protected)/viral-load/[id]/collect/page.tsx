@@ -65,7 +65,7 @@ export default function CollectSamplePage() {
   // Initialize form with sample data
   React.useEffect(() => {
     if (sample) {
-      setSampleIdBarcode(sample.vlSampleId || "")
+      // Don't initialize sample ID barcode - user will enter manually
       setSampleType(sample.sampleType || "")
     }
   }, [sample])
@@ -144,7 +144,7 @@ export default function CollectSamplePage() {
         <div className="flex items-center gap-2 text-blue-800">
           <Package className="h-4 w-4" />
           <span className="font-medium">
-            Sample ID: {sample.vlSampleId} | Patient ID: {sample.patientUniqueId} | Form: {sample.formNumber}
+            ART Number: {sample.patientUniqueId} | Request Date: {sample.createdAt ? new Date(sample.createdAt).toLocaleDateString() : 'N/A'}
           </span>
         </div>
       </div>
@@ -159,13 +159,13 @@ export default function CollectSamplePage() {
                 Request Details
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <Label htmlFor="patient-clinic-id" className="text-sm font-medium text-gray-700">
-                  Patient ID
+                <Label htmlFor="art-number" className="text-sm font-medium text-gray-700">
+                  ART Number
                 </Label>
                 <Input
-                  id="patient-clinic-id"
+                  id="art-number"
                   value={sample.patientUniqueId || ""}
                   readOnly
                   className="mt-2 h-10 bg-gray-50"
@@ -173,24 +173,12 @@ export default function CollectSamplePage() {
               </div>
               
               <div>
-                <Label htmlFor="sample-id" className="text-sm font-medium text-gray-700">
-                  Sample ID
+                <Label htmlFor="request-date" className="text-sm font-medium text-gray-700">
+                  Request Date
                 </Label>
                 <Input
-                  id="sample-id"
-                  value={sample.vlSampleId || ""}
-                  readOnly
-                  className="mt-2 h-10 bg-gray-50"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="form-number" className="text-sm font-medium text-gray-700">
-                  Form Number
-                </Label>
-                <Input
-                  id="form-number"
-                  value={sample.formNumber || ""}
+                  id="request-date"
+                  value={sample.createdAt ? new Date(sample.createdAt).toLocaleDateString() : ""}
                   readOnly
                   className="mt-2 h-10 bg-gray-50"
                 />
@@ -205,7 +193,7 @@ export default function CollectSamplePage() {
                 Sample Collection Details
               </h2>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               <div>
                 <Label htmlFor="collection-datetime" className="text-sm font-medium text-gray-700">
                   Date and time of collection
@@ -258,52 +246,40 @@ export default function CollectSamplePage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="P">Plasma</SelectItem>
-                    <SelectItem value="D">Dried Blood Spot</SelectItem>
-                    <SelectItem value="W">Whole Blood</SelectItem>
+                    <SelectItem value="D">DBS</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
-              <div>
-                <Label htmlFor="centrifugation-datetime" className="text-sm font-medium text-gray-700">
-                  Date and time of centrifugation
-                </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start text-left font-normal mt-2 h-10",
-                        !centrifugationDateTime && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {centrifugationDateTime ? formatDateTime(centrifugationDateTime) : "mm/dd/yyyy H:M"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      selected={centrifugationDateTime}
-                      onSelect={setCentrifugationDateTime}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              <div>
-                <Label htmlFor="specimen-name" className="text-sm font-medium text-gray-700">
-                  Specimen Name
-                </Label>
-                <Input
-                  id="specimen-name"
-                  value={specimenName}
-                  onChange={(e) => setSpecimenName(e.target.value)}
-                  placeholder="Enter specimen name"
-                  className="mt-2 h-10"
-                />
-              </div>
+              {sampleType === "P" && (
+                <div>
+                  <Label htmlFor="centrifugation-datetime" className="text-sm font-medium text-gray-700">
+                    Date and time of centrifugation
+                  </Label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal mt-2 h-10",
+                          !centrifugationDateTime && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {centrifugationDateTime ? formatDateTime(centrifugationDateTime) : "mm/dd/yyyy H:M"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        selected={centrifugationDateTime}
+                        onSelect={setCentrifugationDateTime}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              )}
 
               <div>
                 <Label htmlFor="storage-consent" className="text-sm font-medium text-gray-700">

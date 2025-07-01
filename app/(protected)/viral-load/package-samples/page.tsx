@@ -137,7 +137,6 @@ export default function PackageSamplesPage() {
     switch (sampleType) {
       case "P": return "Plasma"
       case "D": return "DBS"
-      case "W": return "Whole Blood"
       default: return sampleType || "Unknown"
     }
   }

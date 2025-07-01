@@ -85,9 +85,7 @@ const getSampleType = (type: string | null) => {
     case "P":
       return "Plasma"
     case "D":
-      return "Dried Blood Spot"
-    case "W":
-      return "Whole Blood"
+      return "DBS"
     default:
       return type || "Unknown"
   }
@@ -125,7 +123,7 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
           onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}
           className="h-8 px-2"
         >
-          Patient ID
+          ART Number
           <ArrowUpDown className="ml-2 h-4 w-4" />
         </Button>
       )

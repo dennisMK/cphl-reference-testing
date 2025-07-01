@@ -120,9 +120,8 @@ VIRAL LOAD SAMPLE REPORT
 
 Sample ID: ${sample.vlSampleId}
 Form Number: ${sample.formNumber}
-Patient ID: ${sample.patientUniqueId}
-ART Number: ${sample.patient_data?.artNumber || "Not specified"}
-Sample Type: ${sample.sampleType === "P" ? "Plasma" : sample.sampleType === "D" ? "DBS" : sample.sampleType === "W" ? "Whole Blood" : sample.sampleType}
+ART Number: ${sample.patientUniqueId}
+Sample Type: ${sample.sampleType === "P" ? "Plasma" : sample.sampleType === "D" ? "DBS" : sample.sampleType}
 Status: ${status.charAt(0).toUpperCase() + status.slice(1)}
 
 Dates:
@@ -209,9 +208,8 @@ Generated on: ${new Date().toLocaleString()}
     <div class="label">
         <div class="sample-id">${sample.vlSampleId}</div>
         <div class="barcode">||||| ${sample.vlSampleId} |||||</div>
-        <div class="info"><strong>Patient:</strong> ${sample.patientUniqueId}</div>
-        <div class="info"><strong>ART #:</strong> ${sample.patient_data?.artNumber || "N/A"}</div>
-        <div class="info"><strong>Type:</strong> ${sample.sampleType === "P" ? "Plasma" : sample.sampleType === "D" ? "DBS" : sample.sampleType === "W" ? "Whole Blood" : sample.sampleType}</div>
+        <div class="info"><strong>ART #:</strong> ${sample.patientUniqueId}</div>
+        <div class="info"><strong>Type:</strong> ${sample.sampleType === "P" ? "Plasma" : sample.sampleType === "D" ? "DBS" : sample.sampleType}</div>
         <div class="info"><strong>Form:</strong> ${sample.formNumber}</div>
         <div class="info"><strong>Date:</strong> ${sample.dateCollected ? new Date(sample.dateCollected).toLocaleDateString() : new Date().toLocaleDateString()}</div>
     </div>
@@ -348,12 +346,8 @@ Generated on: ${new Date().toLocaleString()}
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Patient ID</p>
-                <p className="font-medium break-all">{sample.patientUniqueId}</p>
-              </div>
-              <div>
                 <p className="text-sm font-medium text-muted-foreground">ART Number</p>
-                <p className="font-medium break-all">{sample.patient_data?.artNumber || "Not specified"}</p>
+                <p className="font-medium break-all">{sample.patientUniqueId}</p>
               </div>
             </div>
             
@@ -373,8 +367,7 @@ Generated on: ${new Date().toLocaleString()}
                 <p className="text-sm font-medium text-muted-foreground">Sample Type</p>
                 <Badge variant="outline">
                   {sample.sampleType === "P" ? "Plasma" : 
-                   sample.sampleType === "D" ? "DBS" : 
-                   sample.sampleType === "W" ? "Whole Blood" : sample.sampleType}
+                   sample.sampleType === "D" ? "DBS" : sample.sampleType}
                 </Badge>
               </div>
               <div>
@@ -412,8 +405,7 @@ Generated on: ${new Date().toLocaleString()}
                 <p className="text-sm font-medium text-muted-foreground">Sample Type</p>
                 <Badge variant="outline">
                   {sample.sampleType === "P" ? "Plasma" : 
-                   sample.sampleType === "D" ? "DBS" : 
-                   sample.sampleType === "W" ? "Whole Blood" : sample.sampleType}
+                   sample.sampleType === "D" ? "DBS" : sample.sampleType}
                 </Badge>
               </div>
               <div>

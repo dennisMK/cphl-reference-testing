@@ -327,7 +327,7 @@ export default function VLResultsPage() {
               <CardContent className="space-y-3">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <p className="text-gray-600">Patient ID</p>
+                    <p className="text-gray-600">ART Number</p>
                     <p className="font-medium">{selectedResult.patientId}</p>
                   </div>
                   <div>
