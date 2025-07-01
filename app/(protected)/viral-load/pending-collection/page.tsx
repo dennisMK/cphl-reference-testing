@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react"
+import { useSearchParams } from "next/navigation"
 import { api } from "@/trpc/react"
 import {
   type ColumnDef,
@@ -52,10 +53,10 @@ export type ViralLoadSample = {
   patientUniqueId: string | null
   vlSampleId: string | null
   formNumber: string | null
-  dateCollected: Date | null
-  dateReceived: Date | null
+  dateCollected: string | null
+  dateReceived: string | null
   sampleType: string | null
-  createdAt: Date
+  createdAt: string
   verified: number | null
   inWorksheet: number | null
   stage: number | null
@@ -229,7 +230,7 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
           <DropdownMenuContent align="end" className="w-48">
             <DropdownMenuLabel>Actions</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(sample.vlSampleId)}
+              onClick={() => navigator.clipboard.writeText(sample.vlSampleId || "")}
             >
               <FileText className="mr-2 h-4 w-4" />
               Copy Sample ID
@@ -267,16 +268,20 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
 ]
 
 export function ViralLoadDataTable() {
+  const searchParams = useSearchParams()
+  const urlFilter = searchParams.get("filter")
+  
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({})
   const [rowSelection, setRowSelection] = React.useState({})
   const [statusFilter, setStatusFilter] = React.useState<string>("all")
 
-  // Fetch viral load requests from the API
+  // Fetch viral load requests from the API with filter
   const { data: requestsData, isLoading, error } = api.viralLoad.getRequests.useQuery({
     limit: 50,
     offset: 0,
+    filter: urlFilter === "in-transit" || urlFilter === "delivered" ? urlFilter : undefined,
   })
 
   const data = React.useMemo(() => {
@@ -472,6 +477,9 @@ export function ViralLoadDataTable() {
 }
 
 export default function page() {
+  const searchParams = useSearchParams()
+  const urlFilter = searchParams.get("filter")
+  
   // Fetch viral load requests from the API for stats
   const { data: requestsData } = api.viralLoad.getRequests.useQuery({
     limit: 100, // Get samples for stats
@@ -486,11 +494,48 @@ export default function page() {
   const inTransitCount = samples.filter((sample) => sample.stage === 30).length
   const completedCount = samples.filter((sample) => sample.verified === 1).length
 
+  // Get page title and description based on filter
+  const getPageInfo = () => {
+    switch (urlFilter) {
+      case "in-transit":
+        return {
+          title: "In Transit Packages",
+          description: "Packages currently being transported to the laboratory",
+          badge: "In Transit"
+        }
+      case "delivered":
+        return {
+          title: "Delivered Packages", 
+          description: "Packages that have been successfully delivered and completed",
+          badge: "Delivered"
+        }
+      default:
+        return {
+          title: "Pending Collection",
+          description: "View and manage viral load test requests waiting for sample collection",
+          badge: null
+        }
+    }
+  }
+
+  const pageInfo = getPageInfo()
+
   return (
     <main className="container mx-auto px-4 py-6">
       <div className="mb-6">
-        <h1 className="text-3xl font-bold mb-2">Pending Collection</h1>
-        <p className="text-muted-foreground">View and manage viral load test requests waiting for sample collection</p>
+        <div className="flex items-center gap-3 mb-2">
+          <h1 className="text-3xl font-bold">{pageInfo.title}</h1>
+          {pageInfo.badge && (
+            <Badge variant="secondary" className={
+              urlFilter === "in-transit" 
+                ? "text-purple-600 bg-purple-50" 
+                : "text-green-600 bg-green-50"
+            }>
+              {pageInfo.badge}
+            </Badge>
+          )}
+        </div>
+        <p className="text-muted-foreground">{pageInfo.description}</p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">

@@ -36,7 +36,6 @@ const timeRanges = [
   { label: "15 Days", value: 15, key: "15d" },
   { label: "30 Days", value: 30, key: "30d" },
   { label: "3 Months", value: 90, key: "3m" },
-  { label: "1 Year", value: 365, key: "1y" },
   { label: "All Time", value: 999, key: "all" }, // We'll handle "all time" specially
 ];
 
@@ -125,7 +124,10 @@ export default function page() {
     <main className="md:container mx-auto px-4 py-6">
       <div className="mb-6">
         <h1 className="text-3xl font-bold mb-2">HIV Viral Load</h1>
-        <p className="text-muted-foreground">Manage HIV viral load test requests, sample collection, and packaging for laboratory processing.</p>
+        <p className="text-muted-foreground">
+        Manage HIV viral load test requests, sample collection, and packaging
+        for HIV referral tests.
+          </p>
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
@@ -144,8 +146,8 @@ export default function page() {
                 <Link href={action.href}>
                   <Button
                   size={"lg"}
-                    variant={action.action === "create" ? "default" : "outline"}
-                    className={`cursor-pointer rounded-xl w-full ${action.action === "create" ? "bg-red-600 hover:bg-red-700" : ""}`}>
+                    variant="default"
+                    className="cursor-pointer rounded-xl w-full bg-red-600 hover:bg-red-700 text-white">
                     {action.action === "create" ? "Create" : "View"}
                   </Button>
                 </Link>
@@ -354,7 +356,7 @@ export default function page() {
                         radius={[2, 2, 0, 0]}
                         opacity={0.8}
                       />
-                      <ChartLegend content={<ChartLegendContent />} />
+                      <ChartLegend />
                     </>
                   ) : (
                     <Bar 

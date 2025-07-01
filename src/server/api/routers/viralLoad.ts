@@ -43,6 +43,7 @@ export const viralLoadRouter = createTRPCRouter({
         limit: z.number().min(1).max(100).default(10),
         offset: z.number().min(0).default(0),
         status: z.enum(["pending", "collected", "processing", "completed"]).optional(),
+        filter: z.enum(["in-transit", "delivered", "pending-collection", "pending-packaging"]).optional(),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -90,6 +91,24 @@ export const viralLoadRouter = createTRPCRouter({
               return sample.stage === 30; // In transit
             case "completed":
               return sample.verified === 1; // Verified/completed
+            default:
+              return true;
+          }
+        });
+      }
+
+      // Apply navigation filter if specified
+      if (input.filter) {
+        filteredSamples = filteredSamples.filter(sample => {
+          switch (input.filter) {
+            case "pending-collection":
+              return sample.stage === 20; // Pending sample collection
+            case "pending-packaging":
+              return sample.stage === 25; // Pending packaging
+            case "in-transit":
+              return sample.stage === 30; // In transit
+            case "delivered":
+              return sample.verified === 1; // Verified/completed samples
             default:
               return true;
           }
