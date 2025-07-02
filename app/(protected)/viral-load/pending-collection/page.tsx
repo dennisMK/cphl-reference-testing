@@ -280,20 +280,34 @@ export function ViralLoadDataTable() {
   const { data: requestsData, isLoading, error } = api.viralLoad.getRequests.useQuery({
     limit: 50,
     offset: 0,
-    filter: urlFilter === "in-transit" || urlFilter === "delivered" ? urlFilter : undefined,
+    filter: urlFilter === "in-transit" || urlFilter === "delivered" || urlFilter === "pending-packaging" ? urlFilter : undefined,
   })
 
   const data = React.useMemo(() => {
     if (!requestsData?.samples) return []
-    if (statusFilter === "all") return requestsData.samples
-    return requestsData.samples.filter((sample) => {
+    
+    // Apply URL filter first
+    let filteredSamples = requestsData.samples
+    if (urlFilter === "pending-packaging") {
+      filteredSamples = requestsData.samples.filter((sample) => sample.stage === 25)
+    } else if (urlFilter === "in-transit") {
+      filteredSamples = requestsData.samples.filter((sample) => sample.stage === 30)
+    } else if (urlFilter === "delivered") {
+      filteredSamples = requestsData.samples.filter((sample) => sample.verified === 1)
+    } else if (!urlFilter) {
+      filteredSamples = requestsData.samples.filter((sample) => sample.stage === 20)
+    }
+    
+    // Apply status filter
+    if (statusFilter === "all") return filteredSamples
+    return filteredSamples.filter((sample) => {
       if (statusFilter === "pending") return !sample.dateCollected
       if (statusFilter === "collected") return sample.dateCollected && !sample.dateReceived
       if (statusFilter === "processing") return sample.dateReceived && !sample.verified
       if (statusFilter === "completed") return sample.verified === 1
       return true
     })
-  }, [requestsData?.samples, statusFilter])
+  }, [requestsData?.samples, statusFilter, urlFilter])
 
   const table = useReactTable({
     data,
@@ -496,6 +510,12 @@ export default function page() {
   // Get page title and description based on filter
   const getPageInfo = () => {
     switch (urlFilter) {
+      case "pending-packaging":
+        return {
+          title: "Pending Packaging",
+          description: "Collected samples ready for packaging and transport",
+          badge: "Pending Packaging"
+        }
       case "in-transit":
         return {
           title: "In Transit Packages",
@@ -526,7 +546,9 @@ export default function page() {
           <h1 className="text-3xl font-bold">{pageInfo.title}</h1>
           {pageInfo.badge && (
             <Badge variant="secondary" className={
-              urlFilter === "in-transit" 
+              urlFilter === "pending-packaging"
+                ? "text-blue-600 bg-blue-50"
+                : urlFilter === "in-transit" 
                 ? "text-purple-600 bg-purple-50" 
                 : "text-green-600 bg-green-50"
             }>
@@ -538,7 +560,7 @@ export default function page() {
       </div>
       
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-        <Card>
+        <Card className={`cursor-pointer transition-all hover:shadow-md ${urlFilter === null ? 'ring-2 ring-orange-500 bg-orange-50' : ''}`}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Clock className="h-5 w-5 text-orange-500" />
@@ -547,11 +569,19 @@ export default function page() {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">{pendingCount}</div>
-            <p className="text-sm text-muted-foreground">Samples awaiting collection</p>
+            <p className="text-sm text-muted-foreground mb-3">Samples awaiting collection</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full text-orange-600 border-orange-200 hover:bg-orange-50"
+              onClick={() => window.location.href = '/viral-load/pending-collection'}
+            >
+              View All
+            </Button>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={`cursor-pointer transition-all hover:shadow-md ${urlFilter === 'pending-packaging' ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Package className="h-5 w-5 text-blue-500" />
@@ -560,11 +590,19 @@ export default function page() {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">{collectedCount}</div>
-            <p className="text-sm text-muted-foreground">Samples ready for packaging</p>
+            <p className="text-sm text-muted-foreground mb-3">Samples ready for packaging</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full text-blue-600 border-blue-200 hover:bg-blue-50"
+              onClick={() => window.location.href = '/viral-load/pending-collection?filter=pending-packaging'}
+            >
+              View All
+            </Button>
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className={`cursor-pointer transition-all hover:shadow-md ${urlFilter === 'in-transit' ? 'ring-2 ring-purple-500 bg-purple-50' : ''}`}>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-purple-500" />
@@ -573,7 +611,15 @@ export default function page() {
           </CardHeader>
           <CardContent>
             <div className="text-4xl font-bold">{inTransitCount}</div>
-            <p className="text-sm text-muted-foreground">Samples being processed</p>
+            <p className="text-sm text-muted-foreground mb-3">Samples being processed</p>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="w-full text-purple-600 border-purple-200 hover:bg-purple-50"
+              onClick={() => window.location.href = '/viral-load/pending-collection?filter=in-transit'}
+            >
+              View All
+            </Button>
           </CardContent>
         </Card>
       </div>

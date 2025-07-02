@@ -35,6 +35,44 @@ import Link from "next/link";
 import { toast } from "sonner";
 import { api } from "@/trpc/react";
 
+// Helper function to calculate age from date
+const calculateAge = (birthDate: Date): { years: number; months: number; days: number } => {
+  const today = new Date();
+  let years = today.getFullYear() - birthDate.getFullYear();
+  let months = today.getMonth() - birthDate.getMonth();
+  let days = today.getDate() - birthDate.getDate();
+
+  if (days < 0) {
+    months--;
+    const lastMonth = new Date(today.getFullYear(), today.getMonth(), 0);
+    days += lastMonth.getDate();
+  }
+
+  if (months < 0) {
+    years--;
+    months += 12;
+  }
+
+  return { years, months, days };
+};
+
+// Helper function to get date of birth from age
+const getDateFromAge = (ageValue: number, ageUnit: "Years" | "Months" | "Days"): Date => {
+  const today = new Date();
+  const result = new Date(today);
+  
+  // Set to January 1st of the calculated year for consistency
+  if (ageUnit === "Years") {
+    result.setFullYear(today.getFullYear() - ageValue, 0, 1);
+  } else if (ageUnit === "Months") {
+    result.setMonth(today.getMonth() - ageValue, 1);
+  } else if (ageUnit === "Days") {
+    result.setDate(today.getDate() - ageValue);
+  }
+  
+  return result;
+};
+
 const formSchema = z
   .object({
     // Patient Information
@@ -83,6 +121,51 @@ const formSchema = z
     {
       message: "Please select pregnancy status for female patients",
       path: ["pregnant"],
+    }
+  )
+  .refine(
+    (data) => {
+      // Date validation: Request Date should be after DOB
+      if (data.dob && data.requested_on) {
+        const dobDate = new Date(data.dob);
+        const requestDate = new Date(data.requested_on);
+        return requestDate >= dobDate;
+      }
+      return true;
+    },
+    {
+      message: "Request date must be after date of birth",
+      path: ["requested_on"],
+    }
+  )
+  .refine(
+    (data) => {
+      // Date validation: Treatment Initiation Date should be after DOB
+      if (data.dob && data.treatment_initiation_date) {
+        const dobDate = new Date(data.dob);
+        const treatmentDate = new Date(data.treatment_initiation_date);
+        return treatmentDate >= dobDate;
+      }
+      return true;
+    },
+    {
+      message: "Treatment initiation date must be after date of birth",
+      path: ["treatment_initiation_date"],
+    }
+  )
+  .refine(
+    (data) => {
+      // Date validation: Current Regimen Date should be after Treatment Initiation Date
+      if (data.treatment_initiation_date && data.current_regimen_initiation_date) {
+        const treatmentDate = new Date(data.treatment_initiation_date);
+        const regimenDate = new Date(data.current_regimen_initiation_date);
+        return regimenDate >= treatmentDate;
+      }
+      return true;
+    },
+    {
+      message: "Current regimen date must be after treatment initiation date",
+      path: ["current_regimen_initiation_date"],
     }
   );
 
@@ -172,6 +255,14 @@ export default function EditViralLoadForm({
     }
   }, [watchedGender, form]);
 
+  // Handle conditional logic for ANC number (only for pregnant females)
+  const watchedPregnant = form.watch("pregnant");
+  useEffect(() => {
+    if (watchedGender !== "F" || watchedPregnant !== "Y") {
+      form.setValue("anc_number", "");
+    }
+  }, [watchedGender, watchedPregnant, form]);
+
   // Handle conditional logic for TB treatment phase field
   const watchedTbStatus = form.watch("active_tb_status");
   useEffect(() => {
@@ -179,6 +270,58 @@ export default function EditViralLoadForm({
       form.setValue("tb_treatment_phase_id", "");
     }
   }, [watchedTbStatus, form]);
+
+  // Handle age calculation when DOB changes
+  const watchedDob = form.watch("dob");
+  useEffect(() => {
+    if (watchedDob && isFormInitialized) {
+      const dobDate = new Date(watchedDob);
+      if (!isNaN(dobDate.getTime())) {
+        const age = calculateAge(dobDate);
+        
+        // Set the appropriate age unit and value based on calculated age
+        if (age.years > 0) {
+          form.setValue("age", age.years.toString());
+          form.setValue("age_units", "Years");
+        } else if (age.months > 0) {
+          form.setValue("age", age.months.toString());
+          form.setValue("age_units", "Months");
+        } else {
+          form.setValue("age", age.days.toString());
+          form.setValue("age_units", "Days");
+        }
+      }
+    }
+  }, [watchedDob, form, isFormInitialized]);
+
+  // Handle DOB calculation when age changes (but not during form initialization)
+  const watchedAge = form.watch("age");
+  const watchedAgeUnits = form.watch("age_units");
+  const [userIsEditingAge, setUserIsEditingAge] = useState(false);
+  
+  useEffect(() => {
+    // Only calculate DOB from age if the user is actively editing the age field
+    // and not during form initialization
+    if (watchedAge && watchedAgeUnits && isFormInitialized && userIsEditingAge) {
+      const ageValue = parseInt(watchedAge);
+      if (!isNaN(ageValue) && ageValue > 0) {
+        const calculatedDob = getDateFromAge(ageValue, watchedAgeUnits);
+        const dobString = calculatedDob.toISOString().split("T")[0];
+        
+        // Only update if different to prevent loops
+        const currentDob = form.getValues("dob") || "";
+        if (currentDob !== dobString) {
+          form.setValue("dob", dobString);
+          form.trigger("dob");
+          
+          // Update the date component states as well
+          setDobDay(String(calculatedDob.getDate()).padStart(2, "0"));
+          setDobMonth(String(calculatedDob.getMonth() + 1).padStart(2, "0"));
+          setDobYear(String(calculatedDob.getFullYear()));
+        }
+      }
+    }
+  }, [watchedAge, watchedAgeUnits, form, isFormInitialized, userIsEditingAge]);
 
   // Initialize form with sample data - only runs once when sample is provided
   useEffect(() => {
@@ -267,13 +410,26 @@ export default function EditViralLoadForm({
             : "",
       };
 
-      // Handle dates
+      // Handle dates and calculate age
       if (sample.patient_data?.dob) {
         const dobDate = new Date(sample.patient_data.dob);
         setDobDay(String(dobDate.getDate()).padStart(2, "0"));
         setDobMonth(String(dobDate.getMonth() + 1).padStart(2, "0"));
         setDobYear(String(dobDate.getFullYear()));
         formData.dob = dobDate.toISOString().split("T")[0];
+        
+        // Calculate and set age
+        const age = calculateAge(dobDate);
+        if (age.years > 0) {
+          formData.age = age.years.toString();
+          formData.age_units = "Years";
+        } else if (age.months > 0) {
+          formData.age = age.months.toString();
+          formData.age_units = "Months";
+        } else {
+          formData.age = age.days.toString();
+          formData.age_units = "Days";
+        }
       }
 
       if (sample.treatmentInitiationDate) {
@@ -577,19 +733,30 @@ export default function EditViralLoadForm({
                   mode="single"
                   selected={
                     form.watch("requested_on")
-                      ? new Date(form.watch("requested_on")!)
+                      ? new Date(form.watch("requested_on")! + "T00:00:00")
                       : undefined
                   }
-                  onSelect={(date) =>
-                    form.setValue(
-                      "requested_on",
-                      date ? date.toISOString().split("T")[0] : ""
-                    )
-                  }
+                  onSelect={(date) => {
+                    if (date) {
+                      // Create date in local timezone and format as YYYY-MM-DD
+                      const year = date.getFullYear();
+                      const month = String(date.getMonth() + 1).padStart(2, "0");
+                      const day = String(date.getDate()).padStart(2, "0");
+                      const dateString = `${year}-${month}-${day}`;
+                      form.setValue("requested_on", dateString);
+                    } else {
+                      form.setValue("requested_on", "");
+                    }
+                  }}
                   initialFocus
                 />
               </PopoverContent>
             </Popover>
+            {form.formState.errors.requested_on && (
+              <p className="text-sm text-red-500 mt-1">
+                {form.formState.errors.requested_on.message}
+              </p>
+            )}
           </div>
         </div>
       </div>
@@ -743,18 +910,33 @@ export default function EditViralLoadForm({
               <div className="flex gap-2 mt-2 items-center">
                 <Input
                   id="age"
-                  {...form.register("age")}
+                  value={form.watch("age") || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    form.setValue("age", value);
+                    setUserIsEditingAge(true);
+                    
+                    // Reset the flag after a brief delay to allow for the effect to run
+                    setTimeout(() => setUserIsEditingAge(false), 100);
+                  }}
                   placeholder=""
                   className="h-10 flex-1"
                   type="number"
                   min="0"
                 />
-                <Select defaultValue="Years">
+                <Select
+                  value={form.watch("age_units") || "Years"}
+                  onValueChange={(value) =>
+                    form.setValue("age_units", value as "Years" | "Months" | "Days")
+                  }
+                >
                   <SelectTrigger className="h-10 w-20">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="Years">Years</SelectItem>
+                    <SelectItem value="Months">Months</SelectItem>
+                    <SelectItem value="Days">Days</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -977,7 +1159,7 @@ export default function EditViralLoadForm({
             <div>
               <Label
                 htmlFor="anc_number"
-                className={`text-sm font-medium ${watchedGender !== "F" ? "text-gray-400" : "text-gray-700"}`}
+                className={`text-sm font-medium ${watchedGender !== "F" || watchedPregnant !== "Y" ? "text-gray-400" : "text-gray-700"}`}
               >
                 ANC Number:
               </Label>
@@ -985,8 +1167,8 @@ export default function EditViralLoadForm({
                 id="anc_number"
                 {...form.register("anc_number")}
                 placeholder=""
-                className={`mt-2 h-10 ${watchedGender !== "F" ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}
-                disabled={watchedGender !== "F"}
+                className={`mt-2 h-10 ${watchedGender !== "F" || watchedPregnant !== "Y" ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}
+                disabled={watchedGender !== "F" || watchedPregnant !== "Y"}
               />
             </div>
 
@@ -1191,7 +1373,7 @@ export default function EditViralLoadForm({
       <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
         <Button
           type="submit"
-          disabled={isSubmitting || !form.formState.isValid}
+          disabled={isSubmitting}
           className="flex-1 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
         >
           {isSubmitting ? (

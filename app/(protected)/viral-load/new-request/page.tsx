@@ -61,6 +61,39 @@ const formSchema = z.object({
 }, {
   message: "Please select pregnancy status for female patients",
   path: ["pregnant"],
+}).refine((data) => {
+  // Request date should be after DOB
+  if (data.requested_on && data.dob) {
+    const requestDate = new Date(data.requested_on);
+    const dobDate = new Date(data.dob);
+    return requestDate >= dobDate;
+  }
+  return true;
+}, {
+  message: "Request date cannot be before date of birth",
+  path: ["requested_on"],
+}).refine((data) => {
+  // Treatment initiation date should be after DOB
+  if (data.treatment_initiation_date && data.dob) {
+    const treatmentDate = new Date(data.treatment_initiation_date);
+    const dobDate = new Date(data.dob);
+    return treatmentDate >= dobDate;
+  }
+  return true;
+}, {
+  message: "Treatment initiation date cannot be before date of birth",
+  path: ["treatment_initiation_date"],
+}).refine((data) => {
+  // Current regimen initiation date should be after treatment initiation date
+  if (data.current_regimen_initiation_date && data.treatment_initiation_date) {
+    const currentRegimenDate = new Date(data.current_regimen_initiation_date);
+    const treatmentDate = new Date(data.treatment_initiation_date);
+    return currentRegimenDate >= treatmentDate;
+  }
+  return true;
+}, {
+  message: "Current regimen initiation date cannot be before treatment initiation date",
+  path: ["current_regimen_initiation_date"],
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -170,14 +203,49 @@ export default function NewViralLoadRequest(): React.JSX.Element {
     },
   });
 
+  // Helper functions for age calculations
+  const calculateAge = (dobString: string) => {
+    const dob = new Date(dobString);
+    const today = new Date();
+    let age = today.getFullYear() - dob.getFullYear();
+    const monthDiff = today.getMonth() - dob.getMonth();
+    
+    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
+      age--;
+    }
+    
+    return age.toString();
+  };
+
+  const calculateDOBFromAge = (ageString: string) => {
+    const age = parseInt(ageString);
+    if (isNaN(age) || age < 0) return "";
+    
+    const today = new Date();
+    const birthYear = today.getFullYear() - age;
+    
+    // Use January 1st as default
+    return `${birthYear}-01-01`;
+  };
+
   // Handle conditional logic for pregnancy field
   const watchedGender = form.watch("gender");
+  const watchedPregnant = form.watch("pregnant");
+  
   useEffect(() => {
     if (watchedGender === "M") {
       form.setValue("pregnant", "N");
       form.setValue("breast_feeding", "N");
+      form.setValue("anc_number", "");
     }
   }, [watchedGender, form]);
+
+  // Handle ANC field based on pregnancy status
+  useEffect(() => {
+    if (watchedPregnant === "N" || watchedPregnant === "U") {
+      form.setValue("anc_number", "");
+    }
+  }, [watchedPregnant, form]);
 
   // Handle conditional logic for TB treatment phase field
   const watchedTbStatus = form.watch("active_tb_status");
@@ -187,12 +255,17 @@ export default function NewViralLoadRequest(): React.JSX.Element {
     }
   }, [watchedTbStatus, form]);
 
-  // Combine date parts into complete dates
+  // Combine date parts into complete dates and calculate age
   useEffect(() => {
     if (dobDay && dobMonth && dobYear) {
       const dateString = `${dobYear}-${dobMonth}-${dobDay}`;
       console.log("Setting DOB:", dateString);
       form.setValue("dob", dateString);
+      
+      // Auto-calculate age when DOB is set
+      const calculatedAge = calculateAge(dateString);
+      form.setValue("age", calculatedAge);
+      
       form.trigger("dob"); // Trigger validation
     } else {
       form.setValue("dob", "");
@@ -414,11 +487,24 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                       <Calendar
                         mode="single"
                         selected={form.watch("requested_on") ? new Date(form.watch("requested_on")!) : undefined}
-                        onSelect={(date) => form.setValue("requested_on", date ? date.toISOString().split('T')[0] : "")}
+                        onSelect={(date) => {
+                          if (date) {
+                            // Create a local date to avoid timezone issues
+                            const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                            const dateString = localDate.toISOString().split('T')[0];
+                            form.setValue("requested_on", dateString);
+                            form.trigger("requested_on"); // Trigger validation
+                          } else {
+                            form.setValue("requested_on", "");
+                          }
+                        }}
                         initialFocus
                       />
                   </PopoverContent>
                 </Popover>
+                {form.formState.errors.requested_on && (
+                  <p className="text-sm text-red-500 mt-1">{form.formState.errors.requested_on.message}</p>
+                )}
               </div>
             </div>
           </div>
@@ -545,6 +631,25 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                       className="h-10 flex-1"
                       type="number"
                       min="0"
+                      onChange={(e) => {
+                        const ageValue = e.target.value;
+                        form.setValue("age", ageValue);
+                        
+                        // Auto-calculate DOB when age is entered
+                        if (ageValue && parseInt(ageValue) > 0) {
+                          const calculatedDOB = calculateDOBFromAge(ageValue);
+                          if (calculatedDOB) {
+                            form.setValue("dob", calculatedDOB);
+                            // Update date selectors
+                            const dateParts = calculatedDOB.split('-');
+                            if (dateParts.length === 3) {
+                              setDobYear(dateParts[0] || "");
+                              setDobMonth(dateParts[1] || "");
+                              setDobDay(dateParts[2] || "");
+                            }
+                          }
+                        }
+                      }}
                     />
                     <Select defaultValue="Years">
                       <SelectTrigger className="h-10 w-20">
@@ -725,15 +830,15 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                 </div>
 
                 <div>
-                  <Label htmlFor="anc_number" className={`text-sm font-medium ${watchedGender !== "F" ? "text-gray-400" : "text-gray-700"}`}>
+                  <Label htmlFor="anc_number" className={`text-sm font-medium ${watchedGender !== "F" || watchedPregnant !== "Y" ? "text-gray-400" : "text-gray-700"}`}>
                     ANC Number:
                   </Label>
                   <Input
                     id="anc_number"
                     {...form.register("anc_number")}
                     placeholder=""
-                    className={`mt-2 h-10 ${watchedGender !== "F" ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}
-                    disabled={watchedGender !== "F"}
+                    className={`mt-2 h-10 ${watchedGender !== "F" || watchedPregnant !== "Y" ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}
+                    disabled={watchedGender !== "F" || watchedPregnant !== "Y"}
                   />
                 </div>
 
