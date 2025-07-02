@@ -2,11 +2,52 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Activity, Shield,  Heart } from "lucide-react";
+import { Baby, Heart } from "lucide-react";
 import Link from "next/link";
 import React from "react";
-import { IconBabyCarriage, IconVirus } from "@tabler/icons-react";
+import Image from "next/image";
 import { toast } from "sonner";
+
+// Custom icon components using PNG files
+const HIVIcon = ({ className = "h-8 w-8" }: { className?: string }) => (
+  <Image
+    src="/icons/hiv.png"
+    alt="HIV"
+    width={32}
+    height={32}
+    className={className}
+  />
+);
+
+const HepatitisBIcon = ({ className = "h-8 w-8" }: { className?: string }) => (
+  <Image
+    src="/icons/hepatitis_b.png"
+    alt="Hepatitis B"
+    width={32}
+    height={32}
+    className={className}
+  />
+);
+
+const HepatitisCIcon = ({ className = "h-8 w-8" }: { className?: string }) => (
+  <Image
+    src="/icons/hepatitis_c.png"
+    alt="Hepatitis C"
+    width={32}
+    height={32}
+    className={className}
+  />
+);
+
+const HPVIcon = ({ className = "h-8 w-8" }: { className?: string }) => (
+  <Image
+    src="/icons/human_papillomavirus.png"
+    alt="Human Papillomavirus"
+    width={32}
+    height={32}
+    className={className}
+  />
+);
 
 export default function DashboardCards() {
   const actions = [
@@ -14,7 +55,7 @@ export default function DashboardCards() {
       title: "HIV Viral Load",
       description: "Monitor and track HIV viral load test request",
       href: "/viral-load",
-      icon: Activity,
+      icon: HIVIcon,
       theme: "red",
       available: true,
     },
@@ -22,24 +63,24 @@ export default function DashboardCards() {
       title: "HIV-Positive Mothers", 
       description: "Monitor and track EID test request for infants born to HIV Positive Mothers",
       href: "/eid",
-      icon: IconBabyCarriage,
+      icon: Baby,
       theme: "blue",
       available: true,
     },
     {
-      title: "Hep B",
-      description: "Monitor and track Hepatitis B test request and management",
+      title: "Hepatitis C",
+      description: "Monitor and track Hepatitis C test request and management", 
       href: "#",
-      icon: Shield,
-      theme: "green",
+      icon: HepatitisCIcon,
+      theme: "orange",
       available: false,
     },
     {
-      title: "Hep C",
-      description: "Monitor and track Hepatitis C test request and management",
+      title: "Hepatitis B",
+      description: "Monitor and track Hepatitis B test request and management",
       href: "#",
-      icon: Shield,
-      theme: "orange",
+      icon: HepatitisBIcon,
+      theme: "yellow",
       available: false,
     },
     {
@@ -50,75 +91,83 @@ export default function DashboardCards() {
       theme: "purple",
       available: false,
     },
+   
     {
-      title: "Human Papillomavirus (HPV)",
+      title: "Human Papillomavirus",
       description: "Monitor and track HPV screening and vaccination programs",
       href: "#",
-      icon: IconVirus,
+      icon: HPVIcon,
       theme: "pink",
       available: false,
     },
   ];
 
-  const getThemeColors = (theme: string) => {
-    switch (theme) {
-      case "red":
-        return "text-red-600 bg-red-600 hover:bg-red-700";
-      case "blue":
-        return "text-blue-600 bg-blue-600 hover:bg-blue-700";
-      case "green":
-        return "text-green-600 bg-green-600 hover:bg-green-700";
-      case "orange":
-        return "text-orange-600 bg-orange-600 hover:bg-orange-700";
-      case "purple":
-        return "text-purple-600 bg-purple-600 hover:bg-purple-700";
-      case "pink":
-        return "text-pink-600 bg-pink-600 hover:bg-pink-700";
-      default:
-        return "text-gray-600 bg-gray-600 hover:bg-gray-700";
-    }
-  };
-
   const handleUnavailableClick = (title: string) => {
-    toast.error(`${title} is not available yet`, {
-      description: "This feature is coming soon. Please check back later.",
+    toast.info(`${title} module is coming soon!`, {
+      description: "This feature is currently under development.",
     });
   };
 
   return (
-    <div className="w-full grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-      {actions.map((action, index) => {
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {actions.map((action) => {
         const IconComponent = action.icon;
-        const colors = getThemeColors(action.theme);
-        const [textColor, bgColor, hoverColor] = colors.split(" ");
         
         return (
-          <Card key={index}>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <IconComponent className={`h-5 w-5 ${textColor}`} />
-                {action.title}
-              </CardTitle>
+          <Card key={action.title} className="group hover:shadow-lg transition-all duration-200 flex flex-col h-full">
+            <CardHeader className="pb-3">
+              <div className="flex items-center gap-4">
+                <div
+                  className={`p-3 rounded-lg ${
+                    action.theme === "red"
+                      ? "bg-red-100 text-red-600"
+                      : action.theme === "blue"
+                      ? "bg-blue-100 text-blue-600"
+                      : action.theme === "yellow"
+                      ? "bg-yellow-100 text-yellow-600"
+                      : action.theme === "purple"
+                      ? "bg-purple-100 text-purple-600"
+                      : action.theme === "orange"
+                      ? "bg-orange-100 text-orange-600"
+                      : action.theme === "pink"
+                      ? "bg-pink-100 text-pink-600"
+                      : "bg-gray-100 text-gray-600"
+                  }`}
+                >
+                  <IconComponent className="h-8 w-8" />
+                </div>
+                <CardTitle className="text-lg group-hover:text-primary transition-colors">
+                  {action.title}
+                </CardTitle>
+              </div>
             </CardHeader>
-            <CardContent>
-              <p className="text-sm text-muted-foreground mb-6">{action.description}</p>
+            <CardContent className="pt-0 flex flex-col flex-grow">
+              <p className="text-muted-foreground text-sm mb-4 leading-relaxed flex-grow">
+                {action.description}
+              </p>
               
               {action.available ? (
-                <Link href={action.href}>
-                  <Button
-                    size={"lg"}
-                    variant={"default"}
-                    className={`cursor-pointer rounded-xl w-full ${bgColor} ${hoverColor}`}>
-                    Enter
-                  </Button>
-                </Link>
+                <Button
+                  asChild
+                  className={`w-full mt-auto ${
+                    action.theme === "red"
+                      ? "bg-red-600 hover:bg-red-700"
+                      : action.theme === "blue"
+                      ? "bg-blue-600 hover:bg-blue-700"
+                      : "bg-primary hover:bg-primary/90"
+                  }`}
+                >
+                  <Link href={action.href}>
+                    Get Started
+                  </Link>
+                </Button>
               ) : (
                 <Button
-                  size={"lg"}
-                  variant={"default"}
+                  variant="outline"
+                  className="w-full mt-auto"
                   onClick={() => handleUnavailableClick(action.title)}
-                  className={`cursor-pointer rounded-xl w-full ${bgColor} ${hoverColor} opacity-70`}>
-                  Enter
+                >
+                  Coming Soon
                 </Button>
               )}
             </CardContent>

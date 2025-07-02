@@ -6,7 +6,6 @@ import Link from "next/link";
 import {
   IconSettings,
   IconTestPipe,
-  IconBabyCarriage,
   IconPhone,
   IconMail,
   IconChevronDown,
@@ -35,6 +34,7 @@ import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/lib/auth-context";
 import { MdHomeFilled } from "react-icons/md";
+import { Baby, User } from "lucide-react";
 
 export function AppNavigation() {
   const pathname = usePathname();
@@ -165,7 +165,7 @@ export function AppNavigation() {
     {
       name: "HIV-Positive Mothers",
       href: "/eid",
-      icon: IconBabyCarriage,
+      icon: Baby,
       description: "HIV-Positive Mothers",
       theme: "blue",
       subItems: [
@@ -229,7 +229,7 @@ export function AppNavigation() {
             )}
           />
 
-                    {/* Main Navigation */}
+          {/* Main Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
             {navigationSections.map((section) => {
               const IconComponent = section.icon;
@@ -308,16 +308,16 @@ export function AppNavigation() {
                                 {category.category}
                               </div>
                               {category.items?.map((subItem: any) => {
-                                const SubIconComponent = subItem.icon;
-                                return (
-                                  <DropdownMenuItem key={subItem.href} asChild>
-                                    <Link
-                                      href={subItem.href}
+                        const SubIconComponent = subItem.icon;
+                        return (
+                          <DropdownMenuItem key={subItem.href} asChild>
+                            <Link
+                              href={subItem.href}
                                       target={subItem.external ? "_blank" : undefined}
                                       rel={subItem.external ? "noopener noreferrer" : undefined}
                                       className="flex items-center space-x-2 px-2 py-2"
-                                    >
-                                      <SubIconComponent className="h-4 w-4" />
+                            >
+                              <SubIconComponent className="h-4 w-4" />
                                       <div className="flex-1">
                                         <div className="text-sm font-medium">{subItem.name}</div>
                                         {subItem.description && (
@@ -329,24 +329,24 @@ export function AppNavigation() {
                                       {subItem.external && (
                                         <IconExternalLink className="h-3 w-3 text-muted-foreground" />
                                       )}
-                                    </Link>
-                                  </DropdownMenuItem>
-                                );
-                              })}
+                            </Link>
+                          </DropdownMenuItem>
+                        );
+                      })}
                               {categoryIndex < section.subItems.length - 1 && <DropdownMenuSeparator />}
                             </>
                           )}
                           
                           {!category.category && (
                             <DropdownMenuItem key={category.href} asChild>
-                              <Link
+                        <Link
                                 href={category.href}
-                                className="flex items-center space-x-2"
-                              >
+                          className="flex items-center space-x-2"
+                        >
                                 <category.icon className="h-4 w-4" />
                                 <span>{category.name}</span>
-                              </Link>
-                            </DropdownMenuItem>
+                        </Link>
+                      </DropdownMenuItem>
                           )}
                         </div>
                       ))}
@@ -409,7 +409,7 @@ export function AppNavigation() {
                 currentSection === "dashboard" ? "bg-gray-300" : "bg-white/30"
               )}
             />
-            <div className="flex items-center space-x-2">
+        <div className="flex items-center space-x-2">
               <IconPhone className={cn(
                 "h-4 w-4",
                 currentSection === "dashboard" 
@@ -479,14 +479,13 @@ export function AppNavigation() {
                 )}
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarImage
-                    src={`https://vercel.com/api/www/avatar/${encodeURIComponent(
-                      user?.email || user?.username || "user@ugandavlm.org"
-                    )}?s=64`}
-                    alt={user?.name || "User"}
-                  />
-                  <AvatarFallback className="text-xs">
-                    {user?.name?.[0]?.toUpperCase() || "U"}
+                  <AvatarFallback className={cn(
+                    "text-xs",
+                    currentSection === "dashboard"
+                      ? "bg-gray-100 text-gray-600"
+                      : "bg-white/20 text-white"
+                  )}>
+                    <User className="h-4 w-4" />
                   </AvatarFallback>
                 </Avatar>
               </Button>

@@ -252,33 +252,33 @@ export default function CollectSamplePage() {
               </div>
 
               {sampleType === "P" && (
-                <div>
-                  <Label htmlFor="centrifugation-datetime" className="text-sm font-medium text-gray-700">
-                    Date and time of centrifugation
-                  </Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start text-left font-normal mt-2 h-10",
-                          !centrifugationDateTime && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {centrifugationDateTime ? formatDateTime(centrifugationDateTime) : "mm/dd/yyyy H:M"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={centrifugationDateTime}
-                        onSelect={setCentrifugationDateTime}
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                </div>
+              <div>
+                <Label htmlFor="centrifugation-datetime" className="text-sm font-medium text-gray-700">
+                  Date and time of centrifugation
+                </Label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal mt-2 h-10",
+                        !centrifugationDateTime && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {centrifugationDateTime ? formatDateTime(centrifugationDateTime) : "mm/dd/yyyy H:M"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={centrifugationDateTime}
+                      onSelect={setCentrifugationDateTime}
+                      initialFocus
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
               )}
 
               <div>

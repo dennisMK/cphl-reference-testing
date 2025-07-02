@@ -746,7 +746,7 @@ export default function EditViralLoadForm({
                       form.setValue("requested_on", dateString);
                     } else {
                       form.setValue("requested_on", "");
-                    }
+                  }
                   }}
                   initialFocus
                 />

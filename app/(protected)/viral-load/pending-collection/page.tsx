@@ -254,10 +254,10 @@ export const columns: ColumnDef<ViralLoadSample>[] = [
               </a>
             </DropdownMenuItem>
             {isNotCollected && (
-              <DropdownMenuItem className="text-red-600">
-                <Trash2 className="mr-2 h-4 w-4" />
+            <DropdownMenuItem className="text-red-600">
+              <Trash2 className="mr-2 h-4 w-4" />
                 Delete Request
-              </DropdownMenuItem>
+            </DropdownMenuItem>
             )}
           </DropdownMenuContent>
         </DropdownMenu>

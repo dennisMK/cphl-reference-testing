@@ -31,7 +31,6 @@ const timeRanges = [
   { label: "15 Days", value: 15, key: "15d" },
   { label: "30 Days", value: 30, key: "30d" },
   { label: "3 Months", value: 90, key: "3m" },
-  { label: "1 Year", value: 365, key: "1y" },
   { label: "All Time", value: 999, key: "all" },
 ];
 
