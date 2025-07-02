@@ -60,8 +60,9 @@ export default function DashboardCards() {
       available: true,
     },
     {
-      title: "HIV-Positive Mothers", 
-      description: "Monitor and track EID test request for infants born to HIV Positive Mothers",
+      title: "HIV-Positive Mothers",
+      description:
+        "Monitor and track EID test request for infants born to HIV Positive Mothers",
       href: "/eid",
       icon: Baby,
       theme: "blue",
@@ -69,7 +70,7 @@ export default function DashboardCards() {
     },
     {
       title: "Hepatitis C",
-      description: "Monitor and track Hepatitis C test request and management", 
+      description: "Monitor and track Hepatitis C test request and management",
       href: "#",
       icon: HepatitisCIcon,
       theme: "orange",
@@ -91,7 +92,7 @@ export default function DashboardCards() {
       theme: "purple",
       available: false,
     },
-   
+
     {
       title: "Human Papillomavirus",
       description: "Monitor and track HPV screening and vaccination programs",
@@ -112,9 +113,12 @@ export default function DashboardCards() {
     <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
       {actions.map((action) => {
         const IconComponent = action.icon;
-        
+
         return (
-          <Card key={action.title} className="group hover:shadow-lg transition-all duration-200 flex flex-col h-full">
+          <Card
+            key={action.title}
+            className="group hover:shadow-lg transition-all duration-200 flex flex-col h-full"
+          >
             <CardHeader className="pb-3">
               <div className="flex items-center gap-4">
                 <div
@@ -122,16 +126,16 @@ export default function DashboardCards() {
                     action.theme === "red"
                       ? "bg-red-100 text-red-600"
                       : action.theme === "blue"
-                      ? "bg-blue-100 text-blue-600"
-                      : action.theme === "yellow"
-                      ? "bg-yellow-100 text-yellow-600"
-                      : action.theme === "purple"
-                      ? "bg-purple-100 text-purple-600"
-                      : action.theme === "orange"
-                      ? "bg-orange-100 text-orange-600"
-                      : action.theme === "pink"
-                      ? "bg-pink-100 text-pink-600"
-                      : "bg-gray-100 text-gray-600"
+                        ? "bg-blue-100 text-blue-600"
+                        : action.theme === "yellow"
+                          ? "bg-yellow-100 text-yellow-600"
+                          : action.theme === "purple"
+                            ? "bg-purple-100 text-purple-600"
+                            : action.theme === "orange"
+                              ? "bg-orange-100 text-orange-600"
+                              : action.theme === "pink"
+                                ? "bg-pink-100 text-pink-600"
+                                : "bg-gray-100 text-gray-600"
                   }`}
                 >
                   <IconComponent className="h-8 w-8" />
@@ -145,29 +149,30 @@ export default function DashboardCards() {
               <p className="text-muted-foreground text-sm mb-4 leading-relaxed flex-grow">
                 {action.description}
               </p>
-              
+
               {action.available ? (
                 <Button
                   asChild
-                  className={`w-full mt-auto ${
+                  size={"lg"}
+                  className={`w-full mt-auto rounded-xl ${
                     action.theme === "red"
                       ? "bg-red-600 hover:bg-red-700"
                       : action.theme === "blue"
-                      ? "bg-blue-600 hover:bg-blue-700"
-                      : "bg-primary hover:bg-primary/90"
+                        ? "bg-blue-600 hover:bg-blue-700"
+                        : "bg-primary hover:bg-primary/90"
                   }`}
                 >
-                  <Link href={action.href}>
-                    Get Started
-                  </Link>
+                  <Link href={action.href}>Enter</Link>
                 </Button>
               ) : (
                 <Button
+                  size={"lg"}
+                  // disabled={!action.available}
                   variant="outline"
-                  className="w-full mt-auto"
+                  className="w-full mt-auto rounded-xl cursor-pointer"
                   onClick={() => handleUnavailableClick(action.title)}
                 >
-                  Coming Soon
+                  Enter
                 </Button>
               )}
             </CardContent>
