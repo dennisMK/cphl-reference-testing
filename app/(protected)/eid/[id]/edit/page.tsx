@@ -64,6 +64,7 @@ export default function EditEIDRequestPage() {
   const params = useParams();
   const requestId = parseInt(params.id as string);
   const utils = api.useUtils();
+  const [isFormInitialized, setIsFormInitialized] = React.useState(false);
 
   // Fetch EID request data
   const { data: request, isLoading: requestLoading, error: requestError } = api.eid.getRequest.useQuery(
@@ -125,7 +126,7 @@ export default function EditEIDRequestPage() {
 
   // Update form when data is loaded
   React.useEffect(() => {
-    if (request) {
+    if (request && !isFormInitialized) {
       console.log("Loading request data:", request);
       const formData = {
         infant_name: request.infant_name || "",
@@ -153,9 +154,19 @@ export default function EditEIDRequestPage() {
         screening_program: request.screening_program || "",
       };
       console.log("Setting form data:", formData);
+      console.log("Select field values:", {
+        infant_feeding: formData.infant_feeding,
+        test_type: formData.test_type,
+        pcr: formData.pcr,
+        non_routine: formData.non_routine,
+        infant_gender: formData.infant_gender,
+        given_contri: formData.given_contri,
+        delivered_at_hc: formData.delivered_at_hc,
+      });
       form.reset(formData);
+      setIsFormInitialized(true);
     }
-  }, [request, form]);
+  }, [request, form, isFormInitialized]);
 
   const onSubmit = (data: UpdateEIDRequestData) => {
     console.log("Form submitted with data:", data);
@@ -231,7 +242,7 @@ export default function EditEIDRequestPage() {
     );
   }
 
-  if (requestLoading || !request) {
+  if (requestLoading || !request || !isFormInitialized) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">

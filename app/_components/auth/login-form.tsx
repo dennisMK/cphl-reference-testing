@@ -64,7 +64,7 @@ export function LoginForm({
             />
           </div>
           <h1 className="text-4xl font-semibold text-gray-900 mb-3">
-            Uganda Lab <br/> e-Test Requests
+            CPHL <br/> Reference Testing
           </h1>
          
         </div>

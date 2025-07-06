@@ -132,10 +132,10 @@ export default function EIDDetailsPage() {
         <div className="lg:col-span-2 space-y-6">
           {/* Infant Information */}
           <Card>
-            <CardHeader className="bg-blue-50">
-              <CardTitle className="text-lg font-semibold text-blue-900 flex items-center">
-                <Baby className="h-5 w-5 mr-2" />
-                Infant Information
+            <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
+              <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
+                <Baby className="h-5 w-5" />
+                <span>Infant Information</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6">
