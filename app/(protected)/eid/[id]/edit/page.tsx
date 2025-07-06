@@ -260,14 +260,13 @@ export default function EditEIDRequestPage() {
       {/* Form */}
       <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-8">
         {/* Infant Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Baby className="h-5 w-5 text-blue-600" />
+        <Card className="p-0">
+          <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
+            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
               <span>Infant Information</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 pb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="infant_name">Infant Name *</Label>
@@ -287,7 +286,7 @@ export default function EditEIDRequestPage() {
                   value={form.watch("infant_gender")} 
                   onValueChange={(value) => form.setValue("infant_gender", value as any)}
                 >
-                  <SelectTrigger className="mt-2">
+                  <SelectTrigger className="mt-2 w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -343,7 +342,7 @@ export default function EditEIDRequestPage() {
                   value={form.watch("infant_age_units")} 
                   onValueChange={(value) => form.setValue("infant_age_units", value as any)}
                 >
-                  <SelectTrigger className="mt-2">
+                  <SelectTrigger className="mt-2 w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -364,7 +363,7 @@ export default function EditEIDRequestPage() {
                   value={form.watch("infant_is_breast_feeding")} 
                   onValueChange={(value) => form.setValue("infant_is_breast_feeding", value as any)}
                 >
-                  <SelectTrigger className="mt-2">
+                  <SelectTrigger className="mt-2 w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -382,11 +381,13 @@ export default function EditEIDRequestPage() {
         </Card>
 
         {/* Mother Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Mother Information</CardTitle>
+        <Card className="p-0">
+          <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
+            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
+              <span>Mother Information</span>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 pb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="mother_htsnr">Mother's HTS Number</Label>
@@ -428,11 +429,13 @@ export default function EditEIDRequestPage() {
         </Card>
 
         {/* Test Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Test Information</CardTitle>
+        <Card className="p-0">
+          <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
+            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
+              <span>Test Information</span>
+            </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-6">
+          <CardContent className="space-y-6 pb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Label htmlFor="pcr">PCR Type</Label>
@@ -440,7 +443,7 @@ export default function EditEIDRequestPage() {
                   value={form.watch("pcr")} 
                   onValueChange={(value) => form.setValue("pcr", value as any)}
                 >
-                  <SelectTrigger className="mt-2">
+                  <SelectTrigger className="mt-2 w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -469,7 +472,7 @@ export default function EditEIDRequestPage() {
                   value={form.watch("PCR_test_requested")} 
                   onValueChange={(value) => form.setValue("PCR_test_requested", value as any)}
                 >
-                  <SelectTrigger className="mt-2">
+                  <SelectTrigger className="mt-2 w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -485,7 +488,7 @@ export default function EditEIDRequestPage() {
                   value={form.watch("SCD_test_requested")} 
                   onValueChange={(value) => form.setValue("SCD_test_requested", value as any)}
                 >
-                  <SelectTrigger className="mt-2">
+                  <SelectTrigger className="mt-2 w-full">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -499,11 +502,13 @@ export default function EditEIDRequestPage() {
         </Card>
 
         {/* Facility Information (Display Only) */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Facility Information</CardTitle>
+        <Card className="p-0">
+          <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
+            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
+              <span>Facility Information</span>
+            </CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg">
               <div>
                 <Label className="text-sm font-medium text-gray-700">Facility Name</Label>
