@@ -206,7 +206,7 @@ export function AppNavigation() {
             />
             <div className="hidden sm:block">
               <span className={cn("text-lg font-semibold", colors.text)}>
-                Uganda Lab
+                CPHL
               </span>
               <div
                 className={cn(
@@ -216,7 +216,7 @@ export function AppNavigation() {
                     : "text-white/80"
                 )}
               >
-                e-Test Requests
+                Reference Testing
               </div>
             </div>
           </Link>
@@ -242,7 +242,10 @@ export function AppNavigation() {
               if (currentSection === "eid" && section.href === "/viral-load")
                 return null;
 
-              if (section.subItems && currentSection === section.href.split("/")[1]) {
+              if (
+                section.subItems &&
+                currentSection === section.href.split("/")[1]
+              ) {
                 return (
                   <DropdownMenu key={section.href}>
                     <DropdownMenuTrigger asChild>
@@ -299,57 +302,75 @@ export function AppNavigation() {
                         </div>
                       </DropdownMenuLabel>
                       <DropdownMenuSeparator />
-                      
-                      {section.subItems.map((category: any, categoryIndex: number) => (
-                        <div key={categoryIndex}>
-                          {category.category && (
-                            <>
-                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                                {category.category}
-                              </div>
-                              {category.items?.map((subItem: any) => {
-                        const SubIconComponent = subItem.icon;
-                        return (
-                          <DropdownMenuItem key={subItem.href} asChild>
-                            <Link
-                              href={subItem.href}
-                                      target={subItem.external ? "_blank" : undefined}
-                                      rel={subItem.external ? "noopener noreferrer" : undefined}
-                                      className="flex items-center space-x-2 px-2 py-2"
-                            >
-                              <SubIconComponent className="h-4 w-4" />
-                                      <div className="flex-1">
-                                        <div className="text-sm font-medium">{subItem.name}</div>
-                                        {subItem.description && (
-                                          <div className="text-xs text-muted-foreground">
-                                            {subItem.description}
+
+                      {section.subItems.map(
+                        (category: any, categoryIndex: number) => (
+                          <div key={categoryIndex}>
+                            {category.category && (
+                              <>
+                                <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                                  {category.category}
+                                </div>
+                                {category.items?.map((subItem: any) => {
+                                  const SubIconComponent = subItem.icon;
+                                  return (
+                                    <DropdownMenuItem
+                                      key={subItem.href}
+                                      asChild
+                                    >
+                                      <Link
+                                        href={subItem.href}
+                                        target={
+                                          subItem.external
+                                            ? "_blank"
+                                            : undefined
+                                        }
+                                        rel={
+                                          subItem.external
+                                            ? "noopener noreferrer"
+                                            : undefined
+                                        }
+                                        className="flex items-center space-x-2 px-2 py-2"
+                                      >
+                                        <SubIconComponent className="h-4 w-4" />
+                                        <div className="flex-1">
+                                          <div className="text-sm font-medium">
+                                            {subItem.name}
                                           </div>
+                                          {subItem.description && (
+                                            <div className="text-xs text-muted-foreground">
+                                              {subItem.description}
+                                            </div>
+                                          )}
+                                        </div>
+                                        {subItem.external && (
+                                          <IconExternalLink className="h-3 w-3 text-muted-foreground" />
                                         )}
-                                      </div>
-                                      {subItem.external && (
-                                        <IconExternalLink className="h-3 w-3 text-muted-foreground" />
-                                      )}
-                            </Link>
-                          </DropdownMenuItem>
-                        );
-                      })}
-                              {categoryIndex < section.subItems.length - 1 && <DropdownMenuSeparator />}
-                            </>
-                          )}
-                          
-                          {!category.category && (
-                            <DropdownMenuItem key={category.href} asChild>
-                        <Link
-                                href={category.href}
-                          className="flex items-center space-x-2"
-                        >
-                                <category.icon className="h-4 w-4" />
-                                <span>{category.name}</span>
-                        </Link>
-                      </DropdownMenuItem>
-                          )}
-                        </div>
-                      ))}
+                                      </Link>
+                                    </DropdownMenuItem>
+                                  );
+                                })}
+                                {categoryIndex <
+                                  section.subItems.length - 1 && (
+                                  <DropdownMenuSeparator />
+                                )}
+                              </>
+                            )}
+
+                            {!category.category && (
+                              <DropdownMenuItem key={category.href} asChild>
+                                <Link
+                                  href={category.href}
+                                  className="flex items-center space-x-2"
+                                >
+                                  <category.icon className="h-4 w-4" />
+                                  <span>{category.name}</span>
+                                </Link>
+                              </DropdownMenuItem>
+                            )}
+                          </div>
+                        )
+                      )}
                     </DropdownMenuContent>
                   </DropdownMenu>
                 );
@@ -384,13 +405,15 @@ export function AppNavigation() {
           {/* Contact Information */}
           <div className="hidden lg:flex items-center space-x-4">
             <div className="flex items-center space-x-2">
-              <IconMail className={cn(
-                "h-4 w-4",
-                currentSection === "dashboard" 
-                  ? "text-gray-600" 
-                  : "text-white/80"
-              )} />
-              <a 
+              <IconMail
+                className={cn(
+                  "h-4 w-4",
+                  currentSection === "dashboard"
+                    ? "text-gray-600"
+                    : "text-white/80"
+                )}
+              />
+              <a
                 href="mailto:customercare@cphl.go.ug"
                 className={cn(
                   "text-sm font-medium hover:underline transition-colors",
@@ -409,14 +432,16 @@ export function AppNavigation() {
                 currentSection === "dashboard" ? "bg-gray-300" : "bg-white/30"
               )}
             />
-        <div className="flex items-center space-x-2">
-              <IconPhone className={cn(
-                "h-4 w-4",
-                currentSection === "dashboard" 
-                  ? "text-gray-600" 
-                  : "text-white/80"
-              )} />
-              <a 
+            <div className="flex items-center space-x-2">
+              <IconPhone
+                className={cn(
+                  "h-4 w-4",
+                  currentSection === "dashboard"
+                    ? "text-gray-600"
+                    : "text-white/80"
+                )}
+              />
+              <a
                 href="tel:0800221100"
                 className={cn(
                   "text-sm font-medium hover:underline transition-colors",
@@ -432,7 +457,7 @@ export function AppNavigation() {
 
           {/* Mobile Contact - Compact */}
           <div className="lg:hidden flex items-center space-x-2">
-            <a 
+            <a
               href="tel:0800221100"
               className={cn(
                 "flex items-center space-x-1 px-2 py-1 rounded transition-colors",
@@ -444,7 +469,7 @@ export function AppNavigation() {
               <IconPhone className="h-4 w-4" />
               <span className="text-xs font-medium">Call</span>
             </a>
-            <a 
+            <a
               href="mailto:customercare@cphl.go.ug"
               className={cn(
                 "flex items-center space-x-1 px-2 py-1 rounded transition-colors",
@@ -479,12 +504,14 @@ export function AppNavigation() {
                 )}
               >
                 <Avatar className="h-8 w-8">
-                  <AvatarFallback className={cn(
-                    "text-xs",
-                    currentSection === "dashboard"
-                      ? "bg-gray-100 text-gray-600"
-                      : "bg-white/20 text-white"
-                  )}>
+                  <AvatarFallback
+                    className={cn(
+                      "text-xs",
+                      currentSection === "dashboard"
+                        ? "bg-gray-100 text-gray-600"
+                        : "bg-white/20 text-white"
+                    )}
+                  >
                     <User className="h-4 w-4" />
                   </AvatarFallback>
                 </Avatar>

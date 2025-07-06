@@ -100,7 +100,8 @@ export function SignupForm({
             Create your account
           </h1>
           <p className="text-lg text-gray-600">
-            Join Uganda Lab e-Test Requests
+            Join CPHL
+            Reference Testing
           </p>
         </div>
 

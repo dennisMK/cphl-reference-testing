@@ -143,13 +143,7 @@ export default function NewViralLoadRequest(): React.JSX.Element {
   const createRequest = api.viralLoad.createRequest.useMutation({
     onSuccess: (data) => {
       console.log("Request created successfully:", data);
-      toast.success("Viral load request created successfully!", {
-        description: `Sample ID: ${data.sampleId}`,
-        action: {
-          label: "View Requests",
-          onClick: () => router.push("/viral-load/pending-collection"),
-        },
-      });
+      toast.success("Viral load request created successfully!");
       router.push("/viral-load/pending-collection");
     },
     onError: (error) => {
@@ -986,11 +980,15 @@ export default function NewViralLoadRequest(): React.JSX.Element {
 
 
           {/* Form Actions */}
-          <div className="flex flex-col sm:flex-row gap-3 pt-6 border-t">
+        
+          </div>
+
+          <div className="flex justify-center pt-6 border-t">
             <Button
               type="submit"
               disabled={isSubmitting || !form.formState.isValid}
-              className="flex-1 bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
+              size="sm"
+              className="bg-red-600 hover:bg-red-700 text-white disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => {
                 console.log("Submit button clicked");
                 console.log("Form errors:", form.formState.errors);
@@ -1000,22 +998,14 @@ export default function NewViralLoadRequest(): React.JSX.Element {
             >
               {isSubmitting ? (
                 <>
-                  <TestTube className="mr-2 h-4 w-4 animate-spin" />
-                  Creating Request...
+                  Saving...
                 </>
               ) : (
                 <>
-                  <TestTube className="mr-2 h-4 w-4" />
-                  Create Viral Load Request
+                  Save
                 </>
               )}
             </Button>
-            <Link href="/viral-load">
-              <Button type="button" variant="outline" className="w-full sm:w-auto">
-                Cancel
-              </Button>
-            </Link>
-          </div>
           </div>
       </form>
 
