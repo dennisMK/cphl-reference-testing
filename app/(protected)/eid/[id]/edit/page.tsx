@@ -11,51 +11,50 @@ import { ArrowLeft, Baby, Loader2, Save } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { toast } from "sonner";
 
 import { api } from "@/trpc/react";
 
+// Form validation schema for editing (more lenient than create form)
 const updateEIDRequestSchema = z.object({
-  infant_name: z.string().min(1, "Infant name is required").trim(),
-  infant_gender: z.enum(["MALE", "FEMALE", "NOT_RECORDED"], {
-    errorMap: () => ({ message: "Please select a valid gender" })
-  }).optional(),
+  // Patient information - optional for edit form
+  infant_name: z.string().optional(),
+  infant_exp_id: z.string().optional(),
+  infant_gender: z.enum(["MALE", "FEMALE", "NOT_RECORDED"]).optional(),
   infant_age: z.string().optional(),
-  infant_age_units: z.enum(["DAYS", "WEEKS", "MONTHS", "YEARS"], {
-    errorMap: () => ({ message: "Please select valid age units" })
-  }).optional(),
-  infant_dob: z.string().optional().refine((val) => {
-    if (!val) return true;
-    const date = new Date(val);
-    return !isNaN(date.getTime()) && date <= new Date();
-  }, "Date of birth must be a valid date in the past"),
-  infant_is_breast_feeding: z.enum(["YES", "NO", "UNKNOWN"], {
-    errorMap: () => ({ message: "Please select breastfeeding status" })
-  }).optional(),
-  infant_contact_phone: z.string().optional().refine((val) => {
-    if (!val) return true;
-    return /^[\+]?[0-9\s\-\(\)]{7,15}$/.test(val);
-  }, "Please enter a valid phone number"),
+  infant_age_units: z.enum(["months", "days", "weeks", "years"]).optional(),
+  infant_contact_phone: z.string().optional(),
+  given_contri: z.enum(["BLANK", "Y", "N"]).optional(),
+  delivered_at_hc: z.enum(["BLANK", "Y", "N"]).optional(),
+
+  // Other section - optional for edit form
+  infant_feeding: z.string().optional(),
+  test_type: z.enum(["P", "S", "B"]).optional(),
+  pcr: z.enum(["UNKNOWN", "FIRST", "SECOND", "THIRD"]).optional(),
+  non_routine: z.enum(["NONE", "R1", "R2", "R3"]).optional(),
   mother_htsnr: z.string().optional(),
   mother_artnr: z.string().optional(),
-  mother_nin: z.string().optional().refine((val) => {
-    if (!val) return true;
-    return val.length >= 10;
-  }, "NIN must be at least 10 characters"),
-  test_type: z.string().optional(),
-  pcr: z.enum(["FIRST", "SECOND", "THIRD", "NON_ROUTINE", "UNKNOWN"], {
-    errorMap: () => ({ message: "Please select a valid PCR type" })
-  }).optional(),
-  PCR_test_requested: z.enum(["YES", "NO"], {
-    errorMap: () => ({ message: "Please select if PCR test is requested" })
-  }).optional(),
-  SCD_test_requested: z.enum(["YES", "NO"], {
-    errorMap: () => ({ message: "Please select if SCD test is requested" })
-  }).optional(),
+  mother_nin: z.string().optional(),
+  mother_antenatal_prophylaxis: z.string().optional(),
+  mother_delivery_prophylaxis: z.string().optional(),
+  mother_postnatal_prophylaxis: z.string().optional(),
+
+  // Hidden SCD fields that exist in database
+  first_symptom_age: z.enum(["BLANK", "1", "2"]).optional(),
+  diagnosis_age: z.enum(["BLANK", "1", "2"]).optional(),
+  test_reason: z.string().optional(),
+  fam_history: z.string().optional(),
+  screening_program: z.string().optional(),
 });
 
 type UpdateEIDRequestData = z.infer<typeof updateEIDRequestSchema>;
@@ -81,7 +80,7 @@ export default function EditEIDRequestPage() {
       // Invalidate queries to refresh data
       utils.eid.getRequest.invalidate({ id: requestId });
       utils.eid.getRequests.invalidate();
-      router.push(`/eid/${requestId}`);
+      // router.push(`/eid/${requestId}`);
     },
     onError: (error) => {
       console.error("Update error:", error);
@@ -96,21 +95,31 @@ export default function EditEIDRequestPage() {
 
   const form = useForm<UpdateEIDRequestData>({
     resolver: zodResolver(updateEIDRequestSchema),
+    mode: "onSubmit", // Only validate on submit, not on change
     defaultValues: {
       infant_name: "",
+      infant_exp_id: "",
       infant_gender: "NOT_RECORDED",
       infant_age: "",
-      infant_age_units: "WEEKS",
-      infant_dob: "",
-      infant_is_breast_feeding: "UNKNOWN",
+      infant_age_units: "months",
       infant_contact_phone: "",
+      given_contri: "BLANK",
+      delivered_at_hc: "BLANK",
+      infant_feeding: "",
+      test_type: "P",
+      pcr: "UNKNOWN",
+      non_routine: "NONE",
       mother_htsnr: "",
       mother_artnr: "",
       mother_nin: "",
-      test_type: "",
-      pcr: "FIRST",
-      PCR_test_requested: "YES",
-      SCD_test_requested: "NO",
+      mother_antenatal_prophylaxis: "",
+      mother_delivery_prophylaxis: "",
+      mother_postnatal_prophylaxis: "",
+      first_symptom_age: "BLANK",
+      diagnosis_age: "BLANK",
+      test_reason: "",
+      fam_history: "",
+      screening_program: "",
     },
   });
 
@@ -120,19 +129,28 @@ export default function EditEIDRequestPage() {
       console.log("Loading request data:", request);
       const formData = {
         infant_name: request.infant_name || "",
-        infant_gender: request.infant_gender || "NOT_RECORDED",
+        infant_exp_id: request.infant_exp_id || "",
+        infant_gender: (request.infant_gender as "MALE" | "FEMALE" | "NOT_RECORDED") || "NOT_RECORDED",
         infant_age: request.infant_age || "",
-        infant_age_units: (request.infant_age_units as any) || "WEEKS",
-        infant_dob: request.infant_dob ? new Date(request.infant_dob).toISOString().split('T')[0] : "",
-        infant_is_breast_feeding: (request.infant_is_breast_feeding as any) || "UNKNOWN",
+        infant_age_units: (request.infant_age_units as "months" | "days" | "weeks" | "years") || "months",
         infant_contact_phone: request.infant_contact_phone || "",
+        given_contri: (request.given_contri as "BLANK" | "Y" | "N") || "BLANK",
+        delivered_at_hc: (request.delivered_at_hc as "BLANK" | "Y" | "N") || "BLANK",
+        infant_feeding: request.infant_feeding || "",
+        test_type: (request.test_type as "P" | "S" | "B") || "P",
+        pcr: (request.pcr === "NON_ROUTINE" ? "UNKNOWN" : (request.pcr as "UNKNOWN" | "FIRST" | "SECOND" | "THIRD")) || "UNKNOWN",
+        non_routine: (request.non_routine as "NONE" | "R1" | "R2" | "R3") || "NONE",
         mother_htsnr: request.mother_htsnr || "",
         mother_artnr: request.mother_artnr || "",
         mother_nin: request.mother_nin || "",
-        test_type: request.test_type || "",
-        pcr: request.pcr || "FIRST",
-        PCR_test_requested: (request.PCR_test_requested as any) || "YES",
-        SCD_test_requested: (request.SCD_test_requested as any) || "NO",
+        mother_antenatal_prophylaxis: request.mother_antenatal_prophylaxis ? String(request.mother_antenatal_prophylaxis) : "",
+        mother_delivery_prophylaxis: request.mother_delivery_prophylaxis ? String(request.mother_delivery_prophylaxis) : "",
+        mother_postnatal_prophylaxis: request.mother_postnatal_prophylaxis ? String(request.mother_postnatal_prophylaxis) : "",
+        first_symptom_age: (request.first_symptom_age as "BLANK" | "1" | "2") || "BLANK",
+        diagnosis_age: (request.diagnosis_age as "BLANK" | "1" | "2") || "BLANK",
+        test_reason: request.test_reason || "",
+        fam_history: request.fam_history || "",
+        screening_program: request.screening_program || "",
       };
       console.log("Setting form data:", formData);
       form.reset(formData);
@@ -142,25 +160,41 @@ export default function EditEIDRequestPage() {
   const onSubmit = (data: UpdateEIDRequestData) => {
     console.log("Form submitted with data:", data);
     console.log("Request ID:", requestId);
-    console.log("Form validation state:", {
-      isValid: form.formState.isValid,
-      isDirty: form.formState.isDirty,
-      isSubmitted: form.formState.isSubmitted,
-      errorCount: Object.keys(form.formState.errors).length
-    });
-    console.log("Form errors:", form.formState.errors);
     
-    // Check if form is valid
-    if (!form.formState.isValid) {
-      console.log("Form validation failed:", form.formState.errors);
-      toast.error("Please fix the form errors before submitting");
-      return;
+    // Validate required fields on submit since schema is more lenient
+    const errors: Record<string, string> = {};
+    
+    if (!data.infant_name || data.infant_name.trim() === "") {
+      errors.infant_name = "Infant name is required";
     }
     
-    // Validate required fields manually as backup
-    if (!data.infant_name || data.infant_name.trim() === "") {
-      toast.error("Infant name is required");
-      form.setError("infant_name", { message: "Infant name is required" });
+    if (!data.infant_exp_id || data.infant_exp_id.trim() === "") {
+      errors.infant_exp_id = "EXP No is required";
+    }
+    
+    if (!data.infant_age || data.infant_age.trim() === "") {
+      errors.infant_age = "Age is required";
+    }
+    
+    if (!data.infant_feeding || data.infant_feeding.trim() === "") {
+      errors.infant_feeding = "Infant feeding is required";
+    }
+    
+    // If there are validation errors, set them and return
+    if (Object.keys(errors).length > 0) {
+      Object.keys(errors).forEach(field => {
+        form.setError(field as any, { message: errors[field] });
+      });
+      toast.error("Please fix the form errors before submitting");
+      
+      // Focus on first error field
+      const firstErrorField = Object.keys(errors)[0];
+      if (firstErrorField) {
+        const element = document.getElementById(firstErrorField);
+        if (element) {
+          element.focus();
+        }
+      }
       return;
     }
     
@@ -169,28 +203,7 @@ export default function EditEIDRequestPage() {
     updateMutation.mutate({
       id: requestId,
       ...data,
-      infant_dob: data.infant_dob ? data.infant_dob : undefined,
     });
-  };
-
-  const onError = (errors: any) => {
-    // Safely log form errors without circular references
-    const errorSummary = Object.keys(errors).reduce((acc, key) => {
-      acc[key] = errors[key]?.message || 'Unknown error';
-      return acc;
-    }, {} as Record<string, string>);
-    
-    console.log("Form validation errors:", errorSummary);
-    toast.error("Please fix the form errors before submitting");
-    
-    // Focus on first error field
-    const firstErrorField = Object.keys(errors)[0];
-    if (firstErrorField) {
-      const element = document.getElementById(firstErrorField);
-      if (element) {
-        element.focus();
-      }
-    }
   };
 
   const getStatusBadge = () => {
@@ -218,7 +231,7 @@ export default function EditEIDRequestPage() {
     );
   }
 
-  if (requestLoading) {
+  if (requestLoading || !request) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center h-64">
@@ -232,324 +245,714 @@ export default function EditEIDRequestPage() {
   }
 
   return (
-    <div className="container mx-auto p-6">
-      {/* Header */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-4">
-            <Link href={`/eid/${requestId}`}>
-              <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                <ArrowLeft className="h-4 w-4" />
-                <span>Back to Request</span>
-              </Button>
-            </Link>
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900 flex items-center space-x-3">
-                <Baby className="h-8 w-8 text-blue-600" />
-                <span>Edit EID Request</span>
-              </h1>
-              <p className="text-gray-600 mt-1">
-                Update details for EID-{String(requestId).padStart(6, "0")}
-              </p>
+    <main className="md:container md:px-0 px-4 pt-4 pb-20 md:mx-auto">
+      <div>
+        {/* Header */}
+        <div className="mb-6 pb-4 border-b border-gray-200">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-center space-x-4">
+              <Link href={`/eid/${requestId}`}>
+                <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                  <ArrowLeft className="h-4 w-4" />
+                  <span>Back to Request</span>
+                </Button>
+              </Link>
+              <div className="min-w-0 flex-1">
+                <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex items-center space-x-3">
+                  <Baby className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+                  <span>Edit EID Request</span>
+                </h1>
+                <p className="text-sm sm:text-base text-gray-600 mt-1">
+                  Update details for EID-{String(requestId).padStart(6, "0")}
+                </p>
+              </div>
             </div>
+            {getStatusBadge()}
           </div>
-          {getStatusBadge()}
+        </div>
+
+        {/* EID Request Form */}
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+            {/* Patient Information */}
+            <Card className="border-0 shadow-sm bg-white rounded-xl p-0">
+              <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
+                <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
+                  <span>Patient Information</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6 pb-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="infant_name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Infant Name: *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter infant name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="infant_exp_id"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>EXP No: *</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter EXP number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="infant_gender"
+                    render={({ field }) => (
+                      <FormItem className="w-full">
+                        <FormLabel>Sex: *</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select gender" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="MALE">M</SelectItem>
+                            <SelectItem value="FEMALE">F</SelectItem>
+                            <SelectItem value="NOT_RECORDED">Blank</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <div className="grid grid-cols-2 gap-2">
+                    <FormField
+                      control={form.control}
+                      name="infant_age"
+                      render={({ field }) => (
+                        <FormItem className="w-full">
+                          <FormLabel>Age: *</FormLabel>
+                          <FormControl>
+                            <Input placeholder="Age" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="infant_age_units"
+                      render={({ field }) => (
+                        <FormItem className="w-full">
+                          <FormLabel>Units: *</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="months">Months</SelectItem>
+                              <SelectItem value="days">Days</SelectItem>
+                              <SelectItem value="weeks">Weeks</SelectItem>
+                              <SelectItem value="years">Years</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="infant_contact_phone"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Care Giver Phone Number:</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Phone number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="given_contri"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Given Contrimoxazole: *</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="BLANK">Blank</SelectItem>
+                            <SelectItem value="Y">Y</SelectItem>
+                            <SelectItem value="N">N</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="delivered_at_hc"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Delivered at H/C: *</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="BLANK">UNKNOWN</SelectItem>
+                            <SelectItem value="Y">Y</SelectItem>
+                            <SelectItem value="N">N</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <div className="col-span-2">
+                    {/* Placeholder for additional fields if needed */}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Other Section */}
+            <Card className="border-0 shadow-sm bg-white rounded-xl p-0">
+              <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
+                <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
+                  <span>Other</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6 pb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="infant_feeding"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Infant Feeding: *</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select feeding type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="EBF">
+                              Exclusive Breast Feeding
+                            </SelectItem>
+                            <SelectItem value="MF">
+                              Mixed Feeding (below 6 months)
+                            </SelectItem>
+                            <SelectItem value="W">
+                              Wean from breastfeeding
+                            </SelectItem>
+                            <SelectItem value="RF">
+                              Replacement Feeding (never breastfed)
+                            </SelectItem>
+                            <SelectItem value="CF">
+                              Complimentary Feeding (above 6 months)
+                            </SelectItem>
+                            <SelectItem value="NLB">
+                              No longer Breastfeeding
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="test_type"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Type of Test:</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select test type" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="P">PCR</SelectItem>
+                            <SelectItem value="S">SCD</SelectItem>
+                            <SelectItem value="B">Both</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="pcr"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>PCR:</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="UNKNOWN">Blank</SelectItem>
+                            <SelectItem value="FIRST">1st</SelectItem>
+                            <SelectItem value="SECOND">2nd</SelectItem>
+                            <SelectItem value="THIRD">3rd</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="non_routine"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Non Routine PCR:</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select non-routine" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="NONE">None</SelectItem>
+                            <SelectItem value="R1">R1</SelectItem>
+                            <SelectItem value="R2">R2</SelectItem>
+                            <SelectItem value="R3">R3</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="mother_htsnr"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Mothers HTS No:</FormLabel>
+                        <FormControl>
+                          <Input placeholder="HTS number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="mother_artnr"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>ART No:</FormLabel>
+                        <FormControl>
+                          <Input placeholder="ART number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="mother_nin"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>NIN:</FormLabel>
+                        <FormControl>
+                          <Input placeholder="National ID number" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                  <FormField
+                    control={form.control}
+                    name="mother_antenatal_prophylaxis"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Antenatal:</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select antenatal" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="80">1:Lifelong ART</SelectItem>
+                            <SelectItem value="81">2:No ART</SelectItem>
+                            <SelectItem value="82">3:Unknown</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="mother_delivery_prophylaxis"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Delivery:</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select delivery" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="80">1:Lifelong ART</SelectItem>
+                            <SelectItem value="81">2:No ART</SelectItem>
+                            <SelectItem value="82">3:Unknown</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="mother_postnatal_prophylaxis"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Postnatal:</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          value={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger className="w-full">
+                              <SelectValue placeholder="Select postnatal" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="80">1:Lifelong ART</SelectItem>
+                            <SelectItem value="81">2:No ART</SelectItem>
+                            <SelectItem value="82">3:Unknown</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+
+                {/* Hidden SCD Testing Fields */}
+                <div className="hidden space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="first_symptom_age"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Age of first symptom:</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="BLANK">Blank</SelectItem>
+                              <SelectItem value="1">Below 36 months</SelectItem>
+                              <SelectItem value="2">
+                                3 years or above
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="diagnosis_age"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Age at diagnosis:</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="BLANK">Blank</SelectItem>
+                              <SelectItem value="1">Below 36 months</SelectItem>
+                              <SelectItem value="2">
+                                3 years or above
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="test_reason"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Reason for testing:</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select reason" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Known positive family history">
+                                Known positive family history
+                              </SelectItem>
+                              <SelectItem value="Screening program">
+                                Screening program
+                              </SelectItem>
+                              <SelectItem value="Illness">Illness</SelectItem>
+                              <SelectItem value="Pregnancy">
+                                Pregnancy
+                              </SelectItem>
+                              <SelectItem value="Surgery">Surgery</SelectItem>
+                              <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="fam_history"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Known positive family history:</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select family history" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="One parent with AS">
+                                One parent with AS
+                              </SelectItem>
+                              <SelectItem value="Both parents with AS">
+                                Both parents with AS
+                              </SelectItem>
+                              <SelectItem value="Sibling with SCD">
+                                Sibling with SCD
+                              </SelectItem>
+                              <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+
+                    <FormField
+                      control={form.control}
+                      name="screening_program"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Early screening program:</FormLabel>
+                          <Select
+                            onValueChange={field.onChange}
+                            value={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger className="w-full">
+                                <SelectValue placeholder="Select screening program" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="Birth">Birth</SelectItem>
+                              <SelectItem value="First immunization">
+                                First immunization
+                              </SelectItem>
+                              <SelectItem value="subsequent immunization">
+                                subsequent immunization
+                              </SelectItem>
+                              <SelectItem value="Other">Other</SelectItem>
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Facility Information (Display Only) */}
+            <Card className="border-0 shadow-sm bg-white rounded-xl p-0">
+              <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
+                <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
+                  <span>Facility Information</span>
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="pb-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg">
+                  <div>
+                    <div className="text-sm font-medium text-gray-700">Facility Name</div>
+                    <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
+                      {request?.facility_name || "Not specified"}
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row justify-end gap-4">
+              <Button
+                type="button"
+                onClick={() => router.push(`/eid/${requestId}`)}
+                variant="outline"
+                className="flex items-center space-x-2"
+                disabled={updateMutation.isPending}
+              >
+                <span>Cancel</span>
+              </Button>
+              <Button
+                type="submit"
+                className="bg-blue-600 hover:bg-blue-700 flex items-center space-x-2"
+                disabled={updateMutation.isPending}
+              >
+                {updateMutation.isPending && (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                )}
+                <Save className="h-4 w-4" />
+                <span>{updateMutation.isPending ? "Updating..." : "Update Request"}</span>
+              </Button>
+            </div>
+          </form>
+        </Form>
+
+        {/* Information Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-8">
+          <Card className="border-0 shadow-sm bg-white rounded-xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                What is EID?
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm">
+                Early Infant Diagnosis (EID) is the process of HIV testing in
+                infants and children younger than 18 months born to HIV-positive
+                mothers. It's crucial for early detection and treatment.
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-sm bg-white rounded-xl">
+            <CardHeader className="pb-4">
+              <CardTitle className="text-lg font-semibold text-gray-900">
+                Testing Schedule
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-gray-600 text-sm">
+                Standard EID testing occurs at 6 weeks, 14 weeks, 6 months, 12
+                months, and 18 months of age, with additional testing as
+                clinically indicated.
+              </p>
+            </CardContent>
+          </Card>
         </div>
       </div>
-
-      {/* Form */}
-      <form onSubmit={form.handleSubmit(onSubmit, onError)} className="space-y-8">
-        {/* Infant Information */}
-        <Card className="p-0">
-          <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
-            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
-              <span>Infant Information</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6 pb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="infant_name">Infant Name *</Label>
-                <Input 
-                  id="infant_name" 
-                  {...form.register("infant_name")}
-                  className="mt-2"
-                />
-                {form.formState.errors.infant_name && (
-                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.infant_name.message}</p>
-                )}
-              </div>
-              
-              <div>
-                <Label htmlFor="infant_gender">Gender</Label>
-                <Select 
-                  value={form.watch("infant_gender")} 
-                  onValueChange={(value) => form.setValue("infant_gender", value as any)}
-                >
-                  <SelectTrigger className="mt-2 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="MALE">Male</SelectItem>
-                    <SelectItem value="FEMALE">Female</SelectItem>
-                    <SelectItem value="NOT_RECORDED">Not Recorded</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="infant_dob">Date of Birth</Label>
-                <Input 
-                  id="infant_dob" 
-                  type="date"
-                  {...form.register("infant_dob")}
-                  className="mt-2"
-                />
-                {form.formState.errors.infant_dob && (
-                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.infant_dob.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="infant_contact_phone">Contact Phone</Label>
-                <Input 
-                  id="infant_contact_phone" 
-                  {...form.register("infant_contact_phone")}
-                  className="mt-2"
-                  placeholder="Phone number"
-                />
-                {form.formState.errors.infant_contact_phone && (
-                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.infant_contact_phone.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="infant_age">Age</Label>
-                <Input 
-                  id="infant_age" 
-                  {...form.register("infant_age")}
-                  className="mt-2"
-                  placeholder="e.g., 6"
-                />
-                {form.formState.errors.infant_age && (
-                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.infant_age.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="infant_age_units">Age Units</Label>
-                <Select 
-                  value={form.watch("infant_age_units")} 
-                  onValueChange={(value) => form.setValue("infant_age_units", value as any)}
-                >
-                  <SelectTrigger className="mt-2 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="DAYS">Days</SelectItem>
-                    <SelectItem value="WEEKS">Weeks</SelectItem>
-                    <SelectItem value="MONTHS">Months</SelectItem>
-                    <SelectItem value="YEARS">Years</SelectItem>
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.infant_age_units && (
-                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.infant_age_units.message}</p>
-                )}
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="infant_is_breast_feeding">Breastfeeding Status</Label>
-                <Select 
-                  value={form.watch("infant_is_breast_feeding")} 
-                  onValueChange={(value) => form.setValue("infant_is_breast_feeding", value as any)}
-                >
-                  <SelectTrigger className="mt-2 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="YES">Yes</SelectItem>
-                    <SelectItem value="NO">No</SelectItem>
-                    <SelectItem value="UNKNOWN">Unknown</SelectItem>
-                  </SelectContent>
-                </Select>
-                {form.formState.errors.infant_is_breast_feeding && (
-                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.infant_is_breast_feeding.message}</p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Mother Information */}
-        <Card className="p-0">
-          <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
-            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
-              <span>Mother Information</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6 pb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="mother_htsnr">Mother's HTS Number</Label>
-                <Input 
-                  id="mother_htsnr" 
-                  {...form.register("mother_htsnr")}
-                  className="mt-2"
-                />
-                {form.formState.errors.mother_htsnr && (
-                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.mother_htsnr.message}</p>
-                )}
-              </div>
-
-              <div>
-                <Label htmlFor="mother_artnr">Mother's ART Number</Label>
-                <Input 
-                  id="mother_artnr" 
-                  {...form.register("mother_artnr")}
-                  className="mt-2"
-                />
-                {form.formState.errors.mother_artnr && (
-                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.mother_artnr.message}</p>
-                )}
-              </div>
-
-              <div className="md:col-span-2">
-                <Label htmlFor="mother_nin">Mother's NIN</Label>
-                <Input 
-                  id="mother_nin" 
-                  {...form.register("mother_nin")}
-                  className="mt-2"
-                />
-                {form.formState.errors.mother_nin && (
-                  <p className="text-red-600 text-sm mt-1">{form.formState.errors.mother_nin.message}</p>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Test Information */}
-        <Card className="p-0">
-          <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
-            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
-              <span>Test Information</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6 pb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <Label htmlFor="pcr">PCR Type</Label>
-                <Select 
-                  value={form.watch("pcr")} 
-                  onValueChange={(value) => form.setValue("pcr", value as any)}
-                >
-                  <SelectTrigger className="mt-2 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="FIRST">First PCR</SelectItem>
-                    <SelectItem value="SECOND">Second PCR</SelectItem>
-                    <SelectItem value="THIRD">Third PCR</SelectItem>
-                    <SelectItem value="NON_ROUTINE">Non-Routine</SelectItem>
-                    <SelectItem value="UNKNOWN">Unknown</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="test_type">Test Type</Label>
-                <Input 
-                  id="test_type" 
-                  {...form.register("test_type")}
-                  className="mt-2"
-                  placeholder="e.g., Standard EID"
-                />
-              </div>
-
-              <div>
-                <Label htmlFor="PCR_test_requested">PCR Test Requested</Label>
-                <Select 
-                  value={form.watch("PCR_test_requested")} 
-                  onValueChange={(value) => form.setValue("PCR_test_requested", value as any)}
-                >
-                  <SelectTrigger className="mt-2 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="YES">Yes</SelectItem>
-                    <SelectItem value="NO">No</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <Label htmlFor="SCD_test_requested">SCD Test Requested</Label>
-                <Select 
-                  value={form.watch("SCD_test_requested")} 
-                  onValueChange={(value) => form.setValue("SCD_test_requested", value as any)}
-                >
-                  <SelectTrigger className="mt-2 w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="YES">Yes</SelectItem>
-                    <SelectItem value="NO">No</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Facility Information (Display Only) */}
-        <Card className="p-0">
-          <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
-            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
-              <span>Facility Information</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pb-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg">
-              <div>
-                <Label className="text-sm font-medium text-gray-700">Facility Name</Label>
-                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
-                  {request?.facility_name || "Not specified"}
-                </div>
-              </div>
-            
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Form Actions */}
-        <div className="flex justify-end space-x-4 pt-6 border-t">
-          <Button type="button" variant="outline" onClick={() => router.push(`/eid/${requestId}`)}>
-            Cancel
-          </Button>
-          <Button 
-            type="submit" 
-            className="bg-blue-600 hover:bg-blue-700"
-            disabled={updateMutation.isPending}
-            onClick={(e) => {
-              console.log("Submit button clicked!");
-            }}
-          >
-            {updateMutation.isPending ? (
-              <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                Updating...
-              </>
-            ) : (
-              <>
-                <Save className="h-4 w-4 mr-2" />
-                Update Request
-              </>
-            )}
-          </Button>
-        </div>
-
-      
-      </form>
-    </div>
+    </main>
   );
 } 

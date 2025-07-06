@@ -47,23 +47,43 @@ const createEIDRequestSchema = z.object({
 
 const updateEIDRequestSchema = z.object({
   id: z.number(),
+  // Patient information
   infant_name: z.string().optional(),
+  infant_exp_id: z.string().optional(),
   infant_gender: z.enum(["MALE", "FEMALE", "NOT_RECORDED"]).optional(),
   infant_age: z.string().optional(),
   infant_age_units: z.string().optional(),
-  infant_dob: z.string().optional(),
-  infant_is_breast_feeding: z.enum(["YES", "NO", "UNKNOWN"]).optional(),
   infant_contact_phone: z.string().optional(),
+  given_contri: z.enum(["BLANK", "Y", "N"]).optional(),
+  delivered_at_hc: z.enum(["BLANK", "Y", "N"]).optional(),
+
+  // Other section
+  infant_feeding: z.string().optional(),
+  test_type: z.enum(["P", "S", "B"]).optional(),
+  pcr: z.enum(["FIRST", "SECOND", "THIRD", "NON_ROUTINE", "UNKNOWN"]).optional(),
+  non_routine: z.enum(["NONE", "R1", "R2", "R3"]).optional(),
   mother_htsnr: z.string().optional(),
   mother_artnr: z.string().optional(),
   mother_nin: z.string().optional(),
-  test_type: z.string().optional(),
-  pcr: z.enum(["FIRST", "SECOND", "THIRD", "NON_ROUTINE", "UNKNOWN"]).optional(),
-  PCR_test_requested: z.enum(["YES", "NO"]).optional(),
-  SCD_test_requested: z.enum(["YES", "NO"]).optional(),
+  mother_antenatal_prophylaxis: z.string().optional(),
+  mother_delivery_prophylaxis: z.string().optional(),
+  mother_postnatal_prophylaxis: z.string().optional(),
+
+  // Hidden SCD fields that exist in database
+  first_symptom_age: z.enum(["BLANK", "1", "2"]).optional(),
+  diagnosis_age: z.enum(["BLANK", "1", "2"]).optional(),
+  test_reason: z.string().optional(),
+  fam_history: z.string().optional(),
+  screening_program: z.string().optional(),
+
+  // Legacy fields for backward compatibility
+  infant_dob: z.string().optional(),
+  infant_is_breast_feeding: z.enum(["YES", "NO", "UNKNOWN"]).optional(),
   date_dbs_taken: z.string().optional(),
   testing_completed: z.enum(["YES", "NO"]).optional(),
   accepted_result: z.enum(["POSITIVE", "NEGATIVE", "INVALID", "SAMPLE_WAS_REJECTED"]).optional(),
+  PCR_test_requested: z.enum(["YES", "NO"]).optional(),
+  SCD_test_requested: z.enum(["YES", "NO"]).optional(),
 });
 
 export const eidRouter = createTRPCRouter({
@@ -367,10 +387,17 @@ export const eidRouter = createTRPCRouter({
           infant_age_units: dbs_samples.infant_age_units,
           infant_dob: dbs_samples.infant_dob,
           infant_is_breast_feeding: dbs_samples.infant_is_breast_feeding,
+          infant_entryPoint: dbs_samples.infant_entryPoint,
           infant_contact_phone: dbs_samples.infant_contact_phone,
+          given_contri: dbs_samples.given_contri,
+          delivered_at_hc: dbs_samples.delivered_at_hc,
+          infant_feeding: dbs_samples.infant_feeding,
           mother_htsnr: dbs_samples.mother_htsnr,
           mother_artnr: dbs_samples.mother_artnr,
           mother_nin: dbs_samples.mother_nin,
+          mother_antenatal_prophylaxis: dbs_samples.mother_antenatal_prophylaxis,
+          mother_delivery_prophylaxis: dbs_samples.mother_delivery_prophylaxis,
+          mother_postnatal_prophylaxis: dbs_samples.mother_postnatal_prophylaxis,
           date_dbs_taken: dbs_samples.date_dbs_taken,
           testing_completed: dbs_samples.testing_completed,
           accepted_result: dbs_samples.accepted_result,
@@ -378,9 +405,15 @@ export const eidRouter = createTRPCRouter({
           updated_at: dbs_samples.updated_at,
           batch_id: dbs_samples.batch_id,
           pcr: dbs_samples.pcr,
+          non_routine: dbs_samples.non_routine,
           test_type: dbs_samples.test_type,
           PCR_test_requested: dbs_samples.PCR_test_requested,
           SCD_test_requested: dbs_samples.SCD_test_requested,
+          first_symptom_age: dbs_samples.first_symptom_age,
+          diagnosis_age: dbs_samples.diagnosis_age,
+          test_reason: dbs_samples.test_reason,
+          fam_history: dbs_samples.fam_history,
+          screening_program: dbs_samples.screening_program,
           // Batch information
           date_rcvd_by_cphl: batches.date_rcvd_by_cphl,
           facility_name: batches.facility_name,
@@ -565,23 +598,49 @@ export const eidRouter = createTRPCRouter({
       // Prepare update data
       const updateData: any = {};
       
+      // Patient information
       if (input.infant_name !== undefined) updateData.infant_name = input.infant_name;
+      if (input.infant_exp_id !== undefined) updateData.infant_exp_id = input.infant_exp_id;
       if (input.infant_gender !== undefined) updateData.infant_gender = input.infant_gender;
       if (input.infant_age !== undefined) updateData.infant_age = input.infant_age;
       if (input.infant_age_units !== undefined) updateData.infant_age_units = input.infant_age_units;
-      if (input.infant_dob !== undefined) updateData.infant_dob = input.infant_dob ? new Date(input.infant_dob) : null;
-      if (input.infant_is_breast_feeding !== undefined) updateData.infant_is_breast_feeding = input.infant_is_breast_feeding;
       if (input.infant_contact_phone !== undefined) updateData.infant_contact_phone = input.infant_contact_phone;
+      if (input.given_contri !== undefined) updateData.given_contri = input.given_contri;
+      if (input.delivered_at_hc !== undefined) updateData.delivered_at_hc = input.delivered_at_hc;
+
+      // Other section
+      if (input.infant_feeding !== undefined) updateData.infant_feeding = input.infant_feeding;
+      if (input.test_type !== undefined) updateData.test_type = input.test_type;
+      if (input.pcr !== undefined) updateData.pcr = input.pcr;
+      if (input.non_routine !== undefined) updateData.non_routine = input.non_routine === "NONE" ? null : input.non_routine;
       if (input.mother_htsnr !== undefined) updateData.mother_htsnr = input.mother_htsnr;
       if (input.mother_artnr !== undefined) updateData.mother_artnr = input.mother_artnr;
       if (input.mother_nin !== undefined) updateData.mother_nin = input.mother_nin;
-      if (input.test_type !== undefined) updateData.test_type = input.test_type;
-      if (input.pcr !== undefined) updateData.pcr = input.pcr;
-      if (input.PCR_test_requested !== undefined) updateData.PCR_test_requested = input.PCR_test_requested;
-      if (input.SCD_test_requested !== undefined) updateData.SCD_test_requested = input.SCD_test_requested;
+      if (input.mother_antenatal_prophylaxis !== undefined) updateData.mother_antenatal_prophylaxis = input.mother_antenatal_prophylaxis ? parseInt(input.mother_antenatal_prophylaxis) : null;
+      if (input.mother_delivery_prophylaxis !== undefined) updateData.mother_delivery_prophylaxis = input.mother_delivery_prophylaxis ? parseInt(input.mother_delivery_prophylaxis) : null;
+      if (input.mother_postnatal_prophylaxis !== undefined) updateData.mother_postnatal_prophylaxis = input.mother_postnatal_prophylaxis ? parseInt(input.mother_postnatal_prophylaxis) : null;
+
+      // Hidden SCD fields
+      if (input.first_symptom_age !== undefined) updateData.first_symptom_age = input.first_symptom_age;
+      if (input.diagnosis_age !== undefined) updateData.diagnosis_age = input.diagnosis_age;
+      if (input.test_reason !== undefined) updateData.test_reason = input.test_reason;
+      if (input.fam_history !== undefined) updateData.fam_history = input.fam_history;
+      if (input.screening_program !== undefined) updateData.screening_program = input.screening_program;
+
+      // Legacy fields for backward compatibility
+      if (input.infant_dob !== undefined) updateData.infant_dob = input.infant_dob ? new Date(input.infant_dob) : null;
+      if (input.infant_is_breast_feeding !== undefined) updateData.infant_is_breast_feeding = input.infant_is_breast_feeding;
       if (input.date_dbs_taken !== undefined) updateData.date_dbs_taken = input.date_dbs_taken ? new Date(input.date_dbs_taken) : null;
       if (input.testing_completed !== undefined) updateData.testing_completed = input.testing_completed;
       if (input.accepted_result !== undefined) updateData.accepted_result = input.accepted_result;
+      if (input.PCR_test_requested !== undefined) updateData.PCR_test_requested = input.PCR_test_requested;
+      if (input.SCD_test_requested !== undefined) updateData.SCD_test_requested = input.SCD_test_requested;
+
+      // Update test requests based on test_type if provided
+      if (input.test_type !== undefined) {
+        updateData.PCR_test_requested = (input.test_type === "P" || input.test_type === "B") ? "YES" : "NO";
+        updateData.SCD_test_requested = (input.test_type === "S" || input.test_type === "B") ? "YES" : "NO";
+      }
 
       // Update the sample
       await eidDb
