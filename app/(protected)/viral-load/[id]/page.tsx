@@ -24,13 +24,13 @@ import { api } from "@/trpc/react"
 const getStatusBadge = (status: string) => {
   switch (status) {
     case "pending":
-      return <Badge variant="secondary" className="text-orange-600 bg-orange-50">Pending Collection</Badge>
+      return <Badge variant="secondary" className="text-gray-600 bg-gray-50">Pending Collection</Badge>
     case "collected":
-      return <Badge variant="secondary" className="text-blue-600 bg-blue-50">Collected</Badge>
+      return <Badge variant="secondary" className="text-gray-600 bg-gray-5">Collected</Badge>
     case "processing":
-      return <Badge variant="secondary" className="text-purple-600 bg-purple-50">Processing</Badge>
+      return <Badge variant="secondary" className="text-gray-600 bg-gray-5">Processing</Badge>
     case "completed":
-      return <Badge variant="secondary" className="text-green-600 bg-green-50">Completed</Badge>
+      return <Badge variant="secondary" className="text-green-800 bg-green-200">Completed</Badge>
     case "rejected":
       return <Badge variant="secondary" className="text-red-600 bg-red-50">Rejected</Badge>
     default:
@@ -336,14 +336,14 @@ Generated on: ${new Date().toLocaleString()}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 lg:gap-6">
         {/* Patient Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="border-0 shadow-sm bg-white rounded-xl p-0">
+          <CardHeader className="bg-red-600 text-white rounded-t-xl p-4 mb-0">
+            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
               <User className="h-5 w-5" />
-              Patient Information
+              <span>Patient Information</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 pb-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">ART Number</p>
@@ -381,14 +381,14 @@ Generated on: ${new Date().toLocaleString()}
         </Card>
 
         {/* Sample Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="border-0 shadow-sm bg-white rounded-xl p-0">
+          <CardHeader className="bg-red-600 text-white rounded-t-xl p-4 mb-0">
+            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
               <Package className="h-5 w-5" />
-              Sample Information
+              <span>Sample Information</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 pb-6">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Sample ID</p>
@@ -435,14 +435,14 @@ Generated on: ${new Date().toLocaleString()}
         
 
         {/* Additional Information */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="border-0 shadow-sm bg-white rounded-xl p-0">
+          <CardHeader className="bg-red-600 text-white rounded-t-xl p-4 mb-0">
+            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
               <FileText className="h-5 w-5" />
-              Additional Information
+              <span>Additional Information</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 pb-6">
             {sample.treatmentInitiationDate && (
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Treatment Initiation Date</p>
@@ -475,14 +475,14 @@ Generated on: ${new Date().toLocaleString()}
 
 
         {/* Timeline & Dates */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
+        <Card className="border-0 shadow-sm bg-white rounded-xl p-0">
+          <CardHeader className="bg-red-600 text-white rounded-t-xl p-4 mb-0">
+            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
               <Clock className="h-5 w-5" />
-              Timeline & Dates
+              <span>Timeline & Dates</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-6 pb-6">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -530,15 +530,15 @@ Generated on: ${new Date().toLocaleString()}
 
       {/* Quick Actions */}
       {status === "pending" && (
-        <Card className="mt-6">
-          <CardHeader>
-            <CardTitle>Quick Actions</CardTitle>
+        <Card className="mt-6 border-0 shadow-sm bg-white rounded-xl p-0">
+          <CardHeader className="bg-red-600 text-white rounded-t-xl p-4 mb-0">
+            <CardTitle className="text-lg font-semibold text-white">Quick Actions</CardTitle>
           </CardHeader>
-          <CardContent>
+          <CardContent className="space-y-6 pb-6">
             <div className="flex flex-col sm:flex-row gap-4">
               <Button 
                 onClick={() => router.push(`/viral-load/${sample.vlSampleId}/collect`)}
-                className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+                className="bg-red-600 hover:bg-red-700 w-full sm:w-auto"
               >
                 <Package className="h-4 w-4 mr-2" />
                 Collect Sample

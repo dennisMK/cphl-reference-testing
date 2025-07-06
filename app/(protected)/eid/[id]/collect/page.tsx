@@ -170,14 +170,14 @@ export default function CollectSamplePage() {
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         {/* Infant Details Section */}
-        <Card>
-          <CardHeader className="bg-blue-50">
-            <CardTitle className="text-lg font-semibold text-blue-900 flex items-center">
-              <Baby className="h-5 w-5 mr-2" />
-              Infant Details
+        <Card className="border-0 shadow-sm bg-white rounded-xl p-0">
+          <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
+            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
+              <Baby className="h-5 w-5" />
+              <span>Infant Details</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="space-y-6 pb-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <Label className="text-sm font-medium text-gray-700">Infant Name:</Label>
@@ -208,14 +208,14 @@ export default function CollectSamplePage() {
         </Card>
 
         {/* Patient Information Section */}
-        <Card>
-          <CardHeader className="bg-blue-50">
-            <CardTitle className="text-lg font-semibold text-blue-900 flex items-center">
-              <TestTube className="h-5 w-5 mr-2" />
-              Patient Information
+        <Card className="border-0 shadow-sm bg-white rounded-xl p-0">
+          <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
+            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
+              <TestTube className="h-5 w-5" />
+              <span>Patient Information</span>
             </CardTitle>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="space-y-6 pb-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Barcode Number */}
               <div>
@@ -259,7 +259,11 @@ export default function CollectSamplePage() {
                     <Calendar
                       mode="single"
                       selected={form.watch("collectionDate")}
-                      onSelect={(date) => form.setValue("collectionDate", date!)}
+                      onSelect={(date) => {
+                        if (date) {
+                          form.setValue("collectionDate", date);
+                        }
+                      }}
                       initialFocus
                     />
                   </PopoverContent>
@@ -285,7 +289,7 @@ export default function CollectSamplePage() {
                     >
                       <CalendarIcon className="mr-2 h-4 w-4" />
                       {form.watch("dispatchDate") ? (
-                        format(form.watch("dispatchDate"), "PPP")
+                        format(form.watch("dispatchDate")!, "PPP")
                       ) : (
                         <span>Pick a date (optional)</span>
                       )}
@@ -295,7 +299,7 @@ export default function CollectSamplePage() {
                     <Calendar
                       mode="single"
                       selected={form.watch("dispatchDate")}
-                      onSelect={(date) => form.setValue("dispatchDate", date)}
+                      onSelect={(date) => form.setValue("dispatchDate", date || undefined)}
                       initialFocus
                     />
                   </PopoverContent>

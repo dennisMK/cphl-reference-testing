@@ -17,9 +17,9 @@ const getStatusBadge = (request: any) => {
   } else if (request.date_dbs_taken && !request.date_rcvd_by_cphl) {
     return <Badge variant="secondary" className="bg-blue-100 text-blue-800">Collected</Badge>;
   } else if (request.date_rcvd_by_cphl && request.testing_completed !== "YES") {
-    return <Badge variant="secondary" className="bg-purple-100 text-purple-800">Processing</Badge>;
+    return <Badge variant="secondary" className="bg-blue-200 text-blue-900">Processing</Badge>;
   } else if (request.testing_completed === "YES") {
-    return <Badge variant="secondary" className="bg-green-100 text-green-800">Completed</Badge>;
+    return <Badge variant="secondary" className="bg-blue-300 text-blue-900">Completed</Badge>;
   }
   return <Badge variant="outline">Unknown</Badge>;
 };
@@ -27,13 +27,13 @@ const getStatusBadge = (request: any) => {
 const getPriorityBadge = (pcr: string) => {
   switch (pcr) {
     case "FIRST":
-      return <Badge variant="default" className="bg-green-600">First PCR</Badge>;
+      return <Badge variant="default" className="bg-blue-600">First PCR</Badge>;
     case "SECOND":
-      return <Badge variant="default" className="bg-yellow-600">Second PCR</Badge>;
+      return <Badge variant="default" className="bg-blue-700">Second PCR</Badge>;
     case "THIRD":
-      return <Badge variant="default" className="bg-red-600">Third PCR</Badge>;
+      return <Badge variant="default" className="bg-blue-800">Third PCR</Badge>;
     case "NON_ROUTINE":
-      return <Badge variant="default" className="bg-purple-600">Non-Routine</Badge>;
+      return <Badge variant="default" className="bg-blue-900">Non-Routine</Badge>;
     default:
       return <Badge variant="outline">Unknown</Badge>;
   }
@@ -117,7 +117,7 @@ export default function EIDDetailsPage() {
             </Link>
             {!request.date_dbs_taken && (
               <Link href={`/eid/${requestId}/collect`}>
-                <Button className="bg-green-600 hover:bg-green-700">
+                <Button className="bg-blue-600 hover:bg-blue-700">
                   <TestTube className="mr-2 h-4 w-4" />
                   Collect Sample
                 </Button>
@@ -131,14 +131,14 @@ export default function EIDDetailsPage() {
         {/* Main Content */}
         <div className="lg:col-span-2 space-y-6">
           {/* Infant Information */}
-          <Card>
+          <Card className="border-0 shadow-sm bg-white rounded-xl p-0">
             <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
               <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
                 <Baby className="h-5 w-5" />
                 <span>Infant Information</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="space-y-6 pb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
@@ -184,14 +184,14 @@ export default function EIDDetailsPage() {
           </Card>
 
           {/* Mother Information */}
-          <Card>
-            <CardHeader className="bg-pink-50">
-              <CardTitle className="text-lg font-semibold text-pink-900 flex items-center">
-                <User className="h-5 w-5 mr-2" />
-                Mother Information
+          <Card className="border-0 shadow-sm bg-white rounded-xl p-0">
+            <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
+              <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
+                <User className="h-5 w-5" />
+                <span>Mother Information</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="space-y-6 pb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
@@ -214,14 +214,14 @@ export default function EIDDetailsPage() {
           </Card>
 
           {/* Test Information */}
-          <Card>
-            <CardHeader className="bg-purple-50">
-              <CardTitle className="text-lg font-semibold text-purple-900 flex items-center">
-                <TestTube className="h-5 w-5 mr-2" />
-                Test Information
+          <Card className="border-0 shadow-sm bg-white rounded-xl p-0">
+            <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
+              <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
+                <TestTube className="h-5 w-5" />
+                <span>Test Information</span>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="space-y-6 pb-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div className="space-y-4">
                   <div>
@@ -264,7 +264,7 @@ export default function EIDDetailsPage() {
                 <Separator />
                 <div className="space-y-3">
                   <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${request.created_at ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <div className={`w-3 h-3 rounded-full ${request.created_at ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
                     <div>
                       <p className="text-sm font-medium">Request Created</p>
                       {request.created_at && (
@@ -275,7 +275,7 @@ export default function EIDDetailsPage() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${request.date_dbs_taken ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <div className={`w-3 h-3 rounded-full ${request.date_dbs_taken ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
                     <div>
                       <p className="text-sm font-medium">Sample Collected</p>
                       {request.date_dbs_taken && (
@@ -286,7 +286,7 @@ export default function EIDDetailsPage() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${request.date_rcvd_by_cphl ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <div className={`w-3 h-3 rounded-full ${request.date_rcvd_by_cphl ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
                     <div>
                       <p className="text-sm font-medium">Received at Lab</p>
                       {request.date_rcvd_by_cphl && (
@@ -297,7 +297,7 @@ export default function EIDDetailsPage() {
                     </div>
                   </div>
                   <div className="flex items-center space-x-3">
-                    <div className={`w-3 h-3 rounded-full ${request.testing_completed === "YES" ? 'bg-green-500' : 'bg-gray-300'}`}></div>
+                    <div className={`w-3 h-3 rounded-full ${request.testing_completed === "YES" ? 'bg-blue-500' : 'bg-gray-300'}`}></div>
                     <div>
                       <p className="text-sm font-medium">Testing Completed</p>
                       {request.testing_completed === "YES" && (
@@ -347,7 +347,7 @@ export default function EIDDetailsPage() {
                 </Link>
                 {!request.date_dbs_taken && (
                   <Link href={`/eid/${requestId}/collect`} className="block">
-                    <Button className="w-full justify-start bg-green-600 hover:bg-green-700">
+                    <Button className="w-full justify-start bg-blue-600 hover:bg-blue-700">
                       <TestTube className="mr-2 h-4 w-4" />
                       Collect Sample
                     </Button>
