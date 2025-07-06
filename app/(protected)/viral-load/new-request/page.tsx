@@ -32,16 +32,16 @@ const formSchema = z.object({
   age: z.string().optional(),
   age_units: z.enum(["Years", "Months", "Days"]).optional(),
   patient_phone_number: z.string().optional(),
-  
+
   // Requesting Clinician
   clinician_id: z.string().optional(),
   requested_on: z.string().optional(),
-  
+
   // Treatment Information
   treatment_initiation_date: z.string().min(1, "Treatment initiation date is required"),
   current_regimen_id: z.string().optional(),
   current_regimen_initiation_date: z.string().min(1, "Current regimen initiation date is required"),
-  
+
   // Health Information
   pregnant: z.enum(["Y", "N", "U"]).optional(),
   anc_number: z.string().optional(),
@@ -131,11 +131,11 @@ export default function NewViralLoadRequest(): React.JSX.Element {
   const [dobDay, setDobDay] = useState<string>("");
   const [dobMonth, setDobMonth] = useState<string>("");
   const [dobYear, setDobYear] = useState<string>("");
-  
+
   const [treatmentDay, setTreatmentDay] = useState<string>("");
   const [treatmentMonth, setTreatmentMonth] = useState<string>("");
   const [treatmentYear, setTreatmentYear] = useState<string>("");
-  
+
   const [regimenDay, setRegimenDay] = useState<string>("");
   const [regimenMonth, setRegimenMonth] = useState<string>("");
   const [regimenYear, setRegimenYear] = useState<string>("");
@@ -154,7 +154,7 @@ export default function NewViralLoadRequest(): React.JSX.Element {
     },
     onError: (error) => {
       console.error("Error creating request:", error);
-      
+
       // Show error toast with action to go to settings if it's a facility error
       if (error.message.includes("facility information")) {
         toast.error("Facility Setup Required", {
@@ -170,7 +170,7 @@ export default function NewViralLoadRequest(): React.JSX.Element {
           description: error.message,
         });
       }
-      
+
       setIsSubmitting(false);
     },
   });
@@ -209,21 +209,21 @@ export default function NewViralLoadRequest(): React.JSX.Element {
     const today = new Date();
     let age = today.getFullYear() - dob.getFullYear();
     const monthDiff = today.getMonth() - dob.getMonth();
-    
+
     if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < dob.getDate())) {
       age--;
     }
-    
+
     return age.toString();
   };
 
   const calculateDOBFromAge = (ageString: string) => {
     const age = parseInt(ageString);
     if (isNaN(age) || age < 0) return "";
-    
+
     const today = new Date();
     const birthYear = today.getFullYear() - age;
-    
+
     // Use January 1st as default
     return `${birthYear}-01-01`;
   };
@@ -231,7 +231,7 @@ export default function NewViralLoadRequest(): React.JSX.Element {
   // Handle conditional logic for pregnancy field
   const watchedGender = form.watch("gender");
   const watchedPregnant = form.watch("pregnant");
-  
+
   useEffect(() => {
     if (watchedGender === "M") {
       form.setValue("pregnant", "N");
@@ -261,11 +261,11 @@ export default function NewViralLoadRequest(): React.JSX.Element {
       const dateString = `${dobYear}-${dobMonth}-${dobDay}`;
       console.log("Setting DOB:", dateString);
       form.setValue("dob", dateString);
-      
+
       // Auto-calculate age when DOB is set
       const calculatedAge = calculateAge(dateString);
       form.setValue("age", calculatedAge);
-      
+
       form.trigger("dob"); // Trigger validation
     } else {
       form.setValue("dob", "");
@@ -310,7 +310,7 @@ export default function NewViralLoadRequest(): React.JSX.Element {
   const onSubmit = async (data: FormData): Promise<void> => {
     console.log("Form submission started", data);
     setIsSubmitting(true);
-    
+
     try {
       // Zod validation is automatically handled by react-hook-form
       // If we reach here, all validations have passed
@@ -360,25 +360,26 @@ export default function NewViralLoadRequest(): React.JSX.Element {
         </div>
       </div>
 
-      <div className="">
-        <form id="viral-load-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 
-          {/* Facility Information - Single Line Display */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-            <div className="text-sm text-blue-800">
-              <span className="font-medium">Facility:</span> {user?.facility_name || "Not specified"} | 
-              <span className="font-medium"> District:</span> {user?.hub_name ? user.hub_name.split(' ')[0] : "Not specified"} | 
-              <span className="font-medium"> Hub:</span> {user?.hub_name || "Not specified"}
-            </div>
+      <form id="viral-load-form" onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+
+        {/* Facility Information - Single Line Display */}
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+          <div className="text-sm text-blue-800">
+            <span className="font-medium">Facility:</span> {user?.facility_name || "Not specified"} |
+            <span className="font-medium"> District:</span> {user?.hub_name ? user.hub_name.split(' ')[0] : "Not specified"} |
+            <span className="font-medium"> Hub:</span> {user?.hub_name || "Not specified"}
           </div>
+        </div>
 
-          {/* Requesting Clinician Section */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-            <div className="pb-3 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Requesting Clinician
-              </h2>
-            </div>
+        {/* Requesting Clinician Section */}
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="bg-red-500 px-6 py-3">
+            <h2 className="text-lg font-semibold text-white">
+              Requesting Clinician
+            </h2>
+          </div>
+          <div className="p-6 space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="clinician_id" className="text-sm font-medium text-gray-700">
@@ -408,7 +409,7 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                       )}
                     </SelectContent>
                   </Select>
-                  
+
                   <Dialog open={isAddClinicianOpen} onOpenChange={setIsAddClinicianOpen}>
                     <DialogTrigger asChild>
                       <Button type="button" variant="outline" size="icon" className="h-10 w-10 shrink-0">
@@ -445,15 +446,16 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                           />
                         </div>
                         <div className="flex justify-end gap-2 pt-4">
-                          <Button 
-                            type="button" 
-                            variant="outline" 
+                          <Button
+                            type="button"
+                            variant="outline"
                             onClick={() => setIsAddClinicianOpen(false)}
                           >
                             Cancel
                           </Button>
-                          <Button 
-                            type="button" 
+                          <Button
+                          variant={"destructive"}
+                            type="button"
                             onClick={handleAddClinician}
                             disabled={createClinicianMutation.isPending || !newClinicianName.trim()}
                           >
@@ -472,34 +474,34 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                 </Label>
                 <Popover>
                   <PopoverTrigger asChild>
-                                          <Button
-                        variant={"outline"}
-                        className={cn(
-                          "mt-2 w-full h-10 justify-start text-left font-normal",
-                          !form.watch("requested_on") && "text-muted-foreground"
-                        )}
-                      >
-                        <CalendarIcon className="mr-2 h-4 w-4" />
-                        {form.watch("requested_on") ? format(new Date(form.watch("requested_on")!), "PPP") : <span>Pick a date</span>}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0">
-                      <Calendar
-                        mode="single"
-                        selected={form.watch("requested_on") ? new Date(form.watch("requested_on")!) : undefined}
-                        onSelect={(date) => {
-                          if (date) {
-                            // Create a local date to avoid timezone issues
-                            const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
-                            const dateString = localDate.toISOString().split('T')[0];
-                            form.setValue("requested_on", dateString);
-                            form.trigger("requested_on"); // Trigger validation
-                          } else {
-                            form.setValue("requested_on", "");
-                          }
-                        }}
-                        initialFocus
-                      />
+                    <Button
+                      variant={"outline"}
+                      className={cn(
+                        "mt-2 w-full h-10 justify-start text-left font-normal",
+                        !form.watch("requested_on") && "text-muted-foreground"
+                      )}
+                    >
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {form.watch("requested_on") ? format(new Date(form.watch("requested_on")!), "PPP") : <span>Pick a date</span>}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0">
+                    <Calendar
+                      mode="single"
+                      selected={form.watch("requested_on") ? new Date(form.watch("requested_on")!) : undefined}
+                      onSelect={(date) => {
+                        if (date) {
+                          // Create a local date to avoid timezone issues
+                          const localDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+                          const dateString = localDate.toISOString().split('T')[0];
+                          form.setValue("requested_on", dateString);
+                          form.trigger("requested_on"); // Trigger validation
+                        } else {
+                          form.setValue("requested_on", "");
+                        }
+                      }}
+                      initialFocus
+                    />
                   </PopoverContent>
                 </Popover>
                 {form.formState.errors.requested_on && (
@@ -508,14 +510,16 @@ export default function NewViralLoadRequest(): React.JSX.Element {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Patient Information */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-            <div className="pb-3 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Patient Information
-              </h2>
-            </div>
+        {/* Patient Information */}
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="bg-red-500 px-6 py-3">
+            <h2 className="text-lg font-semibold text-white">
+              Patient Information
+            </h2>
+          </div>
+          <div className="p-6 space-y-4">
             <div className="space-y-4">
               {/* First Row: Patient Clinic ID/ART #, Other ID, Gender */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -580,9 +584,9 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                         <SelectValue placeholder="" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({length: 31}, (_, i) => (
-                          <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
-                            {String(i+1).padStart(2, '0')}
+                        {Array.from({ length: 31 }, (_, i) => (
+                          <SelectItem key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                            {String(i + 1).padStart(2, '0')}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -593,9 +597,9 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                         <SelectValue placeholder="" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({length: 12}, (_, i) => (
-                          <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
-                            {String(i+1).padStart(2, '0')}
+                        {Array.from({ length: 12 }, (_, i) => (
+                          <SelectItem key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                            {String(i + 1).padStart(2, '0')}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -606,9 +610,9 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                         <SelectValue placeholder="" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({length: 100}, (_, i) => (
-                          <SelectItem key={2024-i} value={String(2024-i)}>
-                            {2024-i}
+                        {Array.from({ length: 100 }, (_, i) => (
+                          <SelectItem key={2024 - i} value={String(2024 - i)}>
+                            {2024 - i}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -634,7 +638,7 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                       onChange={(e) => {
                         const ageValue = e.target.value;
                         form.setValue("age", ageValue);
-                        
+
                         // Auto-calculate DOB when age is entered
                         if (ageValue && parseInt(ageValue) > 0) {
                           const calculatedDOB = calculateDOBFromAge(ageValue);
@@ -676,14 +680,16 @@ export default function NewViralLoadRequest(): React.JSX.Element {
               </div>
             </div>
           </div>
+        </div>
 
-          {/* Treatment Information */}
-          <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-            <div className="pb-3 border-b border-gray-100">
-              <h2 className="text-lg font-semibold text-gray-900">
-                Treatment Information
-              </h2>
-            </div>
+        {/* Treatment Information */}
+        <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+          <div className="bg-red-500 px-6 py-3">
+            <h2 className="text-lg font-semibold text-white">
+              Treatment Information
+            </h2>
+          </div>
+          <div className="p-6 space-y-4">
             <div className="space-y-4">
               {/* First Row: Treatment Initiation Date, Current regimen, Current regimen initiation date */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -697,9 +703,9 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                         <SelectValue placeholder="" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({length: 31}, (_, i) => (
-                          <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
-                            {String(i+1).padStart(2, '0')}
+                        {Array.from({ length: 31 }, (_, i) => (
+                          <SelectItem key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                            {String(i + 1).padStart(2, '0')}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -710,9 +716,9 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                         <SelectValue placeholder="" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({length: 12}, (_, i) => (
-                          <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
-                            {String(i+1).padStart(2, '0')}
+                        {Array.from({ length: 12 }, (_, i) => (
+                          <SelectItem key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                            {String(i + 1).padStart(2, '0')}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -723,9 +729,9 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                         <SelectValue placeholder="" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({length: 100}, (_, i) => (
-                          <SelectItem key={2024-i} value={String(2024-i)}>
-                            {2024-i}
+                        {Array.from({ length: 100 }, (_, i) => (
+                          <SelectItem key={2024 - i} value={String(2024 - i)}>
+                            {2024 - i}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -768,9 +774,9 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                         <SelectValue placeholder="" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({length: 31}, (_, i) => (
-                          <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
-                            {String(i+1).padStart(2, '0')}
+                        {Array.from({ length: 31 }, (_, i) => (
+                          <SelectItem key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                            {String(i + 1).padStart(2, '0')}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -781,9 +787,9 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                         <SelectValue placeholder="" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({length: 12}, (_, i) => (
-                          <SelectItem key={i+1} value={String(i+1).padStart(2, '0')}>
-                            {String(i+1).padStart(2, '0')}
+                        {Array.from({ length: 12 }, (_, i) => (
+                          <SelectItem key={i + 1} value={String(i + 1).padStart(2, '0')}>
+                            {String(i + 1).padStart(2, '0')}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -794,9 +800,9 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                         <SelectValue placeholder="" />
                       </SelectTrigger>
                       <SelectContent>
-                        {Array.from({length: 100}, (_, i) => (
-                          <SelectItem key={2024-i} value={String(2024-i)}>
-                            {2024-i}
+                        {Array.from({ length: 100 }, (_, i) => (
+                          <SelectItem key={2024 - i} value={String(2024 - i)}>
+                            {2024 - i}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -814,7 +820,7 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                   <Label htmlFor="pregnant" className={`text-sm font-medium ${watchedGender !== "F" ? "text-gray-400" : "text-gray-700"}`}>
                     Pregnant:
                   </Label>
-                  <Select 
+                  <Select
                     onValueChange={(value) => form.setValue("pregnant", value as "Y" | "N" | "U")}
                     disabled={watchedGender !== "F"}
                   >
@@ -846,7 +852,7 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                   <Label htmlFor="breast_feeding" className={`text-sm font-medium ${watchedGender !== "F" ? "text-gray-400" : "text-gray-700"}`}>
                     Mother Breast-Feeding:
                   </Label>
-                  <Select 
+                  <Select
                     onValueChange={(value) => form.setValue("breast_feeding", value as "Y" | "N" | "U")}
                     disabled={watchedGender !== "F"}
                   >
@@ -884,7 +890,7 @@ export default function NewViralLoadRequest(): React.JSX.Element {
                   <Label htmlFor="tb_treatment_phase_id" className={`text-sm font-medium ${watchedTbStatus === "N" ? "text-gray-400" : "text-gray-700"}`}>
                     TB Treatment Phase:
                   </Label>
-                  <Select 
+                  <Select
                     onValueChange={(value) => form.setValue("tb_treatment_phase_id", value)}
                     disabled={watchedTbStatus === "N"}
                   >
@@ -1010,8 +1016,9 @@ export default function NewViralLoadRequest(): React.JSX.Element {
               </Button>
             </Link>
           </div>
-        </form>
-      </div>
+          </div>
+      </form>
+
     </div>
   );
 } 

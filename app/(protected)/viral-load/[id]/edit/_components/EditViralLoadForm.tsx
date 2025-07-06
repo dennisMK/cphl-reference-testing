@@ -576,12 +576,13 @@ export default function EditViralLoadForm({
       </div>
 
       {/* Requesting Clinician Section */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <div className="pb-3 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-red-500 px-6 py-3">
+          <h2 className="text-lg font-semibold text-white">
             Requesting Clinician
           </h2>
         </div>
+        <div className="p-6 space-y-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label
@@ -692,6 +693,7 @@ export default function EditViralLoadForm({
                           createClinicianMutation.isPending ||
                           !newClinicianName.trim()
                         }
+                        variant="destructive"
                       >
                         {createClinicianMutation.isPending
                           ? "Adding..."
@@ -759,15 +761,17 @@ export default function EditViralLoadForm({
             )}
           </div>
         </div>
+        </div>
       </div>
 
       {/* Patient Information */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <div className="pb-3 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-red-500 px-6 py-3">
+          <h2 className="text-lg font-semibold text-white">
             Patient Information
           </h2>
         </div>
+        <div className="p-6 space-y-4">
         <div className="space-y-4">
           {/* First Row: Patient Clinic ID/ART #, Other ID, Gender */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -958,15 +962,17 @@ export default function EditViralLoadForm({
             </div>
           </div>
         </div>
+        </div>
       </div>
 
       {/* Treatment Information */}
-      <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-4">
-        <div className="pb-3 border-b border-gray-100">
-          <h2 className="text-lg font-semibold text-gray-900">
+      <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+        <div className="bg-red-500 px-6 py-3">
+          <h2 className="text-lg font-semibold text-white">
             Treatment Information
           </h2>
         </div>
+        <div className="p-6 space-y-4">
         <div className="space-y-4">
           {/* First Row: Treatment Initiation Date, Current regimen, Current regimen initiation date */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1366,6 +1372,7 @@ export default function EditViralLoadForm({
               </Select>
             </div>
           </div>
+        </div>
         </div>
       </div>
 
