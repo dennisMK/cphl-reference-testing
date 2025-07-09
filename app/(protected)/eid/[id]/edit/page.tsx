@@ -196,16 +196,16 @@ export default function EditEIDRequestPage() {
       Object.keys(errors).forEach(field => {
         form.setError(field as any, { message: errors[field] });
       });
-      toast.error("Please fix the form errors before submitting");
-      
-      // Focus on first error field
-      const firstErrorField = Object.keys(errors)[0];
-      if (firstErrorField) {
-        const element = document.getElementById(firstErrorField);
-        if (element) {
-          element.focus();
-        }
+    toast.error("Please fix the form errors before submitting");
+    
+    // Focus on first error field
+    const firstErrorField = Object.keys(errors)[0];
+    if (firstErrorField) {
+      const element = document.getElementById(firstErrorField);
+      if (element) {
+        element.focus();
       }
+    }
       return;
     }
     
@@ -258,47 +258,47 @@ export default function EditEIDRequestPage() {
   return (
     <main className="md:container md:px-0 px-4 pt-4 pb-20 md:mx-auto">
       <div>
-        {/* Header */}
+      {/* Header */}
         <div className="mb-6 pb-4 border-b border-gray-200">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex items-center space-x-4">
-              <Link href={`/eid/${requestId}`}>
-                <Button variant="outline" size="sm" className="flex items-center space-x-2">
-                  <ArrowLeft className="h-4 w-4" />
-                  <span>Back to Request</span>
-                </Button>
-              </Link>
+          <div className="flex items-center space-x-4">
+            <Link href={`/eid/${requestId}`}>
+              <Button variant="outline" size="sm" className="flex items-center space-x-2">
+                <ArrowLeft className="h-4 w-4" />
+                <span>Back to Request</span>
+              </Button>
+            </Link>
               <div className="min-w-0 flex-1">
                 <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900 flex items-center space-x-3">
                   <Baby className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
-                  <span>Edit EID Request</span>
-                </h1>
+                <span>Edit EID Request</span>
+              </h1>
                 <p className="text-sm sm:text-base text-gray-600 mt-1">
-                  Update details for EID-{String(requestId).padStart(6, "0")}
-                </p>
-              </div>
+                Update details for EID-{String(requestId).padStart(6, "0")}
+              </p>
             </div>
-            {getStatusBadge()}
           </div>
+          {getStatusBadge()}
         </div>
+      </div>
 
         {/* EID Request Form */}
-        <Form {...form}>
+      <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             {/* Patient Information */}
             <Card className="border-0 shadow-sm bg-white rounded-xl p-0">
-              <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
-                <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
+            <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
+              <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
                   <span>Patient Information</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-6 pb-6">
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 pb-6">
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <FormField
-                    control={form.control}
-                    name="infant_name"
-                    render={({ field }) => (
-                      <FormItem>
+                <FormField
+                  control={form.control}
+                  name="infant_name"
+                  render={({ field }) => (
+                    <FormItem>
                         <FormLabel>Infant Name: *</FormLabel>
                         <FormControl>
                           <Input placeholder="Enter infant name" {...field} />
@@ -314,71 +314,71 @@ export default function EditEIDRequestPage() {
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel>EXP No: *</FormLabel>
-                        <FormControl>
+                      <FormControl>
                           <Input placeholder="Enter EXP number" {...field} />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
-                  <FormField
-                    control={form.control}
-                    name="infant_gender"
-                    render={({ field }) => (
+                <FormField
+                  control={form.control}
+                  name="infant_gender"
+                  render={({ field }) => (
                       <FormItem className="w-full">
                         <FormLabel>Sex: *</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
                         >
-                          <FormControl>
+                        <FormControl>
                             <SelectTrigger className="w-full">
-                              <SelectValue placeholder="Select gender" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
+                            <SelectValue placeholder="Select gender" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
                             <SelectItem value="MALE">M</SelectItem>
                             <SelectItem value="FEMALE">F</SelectItem>
                             <SelectItem value="NOT_RECORDED">Blank</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <div className="grid grid-cols-2 gap-2">
-                    <FormField
-                      control={form.control}
+                <FormField
+                  control={form.control}
                       name="infant_age"
-                      render={({ field }) => (
+                  render={({ field }) => (
                         <FormItem className="w-full">
                           <FormLabel>Age: *</FormLabel>
-                          <FormControl>
+                      <FormControl>
                             <Input placeholder="Age" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
                       name="infant_age_units"
-                      render={({ field }) => (
+                  render={({ field }) => (
                         <FormItem className="w-full">
                           <FormLabel>Units: *</FormLabel>
                           <Select
                             onValueChange={field.onChange}
                             value={field.value}
                           >
-                            <FormControl>
+                      <FormControl>
                               <SelectTrigger className="w-full">
                                 <SelectValue />
                               </SelectTrigger>
-                            </FormControl>
+                      </FormControl>
                             <SelectContent>
                               <SelectItem value="months">Months</SelectItem>
                               <SelectItem value="days">Days</SelectItem>
@@ -386,17 +386,17 @@ export default function EditEIDRequestPage() {
                               <SelectItem value="years">Years</SelectItem>
                             </SelectContent>
                           </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
 
-                  <FormField
-                    control={form.control}
+                <FormField
+                  control={form.control}
                     name="infant_contact_phone"
-                    render={({ field }) => (
-                      <FormItem>
+                  render={({ field }) => (
+                    <FormItem>
                         <FormLabel>Care Giver Phone Number:</FormLabel>
                         <FormControl>
                           <Input placeholder="Phone number" {...field} />
@@ -419,51 +419,51 @@ export default function EditEIDRequestPage() {
                           <FormControl>
                             <SelectTrigger className="w-full">
                               <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
                             <SelectItem value="BLANK">Blank</SelectItem>
                             <SelectItem value="Y">Y</SelectItem>
                             <SelectItem value="N">N</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <FormField
-                    control={form.control}
+                <FormField
+                  control={form.control}
                     name="delivered_at_hc"
-                    render={({ field }) => (
-                      <FormItem>
+                  render={({ field }) => (
+                    <FormItem>
                         <FormLabel>Delivered at H/C: *</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
                         >
-                          <FormControl>
+                        <FormControl>
                             <SelectTrigger className="w-full">
                               <SelectValue />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
                             <SelectItem value="BLANK">UNKNOWN</SelectItem>
                             <SelectItem value="Y">Y</SelectItem>
                             <SelectItem value="N">N</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
 
                   <div className="col-span-2">
                     {/* Placeholder for additional fields if needed */}
                   </div>
-                </div>
+              </div>
               </CardContent>
             </Card>
 
@@ -476,21 +476,21 @@ export default function EditEIDRequestPage() {
               </CardHeader>
               <CardContent className="space-y-6 pb-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                  <FormField
-                    control={form.control}
+              <FormField
+                control={form.control}
                     name="infant_feeding"
-                    render={({ field }) => (
-                      <FormItem>
+                render={({ field }) => (
+                  <FormItem>
                         <FormLabel>Infant Feeding: *</FormLabel>
                         <Select
                           onValueChange={field.onChange}
                           value={field.value}
                         >
-                          <FormControl>
+                    <FormControl>
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select feeding type" />
                             </SelectTrigger>
-                          </FormControl>
+                    </FormControl>
                           <SelectContent>
                             <SelectItem value="EBF">
                               Exclusive Breast Feeding
@@ -512,10 +512,10 @@ export default function EditEIDRequestPage() {
                             </SelectItem>
                           </SelectContent>
                         </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
 
                   <FormField
                     control={form.control}
@@ -532,16 +532,16 @@ export default function EditEIDRequestPage() {
                               <SelectValue placeholder="Select test type" />
                             </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                      <SelectContent>
                             <SelectItem value="P">PCR</SelectItem>
                             <SelectItem value="S">SCD</SelectItem>
                             <SelectItem value="B">Both</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      </SelectContent>
+                    </Select>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
+                  )}
+                />
 
                   <FormField
                     control={form.control}
@@ -567,7 +567,7 @@ export default function EditEIDRequestPage() {
                         </Select>
                         <FormMessage />
                       </FormItem>
-                    )}
+                )}
                   />
 
                   <FormField
@@ -594,9 +594,9 @@ export default function EditEIDRequestPage() {
                         </Select>
                         <FormMessage />
                       </FormItem>
-                    )}
+                )}
                   />
-                </div>
+              </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <FormField
@@ -624,7 +624,7 @@ export default function EditEIDRequestPage() {
                         </FormControl>
                         <FormMessage />
                       </FormItem>
-                    )}
+                )}
                   />
 
                   <FormField
@@ -638,15 +638,15 @@ export default function EditEIDRequestPage() {
                         </FormControl>
                         <FormMessage />
                       </FormItem>
-                    )}
+                )}
                   />
-                </div>
+              </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <FormField
-                    control={form.control}
+                  control={form.control}
                     name="mother_antenatal_prophylaxis"
-                    render={({ field }) => (
+                  render={({ field }) => (
                       <FormItem>
                         <FormLabel>Antenatal:</FormLabel>
                         <Select
@@ -656,23 +656,23 @@ export default function EditEIDRequestPage() {
                           <FormControl>
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select antenatal" />
-                            </SelectTrigger>
+                      </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                      <SelectContent>
                             <SelectItem value="80">1:Lifelong ART</SelectItem>
                             <SelectItem value="81">2:No ART</SelectItem>
                             <SelectItem value="82">3:Unknown</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      </SelectContent>
+                    </Select>
                         <FormMessage />
                       </FormItem>
-                    )}
-                  />
+                  )}
+                />
 
                   <FormField
-                    control={form.control}
+                  control={form.control}
                     name="mother_delivery_prophylaxis"
-                    render={({ field }) => (
+                  render={({ field }) => (
                       <FormItem>
                         <FormLabel>Delivery:</FormLabel>
                         <Select
@@ -682,17 +682,17 @@ export default function EditEIDRequestPage() {
                           <FormControl>
                             <SelectTrigger className="w-full">
                               <SelectValue placeholder="Select delivery" />
-                            </SelectTrigger>
+                      </SelectTrigger>
                           </FormControl>
-                          <SelectContent>
+                      <SelectContent>
                             <SelectItem value="80">1:Lifelong ART</SelectItem>
                             <SelectItem value="81">2:No ART</SelectItem>
                             <SelectItem value="82">3:Unknown</SelectItem>
-                          </SelectContent>
-                        </Select>
+                      </SelectContent>
+                    </Select>
                         <FormMessage />
                       </FormItem>
-                    )}
+                )}
                   />
 
                   <FormField
@@ -718,17 +718,17 @@ export default function EditEIDRequestPage() {
                         </Select>
                         <FormMessage />
                       </FormItem>
-                    )}
+                )}
                   />
-                </div>
+              </div>
 
                 {/* Hidden SCD Testing Fields */}
                 <div className="hidden space-y-6">
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <FormField
-                      control={form.control}
+                  control={form.control}
                       name="first_symptom_age"
-                      render={({ field }) => (
+                  render={({ field }) => (
                         <FormItem>
                           <FormLabel>Age of first symptom:</FormLabel>
                           <Select
@@ -737,21 +737,21 @@ export default function EditEIDRequestPage() {
                           >
                             <FormControl>
                               <SelectTrigger className="w-full">
-                                <SelectValue />
-                              </SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                      <SelectContent>
                               <SelectItem value="BLANK">Blank</SelectItem>
                               <SelectItem value="1">Below 36 months</SelectItem>
                               <SelectItem value="2">
                                 3 years or above
                               </SelectItem>
-                            </SelectContent>
-                          </Select>
+                      </SelectContent>
+                    </Select>
                           <FormMessage />
                         </FormItem>
-                      )}
-                    />
+                  )}
+                />
 
                     <FormField
                       control={form.control}
@@ -779,14 +779,14 @@ export default function EditEIDRequestPage() {
                           <FormMessage />
                         </FormItem>
                       )}
-                    />
-                  </div>
+                />
+              </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <FormField
-                      control={form.control}
+                  control={form.control}
                       name="test_reason"
-                      render={({ field }) => (
+                  render={({ field }) => (
                         <FormItem>
                           <FormLabel>Reason for testing:</FormLabel>
                           <Select
@@ -796,9 +796,9 @@ export default function EditEIDRequestPage() {
                             <FormControl>
                               <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select reason" />
-                              </SelectTrigger>
+                      </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                      <SelectContent>
                               <SelectItem value="Known positive family history">
                                 Known positive family history
                               </SelectItem>
@@ -811,12 +811,12 @@ export default function EditEIDRequestPage() {
                               </SelectItem>
                               <SelectItem value="Surgery">Surgery</SelectItem>
                               <SelectItem value="Other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
+                      </SelectContent>
+                    </Select>
                           <FormMessage />
                         </FormItem>
-                      )}
-                    />
+                  )}
+                />
 
                     <FormField
                       control={form.control}
@@ -852,9 +852,9 @@ export default function EditEIDRequestPage() {
                     />
 
                     <FormField
-                      control={form.control}
+                  control={form.control}
                       name="screening_program"
-                      render={({ field }) => (
+                  render={({ field }) => (
                         <FormItem>
                           <FormLabel>Early screening program:</FormLabel>
                           <Select
@@ -864,9 +864,9 @@ export default function EditEIDRequestPage() {
                             <FormControl>
                               <SelectTrigger className="w-full">
                                 <SelectValue placeholder="Select screening program" />
-                              </SelectTrigger>
+                      </SelectTrigger>
                             </FormControl>
-                            <SelectContent>
+                      <SelectContent>
                               <SelectItem value="Birth">Birth</SelectItem>
                               <SelectItem value="First immunization">
                                 First immunization
@@ -875,35 +875,35 @@ export default function EditEIDRequestPage() {
                                 subsequent immunization
                               </SelectItem>
                               <SelectItem value="Other">Other</SelectItem>
-                            </SelectContent>
-                          </Select>
+                      </SelectContent>
+                    </Select>
                           <FormMessage />
                         </FormItem>
-                      )}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+                  )}
+                />
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
-            {/* Facility Information (Display Only) */}
+        {/* Facility Information (Display Only) */}
             <Card className="border-0 shadow-sm bg-white rounded-xl p-0">
-              <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
-                <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
-                  <span>Facility Information</span>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="pb-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg">
-                  <div>
+          <CardHeader className="bg-blue-600 text-white rounded-t-xl p-4 mb-0">
+            <CardTitle className="text-lg font-semibold text-white flex items-center space-x-2">
+              <span>Facility Information</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 bg-gray-50 p-4 rounded-lg">
+              <div>
                     <div className="text-sm font-medium text-gray-700">Facility Name</div>
-                    <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
-                      {request?.facility_name || "Not specified"}
-                    </div>
-                  </div>
+                <div className="mt-1 p-2 bg-white border border-gray-200 rounded text-gray-900">
+                  {request?.facility_name || "Not specified"}
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
             {/* Action Buttons */}
             <div className="flex flex-col sm:flex-row justify-end gap-4">
@@ -915,18 +915,18 @@ export default function EditEIDRequestPage() {
                 disabled={updateMutation.isPending}
               >
                 <span>Cancel</span>
-              </Button>
-              <Button
-                type="submit"
+          </Button>
+          <Button 
+            type="submit" 
                 className="bg-blue-600 hover:bg-blue-700 flex items-center space-x-2"
-                disabled={updateMutation.isPending}
-              >
+            disabled={updateMutation.isPending}
+          >
                 {updateMutation.isPending && (
                   <Loader2 className="h-4 w-4 animate-spin" />
                 )}
                 <Save className="h-4 w-4" />
                 <span>{updateMutation.isPending ? "Updating..." : "Update Request"}</span>
-              </Button>
+          </Button>
             </div>
           </form>
         </Form>
@@ -963,7 +963,7 @@ export default function EditEIDRequestPage() {
             </CardContent>
           </Card>
         </div>
-      </div>
+    </div>
     </main>
   );
 } 

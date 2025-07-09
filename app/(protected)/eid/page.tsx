@@ -17,13 +17,17 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 
 const chartConfig = {
+  total: {
+    label: "Total Samples",
+    color: "#2563eb", // blue-600 - real blue
+  },
   pending: {
     label: "Pending Collection",
-    color: "#ef4444", // red-500
+    color: "#2563eb", // blue-500
   },
   collected: {
     label: "Collected Samples",
-    color: "#22c55e", // green-500
+    color: "#2563eb", // blue-700
   },
 } satisfies ChartConfig;
 
@@ -35,7 +39,7 @@ const timeRanges = [
 ];
 
 export default function EIDPage() {
-  const [activeChart, setActiveChart] = React.useState<keyof typeof chartConfig>("pending");
+  const [activeChart, setActiveChart] = React.useState<keyof typeof chartConfig>("total");
   const [selectedTimeRange, setSelectedTimeRange] = React.useState(15);
 
   // Fetch dashboard statistics
@@ -49,14 +53,19 @@ export default function EIDPage() {
   const total = React.useMemo(
     () => {
       if (!analyticsData) {
-        return { pending: 0, collected: 0 };
+        return { pending: 0, collected: 0, total: 0 };
       }
       
       // Get the latest values from the most recent date
       const latestData = analyticsData[analyticsData.length - 1];
+      const pending = latestData?.pending || 0;
+      const collected = latestData?.collected || 0;
+      const totalSamples = pending + collected;
+      
       return {
-        pending: latestData?.pending || 0,
-        collected: latestData?.collected || 0,
+        pending,
+        collected,
+        total: totalSamples,
       };
     },
     [analyticsData]
@@ -131,15 +140,16 @@ export default function EIDPage() {
               <FileText className="h-8 w-8 text-blue-500" />
               <div>
                 <p className="text-sm text-gray-600">Total Samples</p>
-                {statsLoading ? (
+                {analyticsLoading ? (
                   <Skeleton className="h-8 w-12" />
                 ) : (
-                  <p className="text-2xl font-bold text-blue-600">{stats?.totalSamples || 0}</p>
+                  <p className="text-2xl font-bold text-blue-600">{total.total}</p>
                 )}
               </div>
             </div>
           </CardContent>
         </Card>
+
       </div>
       
       {/* Quick Actions */}
@@ -210,7 +220,7 @@ export default function EIDPage() {
               </CardDescription>
             </div>
             <div className="flex">
-              {(["pending", "collected"] as const).map((key) => {
+              {(["total", "pending", "collected"] as const).map((key) => {
                 const chart = key as keyof typeof chartConfig;
                 return (
                   <button
@@ -250,7 +260,10 @@ export default function EIDPage() {
               >
                 <BarChart
                   accessibilityLayer
-                  data={analyticsData}
+                  data={analyticsData?.map(item => ({
+                    ...item,
+                    total: (item.pending || 0) + (item.collected || 0)
+                  }))}
                   margin={{
                     left: 12,
                     right: 12,
