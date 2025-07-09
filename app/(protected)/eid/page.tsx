@@ -23,11 +23,11 @@ const chartConfig = {
   },
   pending: {
     label: "Pending Collection",
-    color: "#2563eb", // blue-500
+    color: "#60a5fa", // blue-400 - more blue, less faded for pending
   },
   collected: {
     label: "Collected Samples",
-    color: "#2563eb", // blue-700
+    color: "#2563eb", // blue-600 - real blue for collected
   },
 } satisfies ChartConfig;
 
@@ -105,13 +105,13 @@ export default function EIDPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <Clock className="h-8 w-8 text-red-500" />
+              <Clock className="h-8 w-8" style={{color: "#60a5fa"}} />
               <div>
                 <p className="text-sm text-gray-600">Pending Collection</p>
                 {analyticsLoading ? (
                   <Skeleton className="h-8 w-12" />
                 ) : (
-                  <p className="text-2xl font-bold text-red-600">{total.pending}</p>
+                  <p className="text-2xl font-bold" style={{color: "#2563eb"}}>{total.pending}</p>
                 )}
               </div>
             </div>
@@ -121,13 +121,13 @@ export default function EIDPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <CheckCircle className="h-8 w-8 text-green-500" />
+              <CheckCircle className="h-8 w-8" style={{color: "#2563eb"}} />
               <div>
                 <p className="text-sm text-gray-600">Collected</p>
                 {analyticsLoading ? (
                   <Skeleton className="h-8 w-12" />
                 ) : (
-                  <p className="text-2xl font-bold text-green-600">{total.collected}</p>
+                  <p className="text-2xl font-bold" style={{color: "#2563eb"}}>{total.collected}</p>
                 )}
               </div>
             </div>
@@ -137,13 +137,13 @@ export default function EIDPage() {
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
-              <FileText className="h-8 w-8 text-blue-500" />
+              <FileText className="h-8 w-8" style={{color: "#2563eb"}} />
               <div>
                 <p className="text-sm text-gray-600">Total Samples</p>
                 {analyticsLoading ? (
                   <Skeleton className="h-8 w-12" />
                 ) : (
-                  <p className="text-2xl font-bold text-blue-600">{total.total}</p>
+                  <p className="text-2xl font-bold" style={{color: "#2563eb"}}>{total.total}</p>
                 )}
               </div>
             </div>
@@ -299,7 +299,14 @@ export default function EIDPage() {
                       />
                     }
                   />
-                  <Bar dataKey={activeChart} fill={chartConfig[activeChart].color} />
+                  {activeChart === "total" ? (
+                    <>
+                      <Bar dataKey="pending" fill={chartConfig.pending.color} name="Pending Collection" />
+                      <Bar dataKey="collected" fill={chartConfig.collected.color} name="Collected Samples" />
+                    </>
+                  ) : (
+                    <Bar dataKey={activeChart} fill={chartConfig[activeChart].color} />
+                  )}
                 </BarChart>
               </ChartContainer>
             )}
