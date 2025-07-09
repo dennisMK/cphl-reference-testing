@@ -60,7 +60,7 @@ export default function DashboardCards() {
       available: true,
     },
     {
-      title: "HIV-Positive Mothers",
+      title: "Early Infant Diagnosis",
       description:
         "Monitor and track EID test request for infants born to HIV Positive Mothers",
       href: "/eid",

@@ -27,7 +27,9 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const [showPassword, setShowPassword] = useState(false);
   const [serverError, setServerError] = useState("");
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, isAuthenticated } = useAuth();
+
+  const [loginSuccess, setLoginSuccess] = useState(false);
 
   const {
     register,
@@ -37,17 +39,21 @@ export function LoginForm({
     resolver: zodResolver(loginSchema),
   });
 
-  const onSubmit = async (data: LoginForm) => {
+  const onSubmit = (data: LoginForm) => {
     setServerError("");
+    setLoginSuccess(false);
     console.log('Login form submitted:', data.username);
 
-    try {
-      await login(data);
-      console.log('Login successful, should redirect to dashboard');
-    } catch (error: any) {
-      console.log('Login failed:', error.message);
-      setServerError(error.message || "Invalid username or password");
-    }
+    login(data)
+      .then(() => {
+        console.log('Login successful, should redirect to dashboard');
+        setLoginSuccess(true);
+      })
+      .catch((error: any) => {
+        console.log('Login failed:', error.message);
+        setLoginSuccess(false);
+        setServerError(error.message || "Invalid username or password");
+      });
   };
 
   return (
@@ -71,7 +77,10 @@ export function LoginForm({
 
         {/* Form Container - Apple Style Grouped Inputs */}
         <div className="mb-8">
-          <form onSubmit={handleSubmit(onSubmit)}>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit(onSubmit)(e);
+          }}>
             {/* Username Field */}
             <div className="mb-4">
               <div className="border border-gray-300 rounded-2xl overflow-hidden bg-white">
@@ -141,6 +150,12 @@ export function LoginForm({
             {serverError && (
               <div className="mb-6">
                 <p className="text-sm text-red-600 ml-1">{serverError}</p>
+              </div>
+            )}
+
+            {loginSuccess && (
+              <div className="mb-6">
+                <p className="text-sm text-green-600 ml-1">Login successful, redirecting to dashboard...</p>
               </div>
             )}
 

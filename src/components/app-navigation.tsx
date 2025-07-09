@@ -163,10 +163,10 @@ export function AppNavigation() {
       ],
     },
     {
-      name: "HIV-Positive Mothers",
+      name: "Early Infant Diagnosis",
       href: "/eid",
       icon: Baby,
-      description: "HIV-Positive Mothers",
+      description: "Early Infant Diagnosis",
       theme: "blue",
       subItems: [
         { name: "New Request", href: "/eid/new-request", icon: IconPlus },
@@ -236,10 +236,10 @@ export function AppNavigation() {
               const active = isActive(section.href);
               const isCurrent = currentSection === section.href.split("/")[1];
 
-              // Hide EID when in viral-load section, and hide viral-load when in EID section
-              if (currentSection === "viral-load" && section.href === "/eid")
+              // Only show sections when on their specific pages
+              if (section.href === "/viral-load" && currentSection !== "viral-load")
                 return null;
-              if (currentSection === "eid" && section.href === "/viral-load")
+              if (section.href === "/eid" && currentSection !== "eid")
                 return null;
 
               if (
@@ -572,10 +572,10 @@ export function AppNavigation() {
             const IconComponent = section.icon;
             const active = isActive(section.href);
 
-            // Hide EID when in viral-load section, and hide viral-load when in EID section
-            if (currentSection === "viral-load" && section.href === "/eid")
+            // Only show sections when on their specific pages
+            if (section.href === "/viral-load" && currentSection !== "viral-load")
               return null;
-            if (currentSection === "eid" && section.href === "/viral-load")
+            if (section.href === "/eid" && currentSection !== "eid")
               return null;
 
             return (
