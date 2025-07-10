@@ -20,7 +20,7 @@ import { cn } from "@/lib/utils";
 const chartConfig = {
   pending: {
     label: "Pending Collections",
-    color: "#ef4444", // red-500
+    color: "#ff0000", // real red
   },
   packaged: {
     label: "Packaged Samples", 
@@ -326,10 +326,7 @@ export default function page() {
                             year: "numeric",
                           });
                         }}
-                        formatter={(value, name) => [
-                          `${value} ${name === 'pending' ? 'pending' : name === 'packaged' ? 'packaged' : 'results'}`,
-                          chartConfig[name as keyof typeof chartConfig]?.label || name
-                        ]}
+                        labelClassName="font-medium"
                       />
                     }
                   />
