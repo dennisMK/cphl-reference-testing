@@ -24,11 +24,11 @@ const chartConfig = {
   },
   packaged: {
     label: "Packaged Samples", 
-    color: "#ef4444", // red-500
+    color: "#3b82f6", // blue-500
   },
   results: {
     label: "Results Received",
-    color: "#ef4444", // red-500
+    color: "#10b981", // emerald-500
   },
 } satisfies ChartConfig;
 

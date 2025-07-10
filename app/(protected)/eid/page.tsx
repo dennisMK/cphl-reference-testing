@@ -19,15 +19,15 @@ import { cn } from "@/lib/utils";
 const chartConfig = {
   total: {
     label: "Total Samples",
-    color: "#2563eb", // blue-600 - real blue
+    color: "#6366f1", // indigo-500
   },
   pending: {
     label: "Pending Collection",
-    color: "#60a5fa", // blue-400 - more blue, less faded for pending
+    color: "#ef4444", // red-500
   },
   collected: {
     label: "Collected Samples",
-    color: "#2563eb", // blue-600 - real blue for collected
+    color: "#3b82f6", // blue-500
   },
 } satisfies ChartConfig;
 
