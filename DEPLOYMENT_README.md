@@ -1,6 +1,6 @@
-# Uganda Viral Load Manager - Simple Deployment Guide
+# CPHL REFERENCE TESTING - Simple Deployment Guide
 
-A quick and simple guide to deploy the Uganda Viral Load Manager Next.js application.
+A quick and simple guide to deploy the CPHL Reference Testing Manager Next.js application.
 
 ## Prerequisites
 
