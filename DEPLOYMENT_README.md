@@ -113,7 +113,7 @@ To keep the application running even after closing the terminal:
 npm install -g pm2
 
 # Start with PM2
-pm2 start "bun start" --name uganda-app
+pm2 start "bun start" --name uganda-viral-load
 
 # Save PM2 configuration
 pm2 save

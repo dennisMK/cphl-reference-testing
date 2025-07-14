@@ -15,6 +15,7 @@ export const env = createEnv({
       .default("development"),
     BETTER_AUTH_SECRET: z.string(), // Using this as JWT secret for now
     RESEND_API_KEY: z.string().optional(),
+    TRUSTED_IPS: z.string().optional(), // Comma-separated list of trusted IPs
   },
 
   /**
@@ -37,6 +38,7 @@ export const env = createEnv({
     NODE_ENV: process.env.NODE_ENV,
     RESEND_API_KEY: process.env.RESEND_API_KEY,
     BETTER_AUTH_SECRET: process.env.BETTER_AUTH_SECRET,
+    TRUSTED_IPS: process.env.TRUSTED_IPS,
     // NEXT_PUBLIC_CLIENTVAR: process.env.NEXT_PUBLIC_CLIENTVAR,
   },
   /**

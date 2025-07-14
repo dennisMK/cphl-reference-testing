@@ -26,8 +26,8 @@ import { getCurrentUser, type User } from "@/lib/auth";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  // Get the current user from the auth token
-  const user = await getCurrentUser();
+  // Get the current user from the auth token, passing headers for IP checking
+  const user = await getCurrentUser(opts.headers);
 
   return {
     db,

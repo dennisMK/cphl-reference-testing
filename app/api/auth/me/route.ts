@@ -2,17 +2,53 @@ import { NextResponse } from 'next/server';
 import { eq } from 'drizzle-orm';
 import { getUsersDb } from '@/server/db';
 import { users } from '@/server/db/schemas/users';
-import { getAuthToken, verifyJWT } from '@/lib/auth';
+import { getAuthToken, verifyJWT, isTrustedRequest } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    // Check if request is from a trusted IP
+    const headers = new Headers(request.headers);
+    const isFromTrustedIP = isTrustedRequest(headers);
+    
+    if (isFromTrustedIP) {
+      console.log('Auth request from trusted IP');
+    }
+    
     const token = await getAuthToken();
     
-    if (!token) {
+    if (!token && !isFromTrustedIP) {
       return NextResponse.json({ error: 'No token found' }, { status: 401 });
     }
 
-    const payload = verifyJWT(token);
+    let payload = null;
+    if (token) {
+      payload = verifyJWT(token);
+      if (!payload && !isFromTrustedIP) {
+        return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
+      }
+    }
+
+    // Handle trusted IP without valid token
+    if (!payload && isFromTrustedIP) {
+      return NextResponse.json({
+        user: {
+          id: -1,
+          username: 'system',
+          name: 'System User (Trusted IP)',
+          email: null,
+          telephone: null,
+          facility_id: 1,
+          facility_name: 'System',
+          hub_id: 1,
+          hub_name: 'System Hub',
+          other_facilities: null,
+          ip_id: null,
+          ip_name: null,
+          requesting_facility_id: null,
+        },
+      });
+    }
+
     if (!payload) {
       return NextResponse.json({ error: 'Invalid token' }, { status: 401 });
     }
