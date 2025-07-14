@@ -10,8 +10,8 @@ import { AuthProvider } from "@/lib/auth-context";
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
-  title: "Uganda Lab e-Test Requests",
-  description: "Comprehensive viral load management system for Uganda",
+  title: "CPHL Reference Testing",
+  description: "Comprehensive reference testing system for Uganda",
   icons: [{ rel: "icon", url: "/uganda-flag.png" }],
 };
 
